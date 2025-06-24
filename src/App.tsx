@@ -16,7 +16,7 @@ import {
 } from './constants';
 
 const App: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [maxCharLimit, setMaxCharLimit] = useState<number>(DEFAULT_MAX_CHAR_LIMIT);
   const [isLoading, setIsLoading] = useState(false);
@@ -70,11 +70,15 @@ const App: React.FC = () => {
     }
     setIsLoading(true);
     setError(null);
-    setAnalysisResult(null); // Clear previous results before new analysis
+    setAnalysisResult(null);
     setCurrentTextAnalyzed(text);
 
     try {
-      const result = await analyzeText(apiKey, text, t);
+      const result = await analyzeText(apiKey, text, t, language);
+
+      // *** DEBUGGING LINE ADDED HERE ***
+      console.log('--- RAW API RESPONSE (from App.tsx) ---', JSON.stringify(result, null, 2));
+
       setAnalysisResult(result);
     } catch (err: any) {
       setError(err.message || "An unknown error occurred during analysis.");
@@ -92,7 +96,7 @@ const App: React.FC = () => {
           <div className="inline-flex items-center justify-center">
              <AthenaLogoIcon className="w-9 h-9 md:w-13 md:h-13 text-blue-600 mr-2 md:mr-3" />
             <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-800">{t('app_title')}</h1>
+                <h1 className="text-lg md:text-3xl font-semibold text-gray-800">{t('app_title')}</h1>
                 <p className="text-md md:text-lg text-gray-600"></p>
             </div>
           </div>

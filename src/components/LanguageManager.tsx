@@ -46,7 +46,7 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({ apiKey }) => {
 
   return (
     <div className="mt-4 pt-4 border-t border-gray-200">
-      <h3 className="text-lg font-semibold text-gray-700 mb-2">{t('lang_manager_title')}</h3>
+      <h3 className="text-lg font-semibold text-gray-700 mb-4">{t('lang_manager_title')}</h3>
       <p className="text-sm text-gray-500 mb-4">
         {t('lang_manager_info')}
       </p>

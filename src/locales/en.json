@@ -71,5 +71,27 @@
   "lang_manager_error_parse": "Failed to parse translation: {message}",
   "lang_manager_error_safety": "The translation request was blocked due to safety concerns.",
   "lang_manager_error_api": "Failed to translate UI: {message}",
-  "lang_switcher_aria_label": "Select language"
+  "lang_switcher_aria_label": "Select language",
+
+  "pattern_guilt_tripping": "Guilt Tripping",
+  "pattern_gaslighting": "Gaslighting",
+  "pattern_threatening_coercion": "Threatening / Coercion",
+  "pattern_invalidation_minimizing": "Invalidation / Minimizing",
+  "pattern_deflection_shifting_blame": "Deflection / Shifting Blame",
+  "pattern_darvo": "DARVO (Deny, Attack, and Reverse Victim and Offender)",
+  "pattern_moving_the_goalposts": "Moving the Goalposts",
+  "pattern_love_bombing": "Love Bombing",
+  "pattern_projection": "Projection",
+  "pattern_splitting": "Splitting",
+  "pattern_the_backhanded_compliment": "The Backhanded Compliment",
+  "pattern_weaponized_incompetence": "Weaponized Incompetence",
+  "pattern_the_silent_treatment": "The Silent Treatment",
+  "pattern_the_straw_man_fallacy": "The Straw Man Fallacy",
+  "pattern_the_co-optation_of_dissent": "The Co-optation of Dissent",
+  "pattern_redefining_the_terrain": "Redefining the Terrain",
+  "pattern_the_foreclosure_of_alternatives": "The Foreclosure of Alternatives",
+  "pattern_manufacturing_reflexive_impotence": "Manufacturing Reflexive Impotence",
+  "pattern_the_personalization_of_systemic_problems": "The Personalization of Systemic Problems",
+  "pattern_dog-whistling": "Dog-Whistling",
+  "pattern_euphemism_jargon": "Euphemism & Jargon"
 }

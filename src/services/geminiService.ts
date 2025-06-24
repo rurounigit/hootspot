@@ -1,6 +1,9 @@
+// src/services/geminiService.ts
+
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { GEMINI_MODEL_NAME, SYSTEM_PROMPT, TRANSLATION_SYSTEM_PROMPT } from "../constants";
 import { GeminiAnalysisResponse } from "../types";
+import { LanguageCode } from "../i18n";
 
 // Type for the translation function, passed from components
 type TFunction = (key: string, replacements?: Record<string, string | number>) => string;
@@ -44,7 +47,8 @@ export const testApiKey = async (apiKey: string, t: TFunction): Promise<{isValid
 export const analyzeText = async (
   apiKey: string,
   textToAnalyze: string,
-  t: TFunction
+  t: TFunction,
+  language: LanguageCode
 ): Promise<GeminiAnalysisResponse> => {
   if (!apiKey) {
     throw new Error(t('error_api_key_not_configured'));
@@ -58,6 +62,8 @@ export const analyzeText = async (
 
   const ai = new GoogleGenAI({ apiKey });
 
+  const dynamicSystemPrompt = `${SYSTEM_PROMPT}\n\nIMPORTANT: The 'analysis_summary' and all 'explanation' fields in the JSON response must be in the following language: ${language}.`;
+
   try {
     const response: GenerateContentResponse = await ai.models.generateContent({
       model: GEMINI_MODEL_NAME,
@@ -65,11 +71,12 @@ export const analyzeText = async (
         { role: "user", parts: [{ text: `Please analyze the following text: ${textToAnalyze}` }] }
       ],
       config: {
-        systemInstruction: SYSTEM_PROMPT,
+        systemInstruction: dynamicSystemPrompt,
         responseMimeType: "application/json",
-        temperature: 0.0,
-        topK: 1,
-        topP: 0.1,
+        // *** THE FIX: RELAXED PARAMETERS TO ALLOW FOR MULTIPLE FINDINGS ***
+        temperature: 0.2,
+        topP: 0.9,
+        topK: 5,
       },
     });
 

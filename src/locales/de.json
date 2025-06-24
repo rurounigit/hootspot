@@ -66,5 +66,27 @@
   "lang_manager_error_parse": "Übersetzung konnte nicht geparst werden: {message}",
   "lang_manager_error_safety": "Die Übersetzungsanfrage wurde aus Sicherheitsgründen blockiert.",
   "lang_manager_error_api": "Benutzeroberfläche konnte nicht übersetzt werden: {message}",
-  "lang_switcher_aria_label": "Sprache auswählen"
+  "lang_switcher_aria_label": "Sprache auswählen",
+
+  "pattern_guilt_tripping": "Schuldgefühle einreden",
+  "pattern_gaslighting": "Gaslighting",
+  "pattern_threatening_coercion": "Drohung / Nötigung",
+  "pattern_invalidation_minimizing": "Entwertung / Herunterspielen",
+  "pattern_deflection_shifting_blame": "Ablenkung / Schuldzuweisung",
+  "pattern_darvo": "DARVO (Leugnen, Angreifen, Opfer-Täter-Umkehr)",
+  "pattern_moving_the_goalposts": "Die Spielregeln ändern",
+  "pattern_love_bombing": "Love Bombing",
+  "pattern_projection": "Projektion",
+  "pattern_splitting": "Spaltung (Schwarz-Weiß-Denken)",
+  "pattern_the_backhanded_compliment": "Das vergiftete Kompliment",
+  "pattern_weaponized_incompetence": "Instrumentalisierte Inkompetenz",
+  "pattern_the_silent_treatment": "Die Schweigebehandlung",
+  "pattern_the_straw_man_fallacy": "Das Strohmann-Argument",
+  "pattern_the_co-optation_of_dissent": "Die Vereinnahmung von Widerspruch",
+  "pattern_redefining_the_terrain": "Das Terrain neu definieren",
+  "pattern_the_foreclosure_of_alternatives": "Der Ausschluss von Alternativen",
+  "pattern_manufacturing_reflexive_impotence": "Erzeugung reflexartiger Ohnmacht",
+  "pattern_the_personalization_of_systemic_problems": "Die Personalisierung systemischer Probleme",
+  "pattern_dog-whistling": "Hundepfeifen-Rhetorik",
+  "pattern_euphemism_jargon": "Euphemismus & Jargon"
 }

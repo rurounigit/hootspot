@@ -66,5 +66,27 @@
   "lang_manager_error_parse": "Échec de l'analyse de la traduction : {message}",
   "lang_manager_error_safety": "La demande de traduction a été bloquée pour des raisons de sécurité.",
   "lang_manager_error_api": "Échec de la traduction de l'interface utilisateur : {message}",
-  "lang_switcher_aria_label": "Sélectionner la langue"
+  "lang_switcher_aria_label": "Sélectionner la langue",
+
+  "pattern_guilt_tripping": "Culpabilisation",
+  "pattern_gaslighting": "Gaslighting (Détournement cognitif)",
+  "pattern_threatening_coercion": "Menace / Coercition",
+  "pattern_invalidation_minimizing": "Invalidation / Minimisation",
+  "pattern_deflection_shifting_blame": "Dévier / Reporter la faute",
+  "pattern_darvo": "DARVO (Nier, Attaquer, Inverser Victime et Offenseur)",
+  "pattern_moving_the_goalposts": "Déplacer les buts",
+  "pattern_love_bombing": "Love Bombing (Bombardement d'amour)",
+  "pattern_projection": "Projection",
+  "pattern_splitting": "Clivage (Pensée manichéenne)",
+  "pattern_the_backhanded_compliment": "Le compliment déguisé",
+  "pattern_weaponized_incompetence": "Incompétence instrumentalisée",
+  "pattern_the_silent_treatment": "Le traitement silencieux",
+  "pattern_the_straw_man_fallacy": "L'argument de l'homme de paille",
+  "pattern_the_co-optation_of_dissent": "La cooptation de la dissidence",
+  "pattern_redefining_the_terrain": "Redéfinir le terrain",
+  "pattern_the_foreclosure_of_alternatives": "L'exclusion des alternatives",
+  "pattern_manufacturing_reflexive_impotence": "Fabrication de l'impuissance réflexe",
+  "pattern_the_personalization_of_systemic_problems": "La personnalisation des problèmes systémiques",
+  "pattern_dog-whistling": "Langage codé (Dog-whistling)",
+  "pattern_euphemism_jargon": "Euphémisme & Jargon"
 }
