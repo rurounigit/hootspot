@@ -37,6 +37,7 @@ const patternNameToI18nKeyMap = new Map<string, string>([
 
 function escapeRegex(string: string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 
+// --- MODIFIED COMPONENT: Added Tooltip and Click-to-Scroll ---
 interface HighlightedTextProps {
   text: string;
   matches: { start: number; end: number; findings: (GeminiFinding & { displayIndex: number })[] }[];
@@ -53,60 +54,108 @@ const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches, patter
     const element = document.getElementById(`finding-card-${displayIndex}`);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Briefly flash the card to give visual feedback
       element.style.transition = 'background-color 0.1s ease-in-out';
-      element.style.backgroundColor = '#e0e7ff';
-      setTimeout(() => { element.style.backgroundColor = ''; }, 800);
+      element.style.backgroundColor = '#e0e7ff'; // A light indigo color
+      setTimeout(() => {
+        element.style.backgroundColor = ''; // Revert to original color
+      }, 800);
     }
   };
 
   const handlePillMouseOver = (event: React.MouseEvent, finding: GeminiFinding, color: { hex: string, text: string }) => {
     const i18nKey = patternNameToI18nKeyMap.get(finding.pattern_name) || finding.pattern_name;
-    setTooltip({ visible: true, content: t(i18nKey), x: event.clientX, y: event.clientY, color: color.hex, textColor: color.text });
+    setTooltip({
+      visible: true,
+      content: t(i18nKey),
+      x: event.clientX,
+      y: event.clientY,
+      color: color.hex,
+      textColor: color.text,
+    });
   };
 
-  const handlePillMouseLeave = () => { setTooltip({ ...tooltip, visible: false }); };
+  const handlePillMouseLeave = () => {
+    setTooltip({ ...tooltip, visible: false });
+  };
 
   const segments: React.ReactNode[] = [];
   let lastIndex = 0;
 
   matches.forEach((match, matchIndex) => {
-    if (match.start > lastIndex) { segments.push(text.substring(lastIndex, match.start)); }
+    if (match.start > lastIndex) {
+      segments.push(text.substring(lastIndex, match.start));
+    }
     const pills = match.findings.map(finding => {
       const colorInfo = patternColorMap.get(finding.pattern_name);
       if (!colorInfo) return null;
-      return (<span key={`${finding.pattern_name}-${match.start}`} className="inline-block w-2.5 h-2.5 rounded-full mr-1 -mb-0.5 border border-gray-500 cursor-pointer" style={{ backgroundColor: colorInfo.hex }} onClick={() => handlePillClick(finding.displayIndex)} onMouseOver={(e) => handlePillMouseOver(e, finding, colorInfo)} onMouseLeave={handlePillMouseLeave} />);
+      return (
+        <span
+          key={`${finding.pattern_name}-${match.start}`}
+          className="inline-block w-2.5 h-2.5 rounded-full mr-1 -mb-0.5 border border-gray-500 cursor-pointer"
+          style={{ backgroundColor: colorInfo.hex }}
+          onClick={() => handlePillClick(finding.displayIndex)}
+          onMouseOver={(e) => handlePillMouseOver(e, finding, colorInfo)}
+          onMouseLeave={handlePillMouseLeave}
+        />
+      );
     });
     segments.push(<span key={`match-${matchIndex}`} className="inline-block">{pills}<mark className={`${UNIFORM_HIGHLIGHT_COLOR} p-0.5 rounded-sm`}>{text.substring(match.start, match.end)}</mark></span>);
     lastIndex = match.end;
   });
 
-  if (lastIndex < text.length) { segments.push(text.substring(lastIndex)); }
+  if (lastIndex < text.length) {
+    segments.push(text.substring(lastIndex));
+  }
 
   return (
     <>
-      {tooltip.visible && (<div className="fixed px-2 py-1 rounded-md shadow-lg text-sm font-semibold pointer-events-none z-50" style={{ top: tooltip.y + 15, left: tooltip.x + 15, backgroundColor: tooltip.color, color: tooltip.textColor, border: `1px solid ${tooltip.textColor}` }}>{tooltip.content}</div>)}
-      <p className="whitespace-pre-wrap leading-relaxed">{segments.map((segment, index) => <React.Fragment key={index}>{segment}</React.Fragment>)}</p>
+      {tooltip.visible && (
+        <div
+          className="fixed px-2 py-1 rounded-md shadow-lg text-sm font-semibold pointer-events-none z-50"
+          style={{
+            top: tooltip.y + 15,
+            left: tooltip.x + 15,
+            backgroundColor: tooltip.color,
+            color: tooltip.textColor,
+            border: `1px solid ${tooltip.textColor}`
+          }}
+        >
+          {tooltip.content}
+        </div>
+      )}
+      <p className="whitespace-pre-wrap leading-relaxed">
+        {segments.map((segment, index) => <React.Fragment key={index}>{segment}</React.Fragment>)}
+      </p>
     </>
   );
 };
+// --- END OF MODIFIED COMPONENT ---
 
 const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: string | null }> = ({ analysis, sourceText }) => {
   const { t } = useTranslation();
   const { findings } = analysis;
   const hasFindings = findings && findings.length > 0;
 
+  // 1. Stable color mapping for patterns
   const patternColorMap = new Map<string, typeof findingColors[0]>();
   if (hasFindings) {
     const uniquePatternNames = [...new Set(findings.map(f => f.pattern_name))];
-    uniquePatternNames.forEach((name, index) => { patternColorMap.set(name, findingColors[index % findingColors.length]); });
+    uniquePatternNames.forEach((name, index) => {
+      patternColorMap.set(name, findingColors[index % findingColors.length]);
+    });
   }
 
-  // --- START OF THE FIX ---
+  // Give each finding a unique index for linking
+  const findingsWithIndex = findings.map((finding, index) => ({
+    ...finding,
+    displayIndex: index,
+  }));
 
-  // 1. Group all findings by their quote's position in the text.
-  const matchesByPosition = new Map<string, { start: number; end: number; findings: GeminiFinding[] }>();
+  // 2. Find all occurrences of each quote and group by exact position
+  const matchesByPosition = new Map<string, { start: number; end: number; findings: (GeminiFinding & { displayIndex: number })[] }>();
   if (hasFindings && sourceText) {
-    findings.forEach(finding => {
+    findingsWithIndex.forEach(finding => {
       const quote = finding.specific_quote;
       if (!quote || typeof quote !== 'string' || quote.trim() === '') return;
       const escapedQuote = escapeRegex(quote);
@@ -125,34 +174,14 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
       }
     });
   }
-
-  // 2. Sort these groups by their start position to establish the correct text order.
   const sortedMatches = Array.from(matchesByPosition.values()).sort((a, b) => a.start - b.start);
 
-  // 3. Create the definitive, correctly-ordered list for displaying the report cards. THIS IS THE SOURCE OF TRUTH.
-  const allFindingsForDisplay = sortedMatches.flatMap(match => match.findings);
-
-  // 4. Create a map to look up the correct final display index for any given finding.
-  const findingToIndexMap = new Map<GeminiFinding, number>();
-  allFindingsForDisplay.forEach((finding, index) => {
-    findingToIndexMap.set(finding, index);
-  });
-
-  // 5. Create the data for the highlights, injecting the correct final `displayIndex` into each finding.
-  const matchesWithCorrectIndex = sortedMatches.map(match => ({
-    ...match,
-    findings: match.findings.map(f => ({
-      ...f,
-      displayIndex: findingToIndexMap.get(f) as number // This is now the correct, final index
-    }))
-  }));
-
-  // 6. Merge overlapping highlight regions for clean rendering, now that the indices are correct.
-  const finalHighlights: typeof matchesWithCorrectIndex = [];
-  if (matchesWithCorrectIndex.length > 0) {
-    let currentHighlight = { ...matchesWithCorrectIndex[0] };
-    for (let i = 1; i < matchesWithCorrectIndex.length; i++) {
-        const nextMatch = matchesWithCorrectIndex[i];
+  // 3. Merge overlapping/nested highlight regions
+  const finalHighlights: typeof sortedMatches = [];
+  if (sortedMatches.length > 0) {
+    let currentHighlight = { ...sortedMatches[0], findings: [...sortedMatches[0].findings] };
+    for (let i = 1; i < sortedMatches.length; i++) {
+        const nextMatch = sortedMatches[i];
         if (nextMatch.start < currentHighlight.end) {
             nextMatch.findings.forEach(findingToAdd => {
                 if (!currentHighlight.findings.some(existing => existing.pattern_name === findingToAdd.pattern_name)) {
@@ -162,13 +191,11 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
             currentHighlight.end = Math.max(currentHighlight.end, nextMatch.end);
         } else {
             finalHighlights.push(currentHighlight);
-            currentHighlight = { ...nextMatch };
+            currentHighlight = { ...nextMatch, findings: [...nextMatch.findings] };
         }
     }
     finalHighlights.push(currentHighlight);
   }
-
-  // --- END OF THE FIX ---
 
   return (
     <div className="mt-4">
@@ -186,12 +213,12 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
         <div>
           <h3 className="text-lg font-semibold text-gray-700 mb-3">{t('report_detected_patterns_title')}</h3>
           <div className="space-y-4">
-            {/* Map over the definitive, correctly-sorted array for rendering */}
-            {allFindingsForDisplay.map((finding, index) => {
+            {/* Use findingsWithIndex to ensure the index matches for the ID */}
+            {findingsWithIndex.map((finding, index) => {
               const color = patternColorMap.get(finding.pattern_name) || { hex: '#e5e7eb', border: 'border-gray-300', text: 'text-gray-800' };
               const i18nKey = patternNameToI18nKeyMap.get(finding.pattern_name) || finding.pattern_name;
               return (
-                // The `id` now uses the correct `index` from the sorted list
+                // Add the unique ID to the card here
                 <div key={index} id={`finding-card-${index}`} className={`bg-gray-50 border ${color.border} rounded-lg shadow-md overflow-hidden`}>
                   <div className={`p-4 border-b ${color.border}`} style={{ backgroundColor: color.hex }}>
                     <h4 className={`text-l font-bold ${color.text} uppercase`}>{t(i18nKey)}</h4>

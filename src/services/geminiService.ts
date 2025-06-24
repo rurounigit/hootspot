@@ -73,10 +73,9 @@ export const analyzeText = async (
       config: {
         systemInstruction: dynamicSystemPrompt,
         responseMimeType: "application/json",
-        // *** THE FIX: RELAXED PARAMETERS TO ALLOW FOR MULTIPLE FINDINGS ***
-        temperature: 0.2,
-        topP: 0.9,
-        topK: 5,
+        temperature: 0,
+        topP: 0,
+        topK: 1,
       },
     });
 
