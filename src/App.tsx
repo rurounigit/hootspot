@@ -87,13 +87,13 @@ const App: React.FC = () => {
   return (
     <div className="relative flex flex-col h-screen bg-gradient-to-br from-athena-logo-bg to-athena-logo-bg">
       <LanguageSwitcher />
-      <div className="flex flex-col flex-1 w-full p-4 md:p-6 overflow-y-auto">
-        <header className="mb-6 text-center">
+      <div className="flex flex-col flex-1 w-full p-2 md:p-4 overflow-y-auto">
+        <header className="mb-1 text-left">
           <div className="inline-flex items-center justify-center">
-             <AthenaLogoIcon className="w-12 h-12 md:w-16 md:h-16 text-blue-600 mr-2 md:mr-3" />
+             <AthenaLogoIcon className="w-9 h-9 md:w-13 md:h-13 text-blue-600 mr-2 md:mr-3" />
             <div>
-                <h1 className="text-3xl md:text-4xl font-extrabold text-gray-800">{t('app_title')}</h1>
-                <p className="text-md md:text-lg text-gray-600">{t('app_subtitle')}</p>
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-800">{t('app_title')}</h1>
+                <p className="text-md md:text-lg text-gray-600"></p>
             </div>
           </div>
         </header>
@@ -127,13 +127,13 @@ const App: React.FC = () => {
           </div>
 
           {(!isLoading && !error && !analysisResult && currentTextAnalyzed && !apiKey) && (
-            <div className="mt-6 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded-md shadow-md">
+            <div className="mt-4 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded-md shadow-md">
                 {t('error_no_api_key_for_results')}
             </div>
           )}
 
           {(!isLoading && !error && !analysisResult && !currentTextAnalyzed && apiKey) && (
-            <div className="mt-6 p-6 bg-white border border-gray-200 text-gray-600 rounded-lg shadow-md text-center">
+            <div className="mt-4 p-6 bg-white border border-gray-200 text-gray-600 rounded-lg shadow-md text-center">
                 <p className="text-lg">{t('info_enter_text_to_analyze')}</p>
                 <p className="text-sm mt-2">{t('info_uncover_patterns')}</p>
             </div>

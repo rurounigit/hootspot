@@ -1,5 +1,5 @@
 {
-  "app_title": "",
+  "app_title": "Athena",
   "app_subtitle": "",
   "app_footer_copyright": "© {year} Analyseur de Texte IA Athena. À des fins de démonstration.",
   "app_footer_responsibility": "L'utilisateur est responsable de tous les coûts de l'API Google Gemini.",
@@ -20,8 +20,8 @@
   "config_button_saving": "Test & Sauvegarde...",
   "config_api_key_configured": "La clé API est configurée. Développez pour modifier les paramètres.",
   "config_api_key_not_configured": "Clé API non configurée. Veuillez développer et entrer votre clé.",
-  "analyzer_title": "Analyser le texte",
-  "analyzer_instruction": "Collez le texte que vous souhaitez analyser ci-dessous.",
+  "analyzer_title": "Analyser",
+  "analyzer_instruction": "Trouvez des motifs de manipulation d'informations.",
   "analyzer_no_api_key_warning": "Veuillez configurer votre clé API dans les paramètres ci-dessus pour activer l'analyse.",
   "analyzer_placeholder": "Collez le texte ici pour l'analyse...",
   "analyzer_chars_count": "Caractères : {count} / {limit}",

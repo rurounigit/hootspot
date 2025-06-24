@@ -296,7 +296,7 @@ RULES:
 export const API_KEY_STORAGE_KEY = 'athenaAIApiKey';
 export const MAX_CHAR_LIMIT_STORAGE_KEY = 'athenaAIMaxCharLimit';
 export const CUSTOM_LANGUAGES_KEY = 'athenaAICustomLanguages';
-export const DEFAULT_MAX_CHAR_LIMIT = 5000;
+export const DEFAULT_MAX_CHAR_LIMIT = 6000;
 
 export const AthenaLogoIcon: React.FC<{ className?: string }> = ({ className }) => (
   <img

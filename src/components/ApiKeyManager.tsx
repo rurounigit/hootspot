@@ -69,11 +69,11 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
   };
 
   return (
-    <div className="bg-white shadow-lg rounded-lg p-4 mb-6">
+    <div className="bg-white shadow-md rounded-lg p-4 mb-4">
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center">
           <SettingsIcon className="w-6 h-6 mr-2 text-blue-600" />
-          <h2 className="text-xl font-semibold text-gray-700">{t('config_title')}</h2>
+          <h2 className="text-lg font-semibold text-gray-700">{t('config_title')}</h2>
         </div>
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}

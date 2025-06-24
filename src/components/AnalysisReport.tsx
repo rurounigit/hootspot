@@ -94,7 +94,7 @@ const AnalysisReport: React.FC<AnalysisReportProps> = ({ analysis, sourceText })
 
   return (
     <div className="mt-8">
-      <h2 className="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">{t('report_title')}</h2>
+      <h2 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">{t('report_title')}</h2>
 
       <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-md shadow-sm mb-8">
         <h3 className="text-lg font-semibold text-blue-800 mb-1">{t('report_summary_title')}</h3>
@@ -121,7 +121,7 @@ const AnalysisReport: React.FC<AnalysisReportProps> = ({ analysis, sourceText })
               return (
                 <div key={index} className={`bg-gray-50 border ${color.border} rounded-lg shadow-md overflow-hidden`}>
                   <div className={`p-4 border-b ${color.border} ${color.bg}`}>
-                    <h4 className={`text-xl font-bold ${color.text} uppercase`}>
+                    <h4 className={`text-l font-bold ${color.text} uppercase`}>
                       {finding.pattern_name}
                     </h4>
                   </div>
