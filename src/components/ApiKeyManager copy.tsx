@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { SaveIcon, SettingsIcon, ExternalLinkIcon, InfoIcon } from '../constants';
 import { testApiKey } from '../services/geminiService';
-import { useTranslation } from '../i18n';
-import LanguageManager from './LanguageManager';
+// ... imports and interface ...
+import LanguageManager from './LanguageManager;
 
 interface ApiKeyManagerProps {
   currentApiKey: string | null;
@@ -17,7 +18,6 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
   currentMaxCharLimit,
   onMaxCharLimitSave,
 }) => {
-  const { t } = useTranslation();
   const [apiKeyInput, setApiKeyInput] = useState(currentApiKey || '');
   const [maxCharLimitInput, setMaxCharLimitInput] = useState(currentMaxCharLimit.toString());
   const [isTesting, setIsTesting] = useState(false);
@@ -37,30 +37,31 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
     setTestStatus(null);
     const trimmedApiKey = apiKeyInput.trim();
     if (!trimmedApiKey) {
-      setTestStatus({ message: t('error_api_key_empty'), type: 'error'});
+      setTestStatus({ message: "API Key cannot be empty.", type: 'error'});
       setIsTesting(false);
       return;
     }
 
-    const { isValid, error: testError } = await testApiKey(trimmedApiKey, t);
+    const { isValid, error: testError } = await testApiKey(trimmedApiKey);
     if (isValid) {
       const {success, error: saveError} = await onApiKeySave(trimmedApiKey);
       if (success) {
-        setTestStatus({ message: t('success_api_key_saved'), type: 'success' });
+        setTestStatus({ message: "API Key saved and validated successfully!", type: 'success' });
         setIsCollapsed(true); // Collapse after successful save
       } else {
-         setTestStatus({ message: saveError || t('error_save_api_key'), type: 'error' });
+         setTestStatus({ message: saveError || "Failed to save API Key.", type: 'error' });
       }
     } else {
-      setTestStatus({ message: testError || t('error_api_key_test_failed_generic'), type: 'error' });
+      setTestStatus({ message: testError || "API Key validation failed.", type: 'error' });
     }
 
     const newLimit = parseInt(maxCharLimitInput, 10);
     if (!isNaN(newLimit) && newLimit > 0) {
       onMaxCharLimitSave(newLimit);
+      // Can add a message for limit save if desired, but API key is primary
     } else {
       setTestStatus(prev => ({
-        message: `${prev ? prev.message + " " : ""}${t('error_invalid_char_limit')}`,
+        message: `${prev ? prev.message + " " : ""}Invalid character limit. Using previous or default.`,
         type: prev?.type === 'success' ? 'success' : 'error' // Keep success if API key was fine
       }));
       setMaxCharLimitInput(currentMaxCharLimit.toString()); // Reset to valid value
@@ -73,12 +74,12 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center">
           <SettingsIcon className="w-6 h-6 mr-2 text-blue-600" />
-          <h2 className="text-xl font-semibold text-gray-700">{t('config_title')}</h2>
+          <h2 className="text-xl font-semibold text-gray-700">Configuration</h2>
         </div>
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
           className="text-blue-500 hover:text-blue-700"
-          aria-label={isCollapsed ? t('config_toggle_expand') : t('config_toggle_collapse')}
+          aria-label={isCollapsed ? "Expand settings" : "Collapse settings"}
         >
           {isCollapsed ? (
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
@@ -99,7 +100,8 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
               <InfoIcon className="w-5 h-5 mr-2 text-blue-500 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm text-blue-700">
-                  {t('config_api_key_info')}
+                  Your Google Gemini API Key is required to use Athena AI. It is stored locally in your browser and never sent to our servers.
+                  You are responsible for any costs associated with its use.
                 </p>
                 <a
                   href="https://aistudio.google.com/app/apikey"
@@ -107,7 +109,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
                   rel="noopener noreferrer"
                   className="text-sm text-blue-600 hover:text-blue-800 font-medium inline-flex items-center"
                 >
-                  {t('config_get_api_key')} <ExternalLinkIcon className="w-4 h-4 ml-1" />
+                  Get your API Key from Google AI Studio <ExternalLinkIcon className="w-4 h-4 ml-1" />
                 </a>
               </div>
             </div>
@@ -115,21 +117,21 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
 
           <div className="mb-4">
             <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700 mb-1">
-              {t('config_api_key_label')}
+              Google Gemini API Key
             </label>
             <input
               type="password"
               id="apiKey"
               value={apiKeyInput}
               onChange={(e) => { setApiKeyInput(e.target.value); setTestStatus(null); }}
-              placeholder={t('config_api_key_placeholder')}
+              placeholder="Enter your API Key"
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
 
           <div className="mb-6">
             <label htmlFor="maxCharLimit" className="block text-sm font-medium text-gray-700 mb-1">
-              {t('config_max_chars_label')}
+              Max Characters for Analysis
             </label>
             <input
               type="number"
@@ -140,7 +142,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
               step="100"
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             />
-            <p className="text-xs text-gray-500 mt-1">{t('config_max_chars_info')}</p>
+            <p className="text-xs text-gray-500 mt-1">Helps prevent accidentally analyzing very large texts.</p>
           </div>
 
           <button
@@ -153,7 +155,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
             ) : (
               <SaveIcon className="w-5 h-5 mr-2" />
             )}
-            {isTesting ? t('config_button_saving') : t('config_button_save_test')}
+            {isTesting ? 'Testing & Saving...' : 'Save & Test Configuration'}
           </button>
 
           {testStatus && (
@@ -161,15 +163,13 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
               {testStatus.message}
             </div>
           )}
-
-          <LanguageManager apiKey={currentApiKey} />
         </>
       )}
        {isCollapsed && currentApiKey && (
-         <p className="text-sm text-green-600">{t('config_api_key_configured')}</p>
+         <p className="text-sm text-green-600">API Key is configured. Expand to change settings.</p>
        )}
        {isCollapsed && !currentApiKey && (
-         <p className="text-sm text-red-600">{t('config_api_key_not_configured')}</p>
+         <p className="text-sm text-red-600">API Key not configured. Please expand and enter your key.</p>
        )}
     </div>
   );

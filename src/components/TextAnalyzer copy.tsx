@@ -1,6 +1,6 @@
+
 import React, { useState } from 'react';
 import { AnalyzeIcon } from '../constants';
-import { useTranslation } from '../i18n';
 
 interface TextAnalyzerProps {
   onAnalyze: (text: string) => void;
@@ -10,7 +10,6 @@ interface TextAnalyzerProps {
 }
 
 const TextAnalyzer: React.FC<TextAnalyzerProps> = ({ onAnalyze, isLoading, maxCharLimit, hasApiKey }) => {
-  const { t } = useTranslation();
   const [text, setText] = useState('');
   const charCount = text.length;
   const exceedsLimit = charCount > maxCharLimit;
@@ -23,19 +22,19 @@ const TextAnalyzer: React.FC<TextAnalyzerProps> = ({ onAnalyze, isLoading, maxCh
 
   return (
     <div className="bg-white shadow-lg rounded-lg p-4 mb-6">
-      <h2 className="text-xl font-semibold text-gray-700 mb-1">{t('analyzer_title')}</h2>
-      <p className="text-sm text-gray-500 mb-4">{t('analyzer_instruction')}</p>
+      <h2 className="text-xl font-semibold text-gray-700 mb-1">Analyze Text</h2>
+      <p className="text-sm text-gray-500 mb-4">Paste the text you want to analyze below.</p>
 
       {!hasApiKey && (
         <div className="mb-4 p-3 rounded-md text-sm bg-yellow-50 text-yellow-700 border border-yellow-200">
-          {t('analyzer_no_api_key_warning')}
+          Please configure your API Key in the settings above to enable analysis.
         </div>
       )}
 
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder={t('analyzer_placeholder')}
+        placeholder="Paste text here for analysis..."
         rows={8}
         className="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
         maxLength={maxCharLimit + 500} // Allow some overtyping to show message, actual limit enforced by logic
@@ -46,8 +45,8 @@ const TextAnalyzer: React.FC<TextAnalyzerProps> = ({ onAnalyze, isLoading, maxCh
           ${exceedsLimit ? 'text-red-600 font-semibold' : 'text-gray-600'}
           ${charCount > maxCharLimit * 0.9 ? 'font-medium' : ''}
         `}>
-          {t('analyzer_chars_count', { count: charCount, limit: maxCharLimit })}
-          {exceedsLimit && t('analyzer_chars_over_limit', { over: charCount - maxCharLimit })}
+          Characters: {charCount} / {maxCharLimit}
+          {exceedsLimit && ` (Over limit by ${charCount - maxCharLimit})`}
         </p>
         <button
           onClick={handleAnalyze}
@@ -59,7 +58,7 @@ const TextAnalyzer: React.FC<TextAnalyzerProps> = ({ onAnalyze, isLoading, maxCh
           ) : (
             <AnalyzeIcon className="w-5 h-5 mr-2" />
           )}
-          {isLoading ? t('analyzer_button_analyzing') : t('analyzer_button_analyze')}
+          {isLoading ? 'Analyzing...' : 'Analyze Text'}
         </button>
       </div>
     </div>

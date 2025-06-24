@@ -3,7 +3,6 @@
 import React from 'react';
 import { GeminiAnalysisResponse, GeminiFinding } from '../types';
 import { InfoIcon } from '../constants';
-import { useTranslation } from '../i18n';
 
 // A color palette to visually link highlighted text to its finding.
 const findingColors = [
@@ -40,16 +39,13 @@ const HighlightedText: React.FC<HighlightedTextProps> = ({ text, findingsMap }) 
   }
 
   const uniqueQuotes = Array.from(findingsMap.keys());
-  const regex = new RegExp(`(${uniqueQuotes.map(escapeRegex).join('|')})`, 'gi');
+  const regex = new RegExp(`(${uniqueQuotes.map(escapeRegex).join('|')})`, 'g');
   const parts = text.split(regex);
 
   return (
     <p className="whitespace-pre-wrap leading-relaxed">
       {parts.map((part, index) => {
-        // Find a case-insensitive match in the map
-        const originalQuote = uniqueQuotes.find(q => q.toLowerCase() === part.toLowerCase());
-        const matchInfo = originalQuote ? findingsMap.get(originalQuote) : undefined;
-
+        const matchInfo = findingsMap.get(part);
         if (matchInfo) {
           return (
             <mark key={index} className={`${matchInfo.color.bg} p-0.5 rounded-sm`}>
@@ -71,7 +67,6 @@ interface AnalysisReportProps {
 }
 
 const AnalysisReport: React.FC<AnalysisReportProps> = ({ analysis, sourceText }) => {
-  const { t } = useTranslation();
   const { findings } = analysis;
   const hasFindings = findings && findings.length > 0;
 
@@ -79,14 +74,11 @@ const AnalysisReport: React.FC<AnalysisReportProps> = ({ analysis, sourceText })
   const findingsMap = new Map<string, { color: typeof findingColors[0] }>();
   if (hasFindings) {
     let colorIndex = 0;
-    const assignedQuotes = new Set<string>();
     findings.forEach((finding) => {
-      const lowerQuote = finding.specific_quote.toLowerCase();
-      if (!assignedQuotes.has(lowerQuote)) {
+      if (!findingsMap.has(finding.specific_quote)) {
         findingsMap.set(finding.specific_quote, {
           color: findingColors[colorIndex % findingColors.length],
         });
-        assignedQuotes.add(lowerQuote);
         colorIndex++;
       }
     });
@@ -94,16 +86,16 @@ const AnalysisReport: React.FC<AnalysisReportProps> = ({ analysis, sourceText })
 
   return (
     <div className="mt-8">
-      <h2 className="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">{t('report_title')}</h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">Analysis Report</h2>
 
       <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-md shadow-sm mb-8">
-        <h3 className="text-lg font-semibold text-blue-800 mb-1">{t('report_summary_title')}</h3>
+        <h3 className="text-lg font-semibold text-blue-800 mb-1">Analysis Summary</h3>
         <p className="text-blue-700">{analysis.analysis_summary}</p>
       </div>
 
       {sourceText && hasFindings && (
         <div className="mb-8">
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">{t('report_highlighted_text_title')}</h3>
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">Highlighted Source Text</h3>
           <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-sm max-h-96 overflow-y-auto">
             <HighlightedText text={sourceText} findingsMap={findingsMap} />
           </div>
@@ -112,12 +104,15 @@ const AnalysisReport: React.FC<AnalysisReportProps> = ({ analysis, sourceText })
 
       {hasFindings ? (
         <div>
-          <h3 className="text-lg font-semibold text-gray-700 mb-3">{t('report_detected_patterns_title')}</h3>
+          <h3 className="text-lg font-semibold text-gray-700 mb-3">Detected Patterns</h3>
           <div className="space-y-4">
             {findings.map((finding, index) => {
+              // Get the correct, consistent color from the map.
               const matchInfo = findingsMap.get(finding.specific_quote);
+              // Fallback color just in case, though it should not be needed.
               const color = matchInfo ? matchInfo.color : { bg: 'bg-gray-200', border: 'border-gray-300', text: 'text-gray-800' };
 
+              // THIS IS THE CARD DESIGN FROM THE VERSION YOU WANTED, NOW WITH CORRECT FUNCTIONALITY
               return (
                 <div key={index} className={`bg-gray-50 border ${color.border} rounded-lg shadow-md overflow-hidden`}>
                   <div className={`p-4 border-b ${color.border} ${color.bg}`}>
@@ -127,13 +122,13 @@ const AnalysisReport: React.FC<AnalysisReportProps> = ({ analysis, sourceText })
                   </div>
                   <div className="p-4 space-y-3">
                     <div>
-                      <h5 className="font-semibold text-gray-600 mb-1">{t('report_quote_label')}</h5>
+                      <h5 className="font-semibold text-gray-600 mb-1">Specific Quote:</h5>
                       <blockquote className={`italic p-3 rounded-md ${color.bg} border-l-4 ${color.border} ${color.text}`}>
                         "{finding.specific_quote}"
                       </blockquote>
                     </div>
                     <div>
-                      <h5 className="font-semibold text-gray-600 mb-1">{t('report_explanation_label')}</h5>
+                      <h5 className="font-semibold text-gray-600 mb-1">Explanation:</h5>
                       <p className="text-gray-700">{finding.explanation}</p>
                     </div>
                   </div>
@@ -145,7 +140,7 @@ const AnalysisReport: React.FC<AnalysisReportProps> = ({ analysis, sourceText })
       ) : (
         <div className="text-center py-8 px-4 bg-green-50 border border-green-200 rounded-lg">
           <InfoIcon className="mx-auto h-12 w-12 text-green-600 mb-2"/>
-          <p className="text-lg font-medium text-green-700">{t('report_no_patterns_detected')}</p>
+          <p className="text-lg font-medium text-green-700">No manipulative patterns were detected in the provided text.</p>
         </div>
       )}
     </div>

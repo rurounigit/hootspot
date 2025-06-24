@@ -4,8 +4,6 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ApiKeyManager from './components/ApiKeyManager';
 import TextAnalyzer from './components/TextAnalyzer';
 import AnalysisReport from './components/AnalysisReport';
-import LanguageSwitcher from './components/LanguageSwitcher';
-import { useTranslation } from './i18n';
 import { analyzeText } from './services/geminiService';
 import { GeminiAnalysisResponse } from './types';
 import {
@@ -16,7 +14,6 @@ import {
 } from './constants';
 
 const App: React.FC = () => {
-  const { t } = useTranslation();
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [maxCharLimit, setMaxCharLimit] = useState<number>(DEFAULT_MAX_CHAR_LIMIT);
   const [isLoading, setIsLoading] = useState(false);
@@ -54,9 +51,9 @@ const App: React.FC = () => {
       return {success: true};
     } catch (e) {
       console.error("Error saving API key to localStorage:", e);
-      return {success: false, error: t('error_save_api_key_storage')};
+      return {success: false, error: "Failed to save API Key to local storage."};
     }
-  }, [t]);
+  }, []);
 
   const handleMaxCharLimitSave = useCallback((newLimit: number) => {
     localStorage.setItem(MAX_CHAR_LIMIT_STORAGE_KEY, newLimit.toString());
@@ -65,7 +62,7 @@ const App: React.FC = () => {
 
   const handleAnalyzeText = async (text: string) => {
     if (!apiKey) {
-      setError(t('error_api_key_not_configured'));
+      setError("API Key is not set. Please configure it in settings.");
       return;
     }
     setIsLoading(true);
@@ -74,7 +71,7 @@ const App: React.FC = () => {
     setCurrentTextAnalyzed(text);
 
     try {
-      const result = await analyzeText(apiKey, text, t);
+      const result = await analyzeText(apiKey, text);
       setAnalysisResult(result);
     } catch (err: any) {
       setError(err.message || "An unknown error occurred during analysis.");
@@ -85,15 +82,14 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="relative flex flex-col h-screen bg-gradient-to-br from-athena-logo-bg to-athena-logo-bg">
-      <LanguageSwitcher />
+    <div className="flex flex-col h-screen bg-gradient-to-br from-slate-100 to-sky-100">
       <div className="flex flex-col flex-1 w-full p-4 md:p-6 overflow-y-auto">
         <header className="mb-6 text-center">
           <div className="inline-flex items-center justify-center">
              <AthenaLogoIcon className="w-12 h-12 md:w-16 md:h-16 text-blue-600 mr-2 md:mr-3" />
             <div>
-                <h1 className="text-3xl md:text-4xl font-extrabold text-gray-800">{t('app_title')}</h1>
-                <p className="text-md md:text-lg text-gray-600">{t('app_subtitle')}</p>
+                <h1 className="text-3xl md:text-4xl font-extrabold text-gray-800">Athena AI</h1>
+                <p className="text-md md:text-lg text-gray-600">Your Personal AI Text Analyst</p>
             </div>
           </div>
         </header>
@@ -115,7 +111,7 @@ const App: React.FC = () => {
 
           {error && (
             <div className="my-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-md shadow-md" role="alert">
-              <strong className="font-bold">{t('error_prefix')}</strong>
+              <strong className="font-bold">Error: </strong>
               <span>{error}</span>
             </div>
           )}
@@ -128,20 +124,20 @@ const App: React.FC = () => {
 
           {(!isLoading && !error && !analysisResult && currentTextAnalyzed && !apiKey) && (
             <div className="mt-6 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded-md shadow-md">
-                {t('error_no_api_key_for_results')}
+                Please set up your API key to view analysis results.
             </div>
           )}
 
           {(!isLoading && !error && !analysisResult && !currentTextAnalyzed && apiKey) && (
             <div className="mt-6 p-6 bg-white border border-gray-200 text-gray-600 rounded-lg shadow-md text-center">
-                <p className="text-lg">{t('info_enter_text_to_analyze')}</p>
-                <p className="text-sm mt-2">{t('info_uncover_patterns')}</p>
+                <p className="text-lg">Enter some text above and click "Analyze Text" to see the AI's insights.</p>
+                <p className="text-sm mt-2">Athena AI will help you uncover hidden psychological and rhetorical patterns.</p>
             </div>
           )}
         </main>
         <footer className="mt-auto pt-6 text-center text-sm text-gray-500">
-          <p>{t('app_footer_copyright', { year: new Date().getFullYear() })}</p>
-          <p>{t('app_footer_responsibility')}</p>
+          <p>© {new Date().getFullYear()} Athena AI Text Analyzer. For demonstration purposes.</p>
+          <p>User is responsible for all Google Gemini API costs.</p>
         </footer>
       </div>
     </div>

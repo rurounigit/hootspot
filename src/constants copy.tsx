@@ -1,6 +1,7 @@
+
 import React from 'react';
 
-export const GEMINI_MODEL_NAME = 'gemini-2.5-flash-lite-preview-06-17';
+export const GEMINI_MODEL_NAME = 'gemini-2.5-flash-preview-04-17';
 
 const ANALYST_LEXICON = `
 The Analyst's Lexicon: A Guide to Manipulative Language
@@ -285,17 +286,8 @@ If no manipulative patterns from the Lexicon are found, return a JSON object wit
 Do not add any conversational text, pleasantries, or apologies outside of the JSON object. Ensure the 'specific_quote' is an exact substring from the provided text.
 `;
 
-export const TRANSLATION_SYSTEM_PROMPT = `You are an expert translator. You will be given a JSON object where the keys are translation IDs and the values are strings in English. Your task is to translate all the string *values* into the target language specified by the user.
-
-RULES:
-1.  Do NOT translate the JSON keys.
-2.  Preserve the original JSON structure exactly.
-3.  Preserve any placeholders like {variable} exactly as they are. For example, if the English is "Characters: {count} / {limit}", the German should be "Zeichen: {count} / {limit}".
-4.  Your output must be ONLY the translated JSON object. Do not include any other text, explanations, or markdown code fences.`;
-
 export const API_KEY_STORAGE_KEY = 'athenaAIApiKey';
 export const MAX_CHAR_LIMIT_STORAGE_KEY = 'athenaAIMaxCharLimit';
-export const CUSTOM_LANGUAGES_KEY = 'athenaAICustomLanguages';
 export const DEFAULT_MAX_CHAR_LIMIT = 5000;
 
 export const AthenaLogoIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -335,11 +327,5 @@ export const InfoIcon: React.FC<{ className?: string }> = ({ className }) => (
 export const ExternalLinkIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-  </svg>
-);
-
-export const AddIcon: React.FC<{ className?: string }> = ({ className }) => (
-  <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
   </svg>
 );
