@@ -29,6 +29,7 @@
   "analyzer_button_analyze": "Text analysieren",
   "analyzer_button_analyzing": "Analysiere...",
   "report_title": "Analysebericht",
+  "report_profile_title": "Manipulationsprofil",
   "report_summary_title": "Analysezusammenfassung",
   "report_highlighted_text_title": "Hervorgehobener Quelltext",
   "report_detected_patterns_title": "Erkannte Muster",

@@ -29,6 +29,7 @@
   "analyzer_button_analyze": "Analyze Text",
   "analyzer_button_analyzing": "Analyzing...",
   "report_title": "Analysis Report",
+  "report_profile_title": "Manipulation Profile",
   "report_summary_title": "Analysis Summary",
   "report_highlighted_text_title": "Highlighted Source Text",
   "report_detected_patterns_title": "Detected Patterns",

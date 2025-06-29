@@ -1,9 +1,12 @@
 // src/components/AnalysisReport.tsx
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { GeminiAnalysisResponse, GeminiFinding } from '../types';
 import { InfoIcon } from '../constants';
 import { useTranslation } from '../i18n';
+import { LEXICON_SECTIONS_BY_KEY, fullNameToKeyMap } from '../lexicon-structure';
+import ManipulationProfileChart from './ManipulationProfileChart';
+import ProfileChartLegend from './ProfileChartLegend';
 
 // A color palette for pattern identification
 const findingColors = [
@@ -16,6 +19,12 @@ const findingColors = [
   { hex: '#cffafe', border: 'border-cyan-400', text: 'text-cyan-800' },     // cyan
   { hex: '#fed7aa', border: 'border-orange-400', text: 'text-orange-800' }, // orange
 ];
+
+const CATEGORY_COLORS: Record<string, string> = {
+  'Interpersonal & Psychological': '#8884d8',
+  'Covert & Indirect Control': '#82ca9d',
+  'Sociopolitical & Rhetorical': '#ffc658',
+};
 
 const UNIFORM_HIGHLIGHT_COLOR = 'bg-red-200';
 
@@ -90,6 +99,7 @@ const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches, patter
   );
 };
 
+
 const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: string | null }> = ({ analysis, sourceText }) => {
   const { t } = useTranslation();
   const { findings } = analysis;
@@ -101,9 +111,39 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
     uniquePatternNames.forEach((name, index) => { patternColorMap.set(name, findingColors[index % findingColors.length]); });
   }
 
-  // --- START OF THE FIX ---
+  const profileDataBySection = useMemo(() => {
+    const counts = new Map<string, number>();
+    if (hasFindings) {
+      for (const finding of findings) {
+        const simpleKey = fullNameToKeyMap.get(finding.pattern_name);
+        if (simpleKey) {
+          counts.set(simpleKey, (counts.get(simpleKey) || 0) + 1);
+        }
+      }
+    }
 
-  // 1. Group all findings by their quote's position in the text.
+    const sections = Object.entries(LEXICON_SECTIONS_BY_KEY).map(([sectionTitle, patterns]) => {
+      let sectionHasFindings = false;
+      const data = Object.entries(patterns).map(([simpleKey, shortName]) => {
+        const count = counts.get(simpleKey) || 0;
+        if (count > 0) sectionHasFindings = true;
+        return {
+          tactic: shortName,
+          count: 1 + count, // Add baseline of 1
+        };
+      });
+
+      return {
+        title: sectionTitle,
+        data: data,
+        hasFindings: sectionHasFindings,
+        color: CATEGORY_COLORS[sectionTitle],
+      };
+    });
+
+    return sections;
+  }, [findings, hasFindings]);
+
   const matchesByPosition = new Map<string, { start: number; end: number; findings: GeminiFinding[] }>();
   if (hasFindings && sourceText) {
     findings.forEach(finding => {
@@ -126,28 +166,21 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
     });
   }
 
-  // 2. Sort these groups by their start position to establish the correct text order.
   const sortedMatches = Array.from(matchesByPosition.values()).sort((a, b) => a.start - b.start);
-
-  // 3. Create the definitive, correctly-ordered list for displaying the report cards. THIS IS THE SOURCE OF TRUTH.
   const allFindingsForDisplay = sortedMatches.flatMap(match => match.findings);
-
-  // 4. Create a map to look up the correct final display index for any given finding.
   const findingToIndexMap = new Map<GeminiFinding, number>();
   allFindingsForDisplay.forEach((finding, index) => {
     findingToIndexMap.set(finding, index);
   });
 
-  // 5. Create the data for the highlights, injecting the correct final `displayIndex` into each finding.
   const matchesWithCorrectIndex = sortedMatches.map(match => ({
     ...match,
     findings: match.findings.map(f => ({
       ...f,
-      displayIndex: findingToIndexMap.get(f) as number // This is now the correct, final index
+      displayIndex: findingToIndexMap.get(f) as number
     }))
   }));
 
-  // 6. Merge overlapping highlight regions for clean rendering, now that the indices are correct.
   const finalHighlights: typeof matchesWithCorrectIndex = [];
   if (matchesWithCorrectIndex.length > 0) {
     let currentHighlight = { ...matchesWithCorrectIndex[0] };
@@ -168,30 +201,49 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
     finalHighlights.push(currentHighlight);
   }
 
-  // --- END OF THE FIX ---
-
   return (
     <div className="mt-4">
       <h2 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-0">{t('report_title')}</h2>
-      <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-md shadow-sm mb-4"><h3 className="text-lg font-semibold text-blue-800 mb-1">{t('report_summary_title')}</h3><p className="text-blue-700">{analysis.analysis_summary}</p></div>
+
+      <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-md shadow-sm mb-6">
+        <h3 className="text-lg font-semibold text-blue-800 mb-1">{t('report_summary_title')}</h3>
+        <p className="text-blue-700">{analysis.analysis_summary}</p>
+      </div>
+
+      {hasFindings && (
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold text-gray-700 mb-4">{t('report_profile_title')}</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+            {profileDataBySection.map(section => (
+              <ManipulationProfileChart
+                key={section.title}
+                data={section.data}
+                color={section.color}
+                hasFindings={section.hasFindings}
+              />
+            ))}
+          </div>
+          <ProfileChartLegend />
+        </div>
+      )}
+
       {sourceText && hasFindings && (
-        <div className="mb-4">
+        <div className="mb-6">
           <h3 className="text-lg font-semibold text-gray-700 mb-4">{t('report_highlighted_text_title')}</h3>
           <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-sm max-h-96 overflow-y-auto">
             <HighlightedText text={sourceText} matches={finalHighlights} patternColorMap={patternColorMap} />
           </div>
         </div>
       )}
+
       {hasFindings ? (
         <div>
           <h3 className="text-lg font-semibold text-gray-700 mb-3">{t('report_detected_patterns_title')}</h3>
           <div className="space-y-4">
-            {/* Map over the definitive, correctly-sorted array for rendering */}
             {allFindingsForDisplay.map((finding, index) => {
               const color = patternColorMap.get(finding.pattern_name) || { hex: '#e5e7eb', border: 'border-gray-300', text: 'text-gray-800' };
               const i18nKey = patternNameToI18nKeyMap.get(finding.pattern_name) || finding.pattern_name;
               return (
-                // The `id` now uses the correct `index` from the sorted list
                 <div key={index} id={`finding-card-${index}`} className={`bg-gray-50 border ${color.border} rounded-lg shadow-md overflow-hidden`}>
                   <div className={`p-4 border-b ${color.border}`} style={{ backgroundColor: color.hex }}>
                     <h4 className={`text-l font-bold ${color.text} uppercase`}>{t(i18nKey)}</h4>

@@ -29,6 +29,7 @@
   "analyzer_button_analyze": "Analyser le texte",
   "analyzer_button_analyzing": "Analyse en cours...",
   "report_title": "Rapport d'analyse",
+  "report_profile_title": "Profil de Manipulation",
   "report_summary_title": "Résumé de l'analyse",
   "report_highlighted_text_title": "Texte source surligné",
   "report_detected_patterns_title": "Schémas détectés",
