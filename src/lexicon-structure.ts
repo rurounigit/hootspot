@@ -1,8 +1,5 @@
-// src/lexicon-structure.ts
+// This file is the single source of truth for all pattern definitions.
 
-// This file is now the single source of truth for all pattern definitions.
-
-// 1. Define simple, programmatic keys for each pattern.
 export const PATTERN_KEYS = {
   GUILT_TRIPPING: "Guilt Tripping",
   GASLIGHTING: "Gaslighting",
@@ -27,16 +24,38 @@ export const PATTERN_KEYS = {
   EUPHEMISM_JARGON: "Euphemism & Jargon",
 };
 
-// 2. Create a reverse map to easily get the simple key from the full API name.
-const fullNameToKeyMap = new Map<string, string>();
+export const fullNameToKeyMap = new Map<string, string>();
 for (const key in PATTERN_KEYS) {
-  const fullName = (PATTERN_KEYS as any)[key];
-  fullNameToKeyMap.set(fullName, key);
+  fullNameToKeyMap.set((PATTERN_KEYS as any)[key], key);
 }
-export { fullNameToKeyMap };
 
+// Maps the simple key (e.g., "GASLIGHTING") to its description key
+export const keyToDescKeyMap = new Map<string, string>([
+  ["GUILT_TRIPPING", "pattern_guilt_tripping_desc"],
+  ["GASLIGHTING", "pattern_gaslighting_desc"],
+  ["THREATENING_COERCION", "pattern_threatening_coercion_desc"],
+  ["INVALIDATION_MINIMIZING", "pattern_invalidation_minimizing_desc"],
+  ["DEFLECTION_BLAME", "pattern_deflection_shifting_blame_desc"],
+  ["DARVO", "pattern_darvo_desc"],
+  ["MOVING_GOALPOSTS", "pattern_moving_the_goalposts_desc"],
+  ["LOVE_BOMBING", "pattern_love_bombing_desc"],
+  ["PROJECTION", "pattern_projection_desc"],
+  ["SPLITTING", "pattern_splitting_desc"],
+  ["BACKHANDED_COMPLIMENT", "pattern_the_backhanded_compliment_desc"],
+  ["WEAPONIZED_INCOMPETENCE", "pattern_weaponized_incompetence_desc"],
+  ["SILENT_TREATMENT", "pattern_the_silent_treatment_desc"],
+  ["STRAW_MAN", "pattern_the_straw_man_fallacy_desc"],
+  ["CO_OPTATION_DISSENT", "pattern_the_co_optation_of_dissent_desc"],
+  ["REDEFINING_TERRAIN", "pattern_redefining_the_terrain_desc"],
+  ["FORECLOSURE_ALTERNATIVES", "pattern_the_foreclosure_of_alternatives_desc"],
+  ["REFLEXIVE_IMPOTENCE", "pattern_manufacturing_reflexive_impotence_desc"],
+  ["PERSONALIZATION_SYSTEMIC", "pattern_the_personalization_of_systemic_problems_desc"],
+  ["DOG_WHISTLING", "pattern_dog-whistling_desc"],
+  ["EUPHEMISM_JARGON", "pattern_euphemism_jargon_desc"],
+]);
 
-// 3. Define the chart sections using the simple, reliable keys.
+export const shortNameToKeyMap = new Map<string, string>();
+
 export const LEXICON_SECTIONS_BY_KEY: Record<string, Record<string, string>> = {
   "Interpersonal & Psychological": {
     GUILT_TRIPPING: "Guilt Tripping",
@@ -66,3 +85,10 @@ export const LEXICON_SECTIONS_BY_KEY: Record<string, Record<string, string>> = {
     EUPHEMISM_JARGON: "Euphemism/Jargon",
   }
 };
+
+// Populate the shortNameToKeyMap automatically
+for (const section in LEXICON_SECTIONS_BY_KEY) {
+  for (const key in LEXICON_SECTIONS_BY_KEY[section]) {
+    shortNameToKeyMap.set((LEXICON_SECTIONS_BY_KEY[section] as any)[key], key);
+  }
+}

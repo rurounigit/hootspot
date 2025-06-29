@@ -22,7 +22,7 @@ const TextAnalyzer: React.FC<TextAnalyzerProps> = ({ onAnalyze, isLoading, maxCh
   };
 
   return (
-    <div className="bg-white shadow-md rounded-lg p-4 mb-4">
+    <div className="bg-white shadow-md  border border-gray-200 rounded-lg p-4 mb-4">
       <h2 className="text-lg font-semibold text-gray-700 mb-1">{t('analyzer_title')}</h2>
       <p className="text-sm text-gray-500 mb-4">{t('analyzer_instruction')}</p>
 

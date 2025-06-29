@@ -1,6 +1,6 @@
 # Athena AI Text Analyzer
 
-![Athena AI Logo](public/images/icon128.png)
+![Athena AI Logo](public/images/icon128_new.png)
 
 **Athena AI is a powerful Chrome Extension designed to help you critically analyze text. Using Google's Gemini API, it identifies and explains a wide range of psychological, rhetorical, and political manipulation tactics, turning your browser into a tool for enhanced media literacy.**
 

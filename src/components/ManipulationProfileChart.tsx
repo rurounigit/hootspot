@@ -1,7 +1,33 @@
-// src/components/ManipulationProfileChart.tsx
-
 import React from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { useTranslation } from '../i18n';
+import { shortNameToKeyMap, keyToDescKeyMap } from '../lexicon-structure';
+
+// Custom Tooltip Component for the Radar Chart
+const CustomRadarTooltip = ({ active, payload }: any) => {
+  const { t } = useTranslation();
+
+  if (active && payload && payload.length) {
+    const data = payload[0];
+    const tacticName = data.payload.tactic;
+    const realCount = data.value - 1;
+
+    // Look up the description using the robust maps
+    const simpleKey = shortNameToKeyMap.get(tacticName);
+    const descKey = simpleKey ? keyToDescKeyMap.get(simpleKey) : null;
+    const description = descKey ? t(descKey) : '';
+
+    return (
+      <div className="max-w-xs p-3 bg-white border border-gray-300 rounded-lg shadow-xl text-sm">
+        <p className="font-bold text-gray-800">{tacticName}</p>
+        <p style={{ color: data.stroke }}>Detected: {realCount}</p>
+        {description && <p className="mt-2 text-gray-600">{description}</p>}
+      </div>
+    );
+  }
+
+  return null;
+};
 
 interface ManipulationProfileChartProps {
   data: { tactic: string; count: number }[];
@@ -10,13 +36,11 @@ interface ManipulationProfileChartProps {
 }
 
 const ManipulationProfileChart: React.FC<ManipulationProfileChartProps> = ({ data, color, hasFindings }) => {
-  // Determine the color based on whether findings are present.
-  const chartColor = hasFindings ? color : '#22c55e'; // Green-500 for "no findings"
-  const fillColor = hasFindings ? color : '#bbf7d0'; // Green-200 for "no findings"
+  const chartColor = hasFindings ? color : '#22c55e';
+  const fillColor = hasFindings ? color : '#bbf7d0';
 
-  // Radar charts need at least 3 points to render a shape.
   if (data.length < 3) {
-    return null; // Don't render if the category has fewer than 3 tactics.
+    return null;
   }
 
   return (
@@ -29,7 +53,7 @@ const ManipulationProfileChart: React.FC<ManipulationProfileChartProps> = ({ dat
             <PolarRadiusAxis
               angle={30}
               domain={[0, 'auto']}
-              tickFormatter={(tickValue) => `${tickValue - 1}`} // Show the real count (value - 1)
+              tickFormatter={(tickValue) => `${tickValue - 1}`}
             />
             <Radar
               name="Count"
@@ -38,14 +62,8 @@ const ManipulationProfileChart: React.FC<ManipulationProfileChartProps> = ({ dat
               fill={fillColor}
               fillOpacity={0.7}
             />
-            <Tooltip
-              formatter={(value: number) => [value - 1, 'Detected']} // Show the real count in tooltip
-              contentStyle={{
-                backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                border: '1px solid #d1d5db',
-                borderRadius: '0.5rem',
-              }}
-            />
+            {/* Use the new custom tooltip */}
+            <Tooltip content={<CustomRadarTooltip />} />
           </RadarChart>
         </ResponsiveContainer>
       </div>

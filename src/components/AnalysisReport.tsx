@@ -1,12 +1,11 @@
 // src/components/AnalysisReport.tsx
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { GeminiAnalysisResponse, GeminiFinding } from '../types';
 import { InfoIcon } from '../constants';
 import { useTranslation } from '../i18n';
-import { LEXICON_SECTIONS_BY_KEY, fullNameToKeyMap } from '../lexicon-structure';
 import ManipulationProfileChart from './ManipulationProfileChart';
-import ProfileChartLegend from './ProfileChartLegend';
+import { LEXICON_SECTIONS_BY_KEY, fullNameToKeyMap, keyToDescKeyMap } from '../lexicon-structure';
 
 // A color palette for pattern identification
 const findingColors = [
@@ -28,21 +27,56 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 const UNIFORM_HIGHLIGHT_COLOR = 'bg-red-200';
 
+// Maps the full pattern name from the API to its translation key for the title.
 const patternNameToI18nKeyMap = new Map<string, string>([
-    ["Guilt Tripping", "pattern_guilt_tripping"], ["Gaslighting", "pattern_gaslighting"],
-    ["Threatening / Coercion", "pattern_threatening_coercion"], ["Invalidation / Minimizing", "pattern_invalidation_minimizing"],
-    ["Deflection / Shifting Blame", "pattern_deflection_shifting_blame"], ["DARVO (Deny, Attack, and Reverse Victim and Offender)", "pattern_darvo"],
-    ["Moving the Goalposts", "pattern_moving_the_goalposts"], ["Love Bombing", "pattern_love_bombing"],
-    ["Projection", "pattern_projection"], ["Splitting (or Black-and-White Thinking)", "pattern_splitting"],
-    ["The Backhanded Compliment", "pattern_the_backhanded_compliment"], ["Weaponized Incompetence", "pattern_weaponized_incompetence"],
-    ["The Silent Treatment (Stonewalling)", "pattern_the_silent_treatment"], ["The Straw Man Fallacy", "pattern_the_straw_man_fallacy"],
+    ["Guilt Tripping", "pattern_guilt_tripping"],
+    ["Gaslighting", "pattern_gaslighting"],
+    ["Threatening / Coercion", "pattern_threatening_coercion"],
+    ["Invalidation / Minimizing", "pattern_invalidation_minimizing"],
+    ["Deflection / Shifting Blame", "pattern_deflection_shifting_blame"],
+    ["DARVO (Deny, Attack, and Reverse Victim and Offender)", "pattern_darvo"],
+    ["Moving the Goalposts", "pattern_moving_the_goalposts"],
+    ["Love Bombing", "pattern_love_bombing"],
+    ["Projection", "pattern_projection"],
+    ["Splitting (or Black-and-White Thinking)", "pattern_splitting"],
+    ["The Backhanded Compliment", "pattern_the_backhanded_compliment"],
+    ["Weaponized Incompetence", "pattern_weaponized_incompetence"],
+    ["The Silent Treatment (Stonewalling)", "pattern_the_silent_treatment"],
+    ["The Straw Man Fallacy", "pattern_the_straw_man_fallacy"],
     ["The Co-optation of Dissent: \"Radical\" Language for Status Quo Ends", "pattern_the_co_optation_of_dissent"],
     ["Redefining the Terrain: The \"Culture War\" as Economic Distraction", "pattern_redefining_the_terrain"],
     ["The Foreclosure of Alternatives: \"There Is No Alternative\" (TINA) 2.0", "pattern_the_foreclosure_of_alternatives"],
     ["Manufacturing Reflexive Impotence: \"Both Sides\" and Information Overload", "pattern_manufacturing_reflexive_impotence"],
     ["The Personalization of Systemic Problems", "pattern_the_personalization_of_systemic_problems"],
-    ["Dog-Whistling", "pattern_dog-whistling"], ["Euphemism & Jargon", "pattern_euphemism_jargon"]
+    ["Dog-Whistling", "pattern_dog-whistling"],
+    ["Euphemism & Jargon", "pattern_euphemism_jargon"]
 ]);
+
+// Maps the full pattern name to its new translation key for the description.
+const patternNameToDescKeyMap = new Map<string, string>([
+    ["Guilt Tripping", "pattern_guilt_tripping_desc"],
+    ["Gaslighting", "pattern_gaslighting_desc"],
+    ["Threatening / Coercion", "pattern_threatening_coercion_desc"],
+    ["Invalidation / Minimizing", "pattern_invalidation_minimizing_desc"],
+    ["Deflection / Shifting Blame", "pattern_deflection_shifting_blame_desc"],
+    ["DARVO (Deny, Attack, and Reverse Victim and Offender)", "pattern_darvo_desc"],
+    ["Moving the Goalposts", "pattern_moving_the_goalposts_desc"],
+    ["Love Bombing", "pattern_love_bombing_desc"],
+    ["Projection", "pattern_projection_desc"],
+    ["Splitting (or Black-and-White Thinking)", "pattern_splitting_desc"],
+    ["The Backhanded Compliment", "pattern_the_backhanded_compliment_desc"],
+    ["Weaponized Incompetence", "pattern_weaponized_incompetence_desc"],
+    ["The Silent Treatment (Stonewalling)", "pattern_the_silent_treatment_desc"],
+    ["The Straw Man Fallacy", "pattern_the_straw_man_fallacy_desc"],
+    ["The Co-optation of Dissent: \"Radical\" Language for Status Quo Ends", "pattern_the_co_optation_of_dissent_desc"],
+    ["Redefining the Terrain: The \"Culture War\" as Economic Distraction", "pattern_redefining_the_terrain_desc"],
+    ["The Foreclosure of Alternatives: \"There Is No Alternative\" (TINA) 2.0", "pattern_the_foreclosure_of_alternatives_desc"],
+    ["Manufacturing Reflexive Impotence: \"Both Sides\" and Information Overload", "pattern_manufacturing_reflexive_impotence_desc"],
+    ["The Personalization of Systemic Problems", "pattern_the_personalization_of_systemic_problems_desc"],
+    ["Dog-Whistling", "pattern_dog-whistling_desc"],
+    ["Euphemism & Jargon", "pattern_euphemism_jargon_desc"]
+]);
+
 
 function escapeRegex(string: string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 
@@ -54,7 +88,8 @@ interface HighlightedTextProps {
 
 const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches, patternColorMap }) => {
   const { t } = useTranslation();
-  const [tooltip, setTooltip] = useState({ visible: false, content: '', x: 0, y: 0, color: '', textColor: '' });
+  // --- FIX 1: Update tooltip state to hold structured content ---
+  const [tooltip, setTooltip] = useState({ visible: false, title: '', description: '', x: 0, y: 0, color: '', textColor: '' });
 
   if (!matches || matches.length === 0) return <p className="whitespace-pre-wrap">{text}</p>;
 
@@ -68,9 +103,19 @@ const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches, patter
     }
   };
 
+  // --- FIX 2: Update hover handler to set both title and description ---
   const handlePillMouseOver = (event: React.MouseEvent, finding: GeminiFinding, color: { hex: string, text: string }) => {
     const i18nKey = patternNameToI18nKeyMap.get(finding.pattern_name) || finding.pattern_name;
-    setTooltip({ visible: true, content: t(i18nKey), x: event.clientX, y: event.clientY, color: color.hex, textColor: color.text });
+    const descI18nKey = patternNameToDescKeyMap.get(finding.pattern_name) || '';
+    setTooltip({
+      visible: true,
+      title: t(i18nKey),
+      description: t(descI18nKey),
+      x: event.clientX,
+      y: event.clientY,
+      color: color.hex,
+      textColor: color.text
+    });
   };
 
   const handlePillMouseLeave = () => { setTooltip({ ...tooltip, visible: false }); };
@@ -93,7 +138,16 @@ const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches, patter
 
   return (
     <>
-      {tooltip.visible && (<div className="fixed px-2 py-1 rounded-md shadow-lg text-sm font-semibold pointer-events-none z-50" style={{ top: tooltip.y + 15, left: tooltip.x + 15, backgroundColor: tooltip.color, color: tooltip.textColor, border: `1px solid ${tooltip.textColor}` }}>{tooltip.content}</div>)}
+      {/* --- FIX 3: Update tooltip JSX to render structured content --- */}
+      {tooltip.visible && (
+        <div
+          className="fixed max-w-xs px-3 py-2 rounded-lg shadow-xl text-sm pointer-events-none z-50"
+          style={{ top: tooltip.y + 15, left: tooltip.x + 15, backgroundColor: tooltip.color, color: tooltip.textColor, border: `1px solid ${tooltip.textColor}` }}
+        >
+          <strong className="font-bold block">{tooltip.title}</strong>
+          {tooltip.description && <p className="mt-1">{tooltip.description}</p>}
+        </div>
+      )}
       <p className="whitespace-pre-wrap leading-relaxed">{segments.map((segment, index) => <React.Fragment key={index}>{segment}</React.Fragment>)}</p>
     </>
   );
@@ -104,6 +158,8 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
   const { t } = useTranslation();
   const { findings } = analysis;
   const hasFindings = findings && findings.length > 0;
+
+  const [activeTab, setActiveTab] = useState<string | null>(null);
 
   const patternColorMap = new Map<string, typeof findingColors[0]>();
   if (hasFindings) {
@@ -123,26 +179,37 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
     }
 
     const sections = Object.entries(LEXICON_SECTIONS_BY_KEY).map(([sectionTitle, patterns]) => {
-      let sectionHasFindings = false;
+      let totalFindings = 0;
       const data = Object.entries(patterns).map(([simpleKey, shortName]) => {
         const count = counts.get(simpleKey) || 0;
-        if (count > 0) sectionHasFindings = true;
+        totalFindings += count;
         return {
           tactic: shortName,
-          count: 1 + count, // Add baseline of 1
+          count: 1 + count,
         };
       });
 
       return {
         title: sectionTitle,
         data: data,
-        hasFindings: sectionHasFindings,
+        hasFindings: totalFindings > 0,
+        totalFindings: totalFindings,
         color: CATEGORY_COLORS[sectionTitle],
       };
     });
 
+    // --- FIX 4: Sort the sections to put the one with the most findings first ---
+    sections.sort((a, b) => b.totalFindings - a.totalFindings);
+
     return sections;
   }, [findings, hasFindings]);
+
+  useEffect(() => {
+    // Set the default active tab to the first one in the sorted list.
+    if (profileDataBySection && profileDataBySection.length > 0) {
+      setActiveTab(profileDataBySection[0].title);
+    }
+  }, [profileDataBySection]);
 
   const matchesByPosition = new Map<string, { start: number; end: number; findings: GeminiFinding[] }>();
   if (hasFindings && sourceText) {
@@ -213,17 +280,40 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
       {hasFindings && (
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-gray-700 mb-4">{t('report_profile_title')}</h3>
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex space-x-4" aria-label="Tabs">
+              {profileDataBySection.map(section => (
+                <button
+                  key={section.title}
+                  onClick={() => section.hasFindings && setActiveTab(section.title)}
+                  disabled={!section.hasFindings}
+                  title={!section.hasFindings ? t('report_profile_no_findings_in_category') : section.title}
+                  className={`
+                    whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm
+                    ${activeTab === section.title
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
+                    ${!section.hasFindings ? 'text-gray-400 cursor-not-allowed hover:border-transparent' : ''}
+                  `}
+                >
+                  {section.title}
+                </button>
+              ))}
+            </nav>
+          </div>
+
+          <div className="mt-4">
             {profileDataBySection.map(section => (
-              <ManipulationProfileChart
-                key={section.title}
-                data={section.data}
-                color={section.color}
-                hasFindings={section.hasFindings}
-              />
+              <div key={section.title} className={activeTab === section.title ? 'block' : 'hidden'}>
+                <ManipulationProfileChart
+                  data={section.data}
+                  color={section.color}
+                  hasFindings={section.hasFindings}
+                />
+              </div>
             ))}
           </div>
-          <ProfileChartLegend />
         </div>
       )}
 

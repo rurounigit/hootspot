@@ -94,7 +94,7 @@ const App: React.FC = () => {
       <div className="flex flex-col flex-1 w-full p-2 md:p-4 overflow-y-auto">
         <header className="mb-1 text-left">
           <div className="inline-flex items-center justify-center">
-             <AthenaLogoIcon className="w-9 h-9 md:w-13 md:h-13 text-blue-600 mr-2 md:mr-3" />
+             <AthenaLogoIcon className="w-9 h-9 md:w-13 md:h-13 text-blue-600 mr-2 md:mr-3 ml-2.5" />
             <div>
                 <h1 className="text-lg md:text-3xl font-semibold text-gray-800">{t('app_title')}</h1>
                 <p className="text-md md:text-lg text-gray-600"></p>

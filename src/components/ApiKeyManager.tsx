@@ -69,7 +69,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
   };
 
   return (
-    <div className="bg-white shadow-md rounded-lg p-4 mb-4">
+    <div className="bg-white shadow-md rounded-lg p-4 mb-4 border border-gray-200">
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center">
           <SettingsIcon className="w-6 h-6 mr-2 text-blue-600" />

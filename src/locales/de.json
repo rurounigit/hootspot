@@ -30,6 +30,7 @@
   "analyzer_button_analyzing": "Analysiere...",
   "report_title": "Analysebericht",
   "report_profile_title": "Manipulationsprofil",
+  "report_profile_no_findings_in_category": "Keine Funde in dieser Kategorie",
   "report_summary_title": "Analysezusammenfassung",
   "report_highlighted_text_title": "Hervorgehobener Quelltext",
   "report_detected_patterns_title": "Erkannte Muster",

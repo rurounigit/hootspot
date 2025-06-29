@@ -300,7 +300,7 @@ export const DEFAULT_MAX_CHAR_LIMIT = 6000;
 
 export const AthenaLogoIcon: React.FC<{ className?: string }> = ({ className }) => (
   <img
-    src="/images/icon.png" // The default image source
+    src="/images/icon_new_small.png" // The default image source
     alt="Athena AI Logo"
     className={className}
   />

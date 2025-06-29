@@ -9,7 +9,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        'athena-logo-bg': '#eaebeb', // Here is your new custom color
+        'athena-logo-bg': '#ffff', // Here is your new custom color
       },
     },
   },
