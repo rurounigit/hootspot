@@ -2,10 +2,11 @@ import React, { createContext, useState, useContext, useEffect, useCallback, Rea
 import { CUSTOM_LANGUAGES_KEY } from './constants';
 
 // Define default languages
-const defaultLanguages = {
+export const defaultLanguages = { // Add 'export'
   en: 'en',
   de: 'de',
   fr: 'fr',
+  es: 'es',
 };
 
 export type LanguageCode = string;
@@ -17,6 +18,7 @@ interface LanguageContextType {
   availableLanguages: LanguagePack;
   setLanguage: (language: LanguageCode) => void;
   addLanguage: (code: LanguageCode, name: string, translations: Record<string, string>) => void;
+  deleteLanguage: (languageCode: LanguageCode) => void; // Add this line
   t: (key: string, replacements?: Record<string, string | number>) => string;
 }
 
@@ -100,6 +102,33 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     setLanguage(code);
   };
 
+  const deleteLanguage = (codeToDelete: LanguageCode) => {
+    // Prevent deleting default languages
+    if (Object.keys(defaultLanguages).includes(codeToDelete)) {
+      console.error("Cannot delete a default language.");
+      return;
+    }
+
+    // If deleting the currently active language, switch to English first
+    if (language === codeToDelete) {
+      setLanguage('en');
+    }
+
+    // Update available languages state
+    const updatedLanguages = { ...availableLanguages };
+    delete updatedLanguages[codeToDelete];
+    setAvailableLanguages(updatedLanguages);
+
+    // Remove from localStorage
+    const customLanguagesStr = localStorage.getItem(CUSTOM_LANGUAGES_KEY);
+    if (customLanguagesStr) {
+      const customLanguages = JSON.parse(customLanguagesStr);
+      delete customLanguages[codeToDelete];
+      localStorage.setItem(CUSTOM_LANGUAGES_KEY, JSON.stringify(customLanguages));
+    }
+    localStorage.removeItem(`translation_${codeToDelete}`);
+  };
+
   const t = useCallback((key: string, replacements?: Record<string, string | number>): string => {
     let translation = translations[key] || key;
     if (replacements) {
@@ -110,7 +139,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     return translation;
   }, [translations]);
 
-  const value = { language, availableLanguages, setLanguage, addLanguage, t };
+  const value = { language, availableLanguages, setLanguage, addLanguage, deleteLanguage, t };
 
   return (
     <LanguageContext.Provider value={value}>

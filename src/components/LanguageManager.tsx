@@ -2,21 +2,22 @@ import React, { useState } from 'react';
 import { useTranslation } from '../i18n';
 import { translateUI } from '../services/geminiService';
 import { AddIcon } from '../constants';
+import { defaultLanguages } from '../i18n';
 
 interface LanguageManagerProps {
   apiKey: string | null;
 }
 
 const LanguageManager: React.FC<LanguageManagerProps> = ({ apiKey }) => {
-  const { t, addLanguage } = useTranslation();
-  const [newLangName, setNewLangName] = useState('');
+  const { t, addLanguage, deleteLanguage, availableLanguages } = useTranslation();
   const [newLangCode, setNewLangCode] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   const handleAddLanguage = async () => {
-    if (!newLangName.trim() || !newLangCode.trim()) {
+    const code = newLangCode.trim().toLowerCase();
+    if (!code) {
       setError(t("lang_manager_error_empty"));
       return;
     }
@@ -31,11 +32,13 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({ apiKey }) => {
 
     try {
       const baseTranslations = await import('../locales/en.json');
-      const translatedJson = await translateUI(apiKey, newLangName, JSON.stringify(baseTranslations.default), t);
+      // Pass the code as the target language for translation
+      const translatedJson = await translateUI(apiKey, code, JSON.stringify(baseTranslations.default), t);
 
-      addLanguage(newLangCode.trim().toLowerCase(), newLangName.trim(), translatedJson);
-      setSuccess(t('lang_manager_success', { langName: newLangName.trim() }));
-      setNewLangName('');
+      // Use the code for both the name and the code
+      addLanguage(code, code, translatedJson);
+
+      setSuccess(t('lang_manager_success', { langName: code }));
       setNewLangCode('');
     } catch (err: any) {
       setError(err.message || t("lang_manager_error_generic"));
@@ -43,6 +46,16 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({ apiKey }) => {
       setIsTranslating(false);
     }
   };
+
+  const handleDeleteLanguage = (code: string, name: string) => {
+    if (window.confirm(t('lang_manager_delete_confirm', { langName: name }))) {
+      deleteLanguage(code);
+    }
+  };
+
+  const customLanguages = Object.entries(availableLanguages).filter(
+    ([code]) => !Object.keys(defaultLanguages).includes(code)
+  );
 
   return (
     <div className="mt-4 pt-4 border-t border-gray-200">
@@ -52,18 +65,6 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({ apiKey }) => {
       </p>
       <div className="space-y-4">
         <div>
-          <label htmlFor="langName" className="block text-sm font-medium text-gray-700">{t('lang_manager_name_label')}</label>
-          <input
-            type="text"
-            id="langName"
-            value={newLangName}
-            onChange={(e) => setNewLangName(e.target.value)}
-            placeholder={t('lang_manager_name_placeholder')}
-            className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            disabled={isTranslating}
-          />
-        </div>
-        <div>
           <label htmlFor="langCode" className="block text-sm font-medium text-gray-700">{t('lang_manager_code_label')}</label>
           <input
             type="text"
@@ -71,7 +72,7 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({ apiKey }) => {
             value={newLangCode}
             onChange={(e) => setNewLangCode(e.target.value)}
             placeholder={t('lang_manager_code_placeholder')}
-            maxLength={2}
+            maxLength={5} // Allow for codes like 'en-US'
             className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             disabled={isTranslating}
           />
@@ -88,9 +89,29 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({ apiKey }) => {
           )}
           {isTranslating ? t('lang_manager_button_translating') : t('lang_manager_button_add')}
         </button>
-        {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
-        {success && <p className="text-sm text-green-600 mt-2">{success}</p>}
       </div>
+      {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
+      {success && <p className="text-sm text-green-600 mt-2">{success}</p>}
+
+      {customLanguages.length > 0 && (
+        <div className="mt-6 pt-4 border-t border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-700 mb-3">{t('lang_manager_custom_languages_title')}</h3>
+          <ul className="space-y-2">
+            {customLanguages.map(([code, name]) => (
+              <li key={code} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
+                <span className="text-sm font-medium text-gray-800">{name}</span>
+                <button
+                  onClick={() => handleDeleteLanguage(code, name)}
+                  className="px-3 py-1 text-sm font-semibold text-red-700 bg-red-100 border border-red-200 rounded-md hover:bg-red-200"
+                  aria-label={`Delete ${name}`}
+                >
+                  {t('lang_manager_delete_button')}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 };

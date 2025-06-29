@@ -22,7 +22,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
   const [maxCharLimitInput, setMaxCharLimitInput] = useState(currentMaxCharLimit.toString());
   const [isTesting, setIsTesting] = useState(false);
   const [testStatus, setTestStatus] = useState<{message: string, type: 'success' | 'error' } | null>(null);
-  const [isCollapsed, setIsCollapsed] = useState(!!currentApiKey); // Collapse if API key is already set
+  const [isCollapsed, setIsCollapsed] = useState(() => !!localStorage.getItem('athenaAIApiKey')); // Collapse if API key is already in storage
 
   useEffect(() => {
     setApiKeyInput(currentApiKey || '');
