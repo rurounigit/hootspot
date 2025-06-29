@@ -19,8 +19,8 @@ This tool acts as a "side panel" in your browser, allowing you to paste text and
 *   **Advanced Rhetorical Analysis**: Leverages a comprehensive, built-in **"Analyst's Lexicon"** to detect over 20 distinct patterns of manipulation, from simple guilt-tripping to complex socio-political rhetoric.
 *   **Detailed, Actionable Reports**: Provides an AI-generated summary, highlights manipulative phrases directly in the source text, and offers clear explanations for each finding.
 *   **Privacy-Focused**: Your text and API key are sent directly to the Google API. Your API key is stored securely and locally in your browser's storage and is **never** sent to any third-party servers.
-*   **Multi-language Support**: The user interface is available in English, German, and French out of the box.
-*   **🤖 AI-Powered UI Translation**: A unique feature that allows you to use the AI to translate the extension's entire interface into a new language of your choice, which is then saved for future use.
+*   **Multi-language Support**: The user interface is available in English, German, French, and Spanish out of the box.
+*   **🤖 AI-Powered Language Management**: A unique feature that allows you to use the AI to translate the extension's entire interface into any language. Simply provide a language code (e.g., "it" for Italian), and the AI handles the rest. Custom languages are saved locally and can be deleted at any time.
 *   **Seamless Integration**: Works as a Chrome Side Panel for easy access while you browse the web.
 
 ## 📸 Demo
