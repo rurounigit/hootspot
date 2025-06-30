@@ -2,7 +2,7 @@
 
 ![Athena AI Logo](public/images/icons/icon128_onwhite.png)
 
-**Athena AI is a powerful Chrome Extension designed to help you critically analyze text. Using Google's Gemini API, it identifies and explains a wide range of psychological, rhetorical, and political manipulation tactics, turning your browser into a tool for enhanced media literacy.**
+**Athena AI is a Chrome Extension designed to help you to identifie and explain a wide range of psychological, rhetorical, and political manipulation tactics.**
 
 [![React](https://img.shields.io/badge/React-19-blue?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue?logo=typescript)](https://www.typescriptlang.org/)
@@ -20,7 +20,7 @@ This tool acts as a "side panel" in your browser, allowing you to paste text and
 *   **Advanced Rhetorical Analysis**: Leverages a comprehensive, built-in **"Analyst's Lexicon"** to detect over 20 distinct patterns of manipulation, from simple guilt-tripping to complex socio-political rhetoric.
 *   **📊 Visual Manipulation Profile**: Instantly understand the nature of the text with a dynamic radar chart that visualizes the frequency and categories of detected manipulative tactics.
 *   **📝 Detailed, Actionable Reports**: Provides a multi-faceted report including an AI-generated summary, color-coded highlights in the source text, and detailed explanations for each detected pattern.
-*   **⚙️ Privacy-Focused & Customizable**: Your API key and custom settings are stored securely and locally in your browser. Configure your experience by setting a custom character limit for analysis to manage API usage. Your data is **never** sent to any third-party servers.
+*   **⚙️ Privacy-Focused & Customizable**: Your API key and custom settings are stored securely and locally in your browser. Configure your experience by setting a custom character limit for analysis to manage API usage.
 *   **Multi-language Support**: The user interface is available in English, German, French, and Spanish out of the box.
 *   **🤖 AI-Powered Language Management**: A unique feature that allows you to use the AI to translate the extension's entire interface into any language. Simply provide a language code (e.g., "it" for Italian), and the AI handles the rest.
 *   **Seamless Integration**: Works as a Chrome Side Panel for easy access while you browse the web.
