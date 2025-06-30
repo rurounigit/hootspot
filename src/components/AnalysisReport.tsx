@@ -88,7 +88,6 @@ interface HighlightedTextProps {
 
 const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches, patternColorMap }) => {
   const { t } = useTranslation();
-  // --- FIX 1: Update tooltip state to hold structured content ---
   const [tooltip, setTooltip] = useState({ visible: false, title: '', description: '', x: 0, y: 0, color: '', textColor: '' });
 
   if (!matches || matches.length === 0) return <p className="whitespace-pre-wrap">{text}</p>;
@@ -103,7 +102,6 @@ const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches, patter
     }
   };
 
-  // --- FIX 2: Update hover handler to set both title and description ---
   const handlePillMouseOver = (event: React.MouseEvent, finding: GeminiFinding, color: { hex: string, text: string }) => {
     const i18nKey = patternNameToI18nKeyMap.get(finding.pattern_name) || finding.pattern_name;
     const descI18nKey = patternNameToDescKeyMap.get(finding.pattern_name) || '';
@@ -138,7 +136,6 @@ const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches, patter
 
   return (
     <>
-      {/* --- FIX 3: Update tooltip JSX to render structured content --- */}
       {tooltip.visible && (
         <div
           className="fixed max-w-xs px-3 py-2 rounded-lg shadow-xl text-sm pointer-events-none z-50"
@@ -168,6 +165,12 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
   }
 
   const profileDataBySection = useMemo(() => {
+    const CATEGORY_ICONS: Record<string, string> = {
+      'Interpersonal & Psychological': 'images/category-icons/psychological.png',
+      'Covert & Indirect Control': 'images/category-icons/control.png',
+      'Sociopolitical & Rhetorical': 'images/category-icons/sociopolitical.png',
+    };
+
     const counts = new Map<string, number>();
     if (hasFindings) {
       for (const finding of findings) {
@@ -191,6 +194,7 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
 
       return {
         title: sectionTitle,
+        icon: CATEGORY_ICONS[sectionTitle],
         data: data,
         hasFindings: totalFindings > 0,
         totalFindings: totalFindings,
@@ -198,14 +202,12 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
       };
     });
 
-    // --- FIX 4: Sort the sections to put the one with the most findings first ---
     sections.sort((a, b) => b.totalFindings - a.totalFindings);
 
     return sections;
   }, [findings, hasFindings]);
 
   useEffect(() => {
-    // Set the default active tab to the first one in the sorted list.
     if (profileDataBySection && profileDataBySection.length > 0) {
       setActiveTab(profileDataBySection[0].title);
     }
@@ -288,7 +290,7 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
                   key={section.title}
                   onClick={() => section.hasFindings && setActiveTab(section.title)}
                   disabled={!section.hasFindings}
-                  title={!section.hasFindings ? t('report_profile_no_findings_in_category') : section.title}
+                  title={section.hasFindings ? section.title : t('report_profile_no_findings_in_category')}
                   className={`
                     whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm
                     ${activeTab === section.title
@@ -297,7 +299,11 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
                     ${!section.hasFindings ? 'text-gray-400 cursor-not-allowed hover:border-transparent' : ''}
                   `}
                 >
-                  {section.title}
+                  <img
+                    src={chrome.runtime.getURL(section.icon)}
+                    alt={section.title}
+                    className="w-12 h-12"
+                  />
                 </button>
               ))}
             </nav>
