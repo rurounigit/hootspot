@@ -26,22 +26,24 @@ const App: React.FC = () => {
   const [isKeyValid, setIsKeyValid] = useState<boolean>(false);
   const [textToAnalyze, setTextToAnalyze] = useState('');
 
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const textWasSetProgrammatically = useRef(false);
   const analysisReportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // --- Load settings from local storage ---
     const storedApiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
-    if (storedApiKey) { setApiKey(storedApiKey); setIsKeyValid(true); }
+    if (storedApiKey) {
+      setApiKey(storedApiKey);
+      setIsKeyValid(true);
+    }
     const storedMaxCharLimit = localStorage.getItem(MAX_CHAR_LIMIT_STORAGE_KEY);
-    if (storedMaxCharLimit) { setMaxCharLimit(parseInt(storedMaxCharLimit, 10) || DEFAULT_MAX_CHAR_LIMIT); }
+    if (storedMaxCharLimit) {
+      setMaxCharLimit(parseInt(storedMaxCharLimit, 10) || DEFAULT_MAX_CHAR_LIMIT);
+    }
 
     // --- SETUP PUSH LISTENER ---
     // This handles new text selections when the panel is *already open*.
     const pushListener = (request: any) => {
       if (request.type === 'PUSH_TEXT_TO_PANEL' && request.text) {
-        textWasSetProgrammatically.current = true;
         setTextToAnalyze(request.text);
       }
     };
@@ -50,9 +52,11 @@ const App: React.FC = () => {
     // --- EXECUTE PULL MECHANISM ---
     // This runs once on mount to get text selected *before* the panel opened.
     chrome.runtime.sendMessage({ type: 'PULL_INITIAL_TEXT' }, (response) => {
-      if (chrome.runtime.lastError) { return; }
+      if (chrome.runtime.lastError) {
+        // This is safe to ignore.
+        return;
+      }
       if (response && response.text) {
-        textWasSetProgrammatically.current = true;
         setTextToAnalyze(response.text);
       }
     });
@@ -62,15 +66,6 @@ const App: React.FC = () => {
       chrome.runtime.onMessage.removeListener(pushListener);
     };
   }, []);
-
-  // This effect handles focusing the textarea when text is set programmatically.
-  useEffect(() => {
-    if (textWasSetProgrammatically.current) {
-      textareaRef.current?.focus();
-      textareaRef.current?.select();
-      textWasSetProgrammatically.current = false; // Reset the flag
-    }
-  }, [textToAnalyze]);
 
   useEffect(() => {
     if (analysisResult && analysisReportRef.current) {
@@ -108,8 +103,9 @@ const App: React.FC = () => {
 
     try {
       const result = await analyzeText(apiKey, text, t, language);
+      console.log('--- RAW API RESPONSE (from App.tsx) ---', JSON.stringify(result, null, 2));
       setAnalysisResult(result);
-    } catch (err: any) { // Typo is fixed here
+    } catch (err: any) {
       setError(err.message || "An unknown error occurred during analysis.");
       setAnalysisResult(null);
     } finally {
@@ -140,7 +136,6 @@ const App: React.FC = () => {
           />
 
           <TextAnalyzer
-            ref={textareaRef}
             text={textToAnalyze}
             onTextChange={setTextToAnalyze}
             onAnalyze={handleAnalyzeText}
@@ -163,7 +158,7 @@ const App: React.FC = () => {
           </div>
 
           {(!isLoading && !error && !analysisResult && currentTextAnalyzed && !apiKey) && (
-            <div className="mt-4 p-4 bg-yellow-100 border-yellow-400 text-yellow-700 rounded-md shadow-md">
+            <div className="mt-4 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded-md shadow-md">
                 {t('error_no_api_key_for_results')}
             </div>
           )}
