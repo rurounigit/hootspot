@@ -1,7 +1,7 @@
 {
   "name": "athena-ai-text-analyzer-extension",
   "version": "1.0.0",
-  "description": "Athena AI Text Analyzer Chrome Extension",
+  "description": "HootSpot AI Text Analyzer Chrome Extension",
   "type": "module",
   "scripts": {
     "dev": "npx vite",

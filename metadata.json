@@ -1,5 +1,5 @@
 {
-  "name": "Athena AI Text Analyzer",
+  "name": "HootSpot AI Text Analyzer",
   "description": "An application to analyze text for psychological and rhetorical patterns using the Gemini API. Users provide their own API key.",
   "requestFramePermissions": [],
   "prompt": ""

@@ -1,8 +1,8 @@
-# Athena AI Text Analyzer
+# HootSpot AI Text Analyzer
 
-![Athena AI Logo](public/images/icons/icon128_onwhite.png)
+![HootSpot AI Logo](public/images/icons/icon128_onwhite.png)
 
-**Athena AI is a Chrome Extension designed to help you to identifie and explain a wide range of psychological, rhetorical, and political manipulation tactics.**
+**HootSpot is a Chrome Extension designed to help you to identify and explain a wide range of psychological, rhetorical, and political manipulation tactics.**
 
 [![React](https://img.shields.io/badge/React-19-blue?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue?logo=typescript)](https://www.typescriptlang.org/)
@@ -31,7 +31,7 @@ This tool acts as a "side panel" in your browser, allowing you to paste text and
 
 ## 🔬 How It Works
 
-The core of Athena is the **`ANALYST_LEXICON`**, a detailed, multi-section prompt that provides the AI with a framework for understanding manipulative language. This lexicon is an integral part of the system prompt sent to the Google Gemini API.
+The core of HootSpot is the **`ANALYST_LEXICON`**, a detailed, multi-section prompt that provides the AI with a framework for understanding manipulative language. This lexicon is an integral part of the system prompt sent to the Google Gemini API.
 
 1.  When you submit a text for analysis, the extension sends it to the Google Gemini API along with the system prompt.
 2.  This instructs the AI to act as an expert in linguistics, psychology, and rhetoric, and to use the lexicon to find matching patterns in your text.
@@ -42,7 +42,7 @@ The core of Athena is the **`ANALYST_LEXICON`**, a detailed, multi-section promp
 
 ### For Users (Recommended)
 
-The easiest way to use Athena AI is to install it from the Chrome Web Store.
+The easiest way to use HootSpot AI is to install it from the Chrome Web Store.
 
 > **[🔗 Install from the Chrome Web Store](https://chrome.google.com/webstore/detail/your-extension-id)** (Link pending publication)
 
@@ -72,11 +72,11 @@ If you want to run the project locally for development or testing, follow these 
     *   Enable **"Developer mode"** using the toggle in the top-right corner.
     *   Click the **"Load unpacked"** button.
     *   Select the `dist` directory that was created in the previous step.
-    *   The Athena AI Text Analyzer icon should now appear in your Chrome toolbar.
+    *   The HootSpot AI Text Analyzer icon should now appear in your Chrome toolbar.
 
 ## 🚀 Getting Started
 
-1.  Click the **Athena AI icon** in your Chrome toolbar to open the side panel.
+1.  Click the **HootSpot AI icon** in your Chrome toolbar to open the side panel.
 2.  In the side panel, expand the **"Configuration"** section.
 3.  You'll need a Google Gemini API key. You can get one for free from **[Google AI Studio](https://aistudio.google.com/app/apikey)**.
 4.  Paste your key into the API key input field. You can also adjust the maximum character limit for analysis to control costs. Click **"Save & Test Configuration"**. The extension will validate the key.
@@ -85,7 +85,7 @@ If you want to run the project locally for development or testing, follow these 
 
 ## 📖 The Analyst's Lexicon
 
-Athena identifies patterns based on a detailed lexicon, which is categorized into three main sections. Each pattern in the lexicon is meticulously defined, complete with telltale signs, common phrases, and illustrative examples to ensure a high degree of analytical accuracy.
+HootSpot identifies patterns based on a detailed lexicon, which is categorized into three main sections. Each pattern in the lexicon is meticulously defined, complete with telltale signs, common phrases, and illustrative examples to ensure a high degree of analytical accuracy.
 
 *   **Section 1: Interpersonal & Psychological Manipulation Tactics**
     *   *(e.g., Gaslighting, Guilt Tripping, Love Bombing, DARVO)*

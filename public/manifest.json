@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Athena AI Text Analyzer Extension",
+  "name": "HootSpot AI Text Analyzer Extension",
   "version": "1.0.0",
   "description": "An application to analyze text for psychological and rhetorical patterns using the Gemini API. Users provide their own API key.",
   "permissions": [
@@ -13,7 +13,7 @@
       "48": "images/icons/icon48.png",
       "128": "images/icons/icon128.png"
     },
-    "default_title": "Athena AI Text Analyzer"
+    "default_title": "HootSpot AI Text Analyzer"
   },
   "icons": {
     "16": "images/icons/icon16.png",

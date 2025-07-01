@@ -272,7 +272,7 @@ Guideline for Future Analysis:
 When analyzing formal documents, pay close attention to not just what is said, but how it is framed. Look for sanitized language, the creation of false necessities, and the use of jargon to obscure meaning. Apply the same level of critical analysis demonstrated in this case study to other texts that seem neutral on the surface.
 `;
 
-export const SYSTEM_PROMPT = `You are Athena AI, a world-class expert in linguistics, psychology, and rhetoric. Your task is to analyze a given text for specific patterns of psychological and socio-political manipulation, as detailed in "The Analyst's Lexicon" provided below. You must identify instances of the patterns described.
+export const SYSTEM_PROMPT = `You are HootSpot AI, a world-class expert in linguistics, psychology, and rhetoric. Your task is to analyze a given text for specific patterns of psychological and socio-political manipulation, as detailed in "The Analyst's Lexicon" provided below. You must identify instances of the patterns described.
 
 THE ANALYST'S LEXICON:
 ${ANALYST_LEXICON}
@@ -298,10 +298,10 @@ export const MAX_CHAR_LIMIT_STORAGE_KEY = 'athenaAIMaxCharLimit';
 export const CUSTOM_LANGUAGES_KEY = 'athenaAICustomLanguages';
 export const DEFAULT_MAX_CHAR_LIMIT = 6000;
 
-export const AthenaLogoIcon: React.FC<{ className?: string }> = ({ className }) => (
+export const HootSpotLogoIcon: React.FC<{ className?: string }> = ({ className }) => (
   <img
     src="/images/icons/icon.png" // The default image source
-    alt="Athena AI Logo"
+    alt="HootSpot AI Logo"
     className={className}
   />
 );
