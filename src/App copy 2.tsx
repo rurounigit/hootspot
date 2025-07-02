@@ -7,7 +7,7 @@ import AnalysisReport from './components/AnalysisReport';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import { useTranslation } from './i18n';
 import { analyzeText } from './services/geminiService';
-import { useModels } from './hooks/useModels';
+import { useModels } from './hooks/useModels'; // This hook now returns { preview, stable }
 import { GeminiAnalysisResponse, GeminiModel } from './types';
 import {
   API_KEY_STORAGE_KEY,
@@ -21,6 +21,7 @@ import {
 const App: React.FC = () => {
   const { t, language } = useTranslation();
   const [apiKey, setApiKey] = useState<string | null>(null);
+  // `models` is now an object: { preview: GeminiModel[], stable: GeminiModel[] }
   const { models, isLoading: areModelsLoading, error: modelsError } = useModels(apiKey);
   const [selectedModel, setSelectedModel] = useState<string>(() => {
     return localStorage.getItem(SELECTED_MODEL_STORAGE_KEY) || GEMINI_MODEL_NAME;
@@ -76,44 +77,35 @@ const App: React.FC = () => {
     };
   }, []);
 
-  // Handles the successful loading of the model list
+  // *** THIS IS THE CORRECTED useEffect THAT HANDLES THE NEW `models` OBJECT ***
   useEffect(() => {
+    // 1. Create a single, flat array from the grouped models.
     const allModels = [...models.preview, ...models.stable];
-    if (allModels.length === 0) return; // Don't run if the model list is empty
 
+    // 2. Save the user's selection to local storage
     localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel);
+
+    // 3. Find the full details of the currently selected model from the combined list.
     const details = allModels.find(m => m.name === selectedModel) || null;
     setCurrentModelDetails(details);
 
-    if (!details) {
+    // 4. If the list of models has finished loading and the currently selected model
+    // is NOT in that list, we reset to a sensible default.
+    if (allModels.length > 0 && !details) {
       const defaultModel = allModels.find(m => m.name === GEMINI_MODEL_NAME) || allModels[0];
       if (defaultModel) {
-        setSelectedModel(defaultModel.name);
+          setSelectedModel(defaultModel.name);
       }
     }
 
+    // 5. Update the 'thinking' toggle based on the selected model's capability.
     if (!details?.thinking) {
       setIsThinkingEnabled(false);
     }
-  }, [selectedModel, models]);
+  }, [selectedModel, models]); // Dependency array is correct
 
-  // Handles model fetching errors by falling back to a default
-  useEffect(() => {
-    if (!areModelsLoading && modelsError) {
-      console.warn(`Model fetch failed: ${modelsError}. Falling back to default: ${GEMINI_MODEL_NAME}`);
 
-      setSelectedModel(GEMINI_MODEL_NAME);
-
-      setCurrentModelDetails({
-        name: 'models/gemini-2.5-flash-lite-preview-06-17',
-        displayName: 'Gemini 2.5 Flash-Lite Preview 06-17',
-        supportedGenerationMethods: ['generateContent'],
-        version: '2.5-preview-06-17',
-        thinking: true,
-      });
-    }
-  }, [areModelsLoading, modelsError]);
-
+  // This effect handles focusing the textarea.
   useEffect(() => {
     if (textWasSetProgrammatically.current) {
       textareaRef.current?.focus();
@@ -143,6 +135,7 @@ const App: React.FC = () => {
     }
   }, [apiKey, t, language, selectedModel]);
 
+  // This effect triggers auto-analysis.
   useEffect(() => {
     if (pendingAnalysis && apiKey) {
       handleAnalyzeText(pendingAnalysis.text);

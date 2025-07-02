@@ -4,23 +4,23 @@ import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { GEMINI_MODEL_NAME, SYSTEM_PROMPT, TRANSLATION_SYSTEM_PROMPT } from "../constants";
 import { GeminiAnalysisResponse, GeminiModel } from "../types";
 import { LanguageCode } from "../i18n";
-import { GroupedModels } from "../hooks/useModels";
 
 type TFunction = (key: string, replacements?: Record<string, string | number>) => string;
 
-// testApiKey and analyzeText functions remain the same...
-
+// MODIFIED: This function now throws an error on failure instead of returning an object.
 export const testApiKey = async (
   apiKey: string,
   t: TFunction,
   modelName: string
 ): Promise<void> => {
   if (!apiKey) {
+    // Throw an error that the calling function can catch.
     throw new Error(t('error_api_key_empty'));
   }
   try {
     const ai = new GoogleGenAI({ apiKey });
     const response: GenerateContentResponse = await ai.models.generateContent({
+      // Use the dynamically selected model for the test.
       model: modelName || GEMINI_MODEL_NAME,
       contents: "Hello",
       config: {
@@ -29,17 +29,24 @@ export const testApiKey = async (
         topP: 0,
       }
     });
+
+    // If the response is empty or invalid, it's a failure.
     if (!response.text || response.text.trim().length === 0) {
         throw new Error(t('test_query_returned_empty'));
     }
+    // If we reach here, the function completes successfully.
   } catch (error: any) {
     console.error("API Key test failed:", error);
+
+    // Use the same robust error parsing as analyzeText.
     let apiErrorObject;
     try {
       apiErrorObject = JSON.parse(error.message);
     } catch (e) {
+      // It's not a JSON error from the API, so use the original message.
       throw new Error(t('error_api_key_test_failed_message', { message: error.message || 'Unknown error' }));
     }
+
     if (apiErrorObject && apiErrorObject.error && apiErrorObject.error.message) {
       const { code, status, message } = apiErrorObject.error;
       if (status === 'RESOURCE_EXHAUSTED' || code === 429) {
@@ -47,6 +54,8 @@ export const testApiKey = async (
       }
       throw new Error(t('error_api_generic', { message: message }));
     }
+
+    // Fallback for any other kind of error.
     throw new Error(t('error_api_key_test_failed_generic'));
   }
 };
@@ -58,8 +67,7 @@ export const analyzeText = async (
   language: LanguageCode,
   modelName: string,
 ): Promise<GeminiAnalysisResponse> => {
-    // ... (implementation is unchanged)
-    if (!apiKey) {
+  if (!apiKey) {
     throw new Error(t('error_api_key_not_configured'));
   }
   if (!textToAnalyze.trim()) {
@@ -134,8 +142,7 @@ export const analyzeText = async (
   }
 };
 
-
-export const fetchModels = async (apiKey: string): Promise<GroupedModels> => {
+export const fetchModels = async (apiKey: string): Promise<GeminiModel[]> => {
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
     if (!response.ok) {
@@ -145,71 +152,33 @@ export const fetchModels = async (apiKey: string): Promise<GroupedModels> => {
     const data = await response.json();
 
     if (!Array.isArray(data.models)) {
-        if (data.error) throw new Error(data.error.message);
-        console.warn("API did not return a models array. Response:", data);
-        return { preview: [], stable: [] };
+      if (data.error) {
+        throw new Error(data.error.message);
+      }
+      console.warn("API did not return a models array. Response:", data);
+      return [];
     }
 
-    // 1. Initial Filtering
-    const filteredModels = (data.models as GeminiModel[]).filter(model => {
-      const name = model.name.toLowerCase();
-      const displayName = model.displayName.toLowerCase();
+    const models = data.models as GeminiModel[];
 
-      if (!model.supportedGenerationMethods.includes("generateContent")) return false;
-      if (name.includes("embedding") || name.includes("aqa") || name.includes("imagen") || name.includes("tts") || name.includes("vision")) return false;
-      if (displayName.includes("exp")) return false;
-      if (displayName.includes("gemini 1.0")) return false;
-      if (displayName.includes("cursor testing")) return false;
+    const filteredModels = models.filter(model =>
+      model.supportedGenerationMethods.includes("generateContent") &&
+      !model.name.includes("embedding") &&
+      !model.name.includes("aqa") &&
+      !model.name.includes("imagen")
+    );
 
-      return true;
+    filteredModels.sort((a, b) => {
+      const aIsPreview = a.displayName.toLowerCase().includes('preview');
+      const bIsPreview = b.displayName.toLowerCase().includes('preview');
+
+      if (aIsPreview && !bIsPreview) return -1;
+      if (!aIsPreview && bIsPreview) return 1;
+
+      return a.displayName.localeCompare(b.displayName);
     });
 
-    // 2. Deduplication: Keep only the latest version of each model
-    const modelMap = new Map<string, GeminiModel>();
-
-    filteredModels.forEach(model => {
-      const baseName = model.displayName.toLowerCase()
-        .replace(/(\s\d{3})$/, '')
-        .replace(/(\s\d{2}-\d{2})$/, '')
-        .replace(/(-latest)$/, '')
-        .trim();
-
-      const existingModel = modelMap.get(baseName);
-
-      // This comparison will now work without a TypeScript error
-      if (!existingModel || model.version > existingModel.version) {
-        modelMap.set(baseName, model);
-      }
-    });
-
-    const uniqueModels = Array.from(modelMap.values());
-
-    // 3. Grouping and Sorting
-    const sorter = (a: GeminiModel, b: GeminiModel): number => {
-        const aIsGemini = a.displayName.toLowerCase().includes('gemini');
-        const bIsGemini = b.displayName.toLowerCase().includes('gemini');
-
-        if (aIsGemini && !bIsGemini) return -1;
-        if (!aIsGemini && bIsGemini) return 1;
-
-        const regex = /(gemini|gemma)\s(3n|[\d.]+)/i;
-        const aMatch = a.displayName.match(regex);
-        const bMatch = b.displayName.match(regex);
-
-        if (aMatch && bMatch) {
-            const aVersion = aMatch[2].toLowerCase() === '3n' ? 3.1 : parseFloat(aMatch[2]);
-            const bVersion = bMatch[2].toLowerCase() === '3n' ? 3.1 : parseFloat(bMatch[2]);
-            if (aVersion !== bVersion) return bVersion - aVersion;
-        }
-
-        return b.displayName.localeCompare(a.displayName);
-    };
-
-    const preview = uniqueModels.filter(m => m.displayName.toLowerCase().includes('preview')).sort(sorter);
-    const stable = uniqueModels.filter(m => !m.displayName.toLowerCase().includes('preview')).sort(sorter);
-
-    return { preview, stable };
-
+    return filteredModels;
   } catch (error) {
     console.error("Failed to fetch models:", error);
     throw error;
@@ -222,7 +191,6 @@ export const translateUI = async (
   baseTranslationsJSON: string,
   t: TFunction
 ): Promise<Record<string, string>> => {
-    // ... (implementation is unchanged)
     if (!apiKey) {
         throw new Error(t('error_api_key_not_configured'));
     }

@@ -43,4 +43,5 @@ export interface GeminiModel {
   displayName: string;
   supportedGenerationMethods: string[];
   thinking?: boolean;
+  version: string;
 }

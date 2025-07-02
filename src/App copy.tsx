@@ -47,7 +47,7 @@ const App: React.FC = () => {
     const storedMaxCharLimit = localStorage.getItem(MAX_CHAR_LIMIT_STORAGE_KEY);
     if (storedMaxCharLimit) { setMaxCharLimit(parseInt(storedMaxCharLimit, 10) || DEFAULT_MAX_CHAR_LIMIT); }
 
-    // --- SETUP MESSAGE LISTENER ---
+    // --- SETUP MESSAGE LISTENER (for both push and pull) ---
     const messageListener = (request: any) => {
       if (request.type === 'PUSH_TEXT_TO_PANEL' && request.text) {
         textWasSetProgrammatically.current = true;
@@ -71,54 +71,42 @@ const App: React.FC = () => {
       }
     });
 
+    // --- Cleanup function ---
     return () => {
       chrome.runtime.onMessage.removeListener(messageListener);
     };
   }, []);
 
-  // Handles the successful loading of the model list
+  // *** THIS IS THE REPLACEMENT FOR THE TWO PREVIOUS useEffect HOOKS ***
   useEffect(() => {
-    const allModels = [...models.preview, ...models.stable];
-    if (allModels.length === 0) return; // Don't run if the model list is empty
-
+    // 1. Save the user's selection to local storage
     localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel);
-    const details = allModels.find(m => m.name === selectedModel) || null;
+
+    // 2. Find the full details of the currently selected model from the fetched list
+    const details = models.find(m => m.name === selectedModel) || null;
     setCurrentModelDetails(details);
 
-    if (!details) {
-      const defaultModel = allModels.find(m => m.name === GEMINI_MODEL_NAME) || allModels[0];
-      if (defaultModel) {
-        setSelectedModel(defaultModel.name);
-      }
+    // 3. If the list of models has finished loading and the currently selected model
+    // is NOT in that list, we reset to a sensible default to avoid a blank selection.
+    if (models.length > 0 && !details) {
+      const defaultModel = models.find(m => m.name === GEMINI_MODEL_NAME) || models[0];
+      setSelectedModel(defaultModel.name);
     }
 
+    // 4. Update the 'thinking' toggle based on the selected model's capability.
+    // If the model does not support 'thinking', we ensure the checkbox is disabled and unchecked.
     if (!details?.thinking) {
       setIsThinkingEnabled(false);
     }
   }, [selectedModel, models]);
 
-  // Handles model fetching errors by falling back to a default
-  useEffect(() => {
-    if (!areModelsLoading && modelsError) {
-      console.warn(`Model fetch failed: ${modelsError}. Falling back to default: ${GEMINI_MODEL_NAME}`);
 
-      setSelectedModel(GEMINI_MODEL_NAME);
-
-      setCurrentModelDetails({
-        name: 'models/gemini-2.5-flash-lite-preview-06-17',
-        displayName: 'Gemini 2.5 Flash-Lite Preview 06-17',
-        supportedGenerationMethods: ['generateContent'],
-        version: '2.5-preview-06-17',
-        thinking: true,
-      });
-    }
-  }, [areModelsLoading, modelsError]);
-
+  // This effect handles focusing the textarea when text is set programmatically.
   useEffect(() => {
     if (textWasSetProgrammatically.current) {
       textareaRef.current?.focus();
       textareaRef.current?.select();
-      textWasSetProgrammatically.current = false;
+      textWasSetProgrammatically.current = false; // Reset the flag
     }
   }, [textToAnalyze]);
 
@@ -143,10 +131,11 @@ const App: React.FC = () => {
     }
   }, [apiKey, t, language, selectedModel]);
 
+  // This effect triggers the auto-analysis once the API key is confirmed to be loaded.
   useEffect(() => {
     if (pendingAnalysis && apiKey) {
       handleAnalyzeText(pendingAnalysis.text);
-      setPendingAnalysis(null);
+      setPendingAnalysis(null); // Clear the pending request
     }
   }, [pendingAnalysis, apiKey, handleAnalyzeText]);
 
@@ -189,6 +178,7 @@ const App: React.FC = () => {
         </header>
 
         <main className="flex-grow">
+          {/* *** ADDED THE REQUIRED PROPS HERE *** */}
           <ApiKeyManager
             currentApiKey={apiKey}
             onApiKeySave={handleApiKeySave}

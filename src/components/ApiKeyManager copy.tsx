@@ -6,14 +6,13 @@ import { testApiKey } from '../services/geminiService';
 import { useTranslation } from '../i18n';
 import LanguageManager from './LanguageManager';
 import { GeminiModel } from '../types';
-import { GroupedModels } from '../hooks/useModels'; // Import the new interface
 
 interface ApiKeyManagerProps {
   currentApiKey: string | null;
   onApiKeySave: (key: string) => Promise<{success: boolean, error?: string}>;
   currentMaxCharLimit: number;
   onMaxCharLimitSave: (limit: number) => void;
-  models: GroupedModels; // Use the new type for the models prop
+  models: GeminiModel[];
   selectedModel: string;
   onModelChange: (model: string) => void;
   isThinkingEnabled: boolean;
@@ -52,15 +51,23 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
     setMaxCharLimitInput(currentMaxCharLimit.toString());
   }, [currentMaxCharLimit]);
 
+  const safeModels = models || [];
+
+  // MODIFIED: This function now uses a try/catch block for clearer logic.
   const handleSave = async () => {
     setIsTesting(true);
     setTestStatus(null);
     const trimmedApiKey = apiKeyInput.trim();
 
     try {
+      // 1. Test the API key against the currently selected model.
+      // This will throw an error if it fails, which the catch block will handle.
       await testApiKey(trimmedApiKey, t, selectedModel);
+
+      // 2. If the test passes, proceed with saving everything.
       const { success, error: saveError } = await onApiKeySave(trimmedApiKey);
       if (!success) {
+        // This handles potential localStorage saving errors.
         throw new Error(saveError || t('error_save_api_key'));
       }
 
@@ -69,22 +76,24 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
         onMaxCharLimitSave(newLimit);
       } else {
         setMaxCharLimitInput(currentMaxCharLimit.toString());
+        // Show a success message but also inform about the invalid limit.
         setTestStatus({ message: `${t('success_api_key_saved')} ${t('error_invalid_char_limit')}`, type: 'success' });
         setIsTesting(false);
-        return;
+        return; // Early return after setting status
       }
 
+      // 3. If everything was successful, show the success message.
       setTestStatus({ message: t('success_api_key_saved'), type: 'success' });
       setIsCollapsed(true);
 
     } catch (err: any) {
+      // 4. If testApiKey (or any other step in try) fails, display the error.
       setTestStatus({ message: err.message, type: 'error' });
     } finally {
+      // 5. Always stop the loading spinner.
       setIsTesting(false);
     }
   };
-
-  const allModelsEmpty = models.preview.length === 0 && models.stable.length === 0;
 
   return (
     <div className="bg-white shadow-md rounded-lg p-4 mb-4 border border-gray-200">
@@ -169,33 +178,16 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
                 id="modelSelector"
                 value={selectedModel}
                 onChange={(e) => onModelChange(e.target.value)}
-                disabled={areModelsLoading || allModelsEmpty}
+                disabled={areModelsLoading || safeModels.length === 0}
                 className="flex-grow w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
               >
                 {areModelsLoading && <option>Loading models...</option>}
                 {modelsError && <option>Error loading models</option>}
-                {!areModelsLoading && !modelsError && (
-                  <>
-                    {models.preview.length > 0 && (
-                      <optgroup label="Preview Models">
-                        {models.preview.map(model => (
-                          <option key={model.name} value={model.name}>
-                            {model.displayName}
-                          </option>
-                        ))}
-                      </optgroup>
-                    )}
-                    {models.stable.length > 0 && (
-                       <optgroup label="Stable Models">
-                        {models.stable.map(model => (
-                          <option key={model.name} value={model.name}>
-                            {model.displayName}
-                          </option>
-                        ))}
-                      </optgroup>
-                    )}
-                  </>
-                )}
+                {!areModelsLoading && !modelsError && safeModels.map(model => (
+                  <option key={model.name} value={model.name}>
+                    {model.displayName}
+                  </option>
+                ))}
               </select>
               <div className="flex items-center pl-2" title={!currentModelDetails?.thinking ? "This model does not support the 'thinking' feature." : "Enable 'thinking' feature"}>
                   <input
