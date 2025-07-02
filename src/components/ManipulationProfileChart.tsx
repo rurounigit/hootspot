@@ -1,42 +1,46 @@
-import React, { useState } from 'react';
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
+import React, { useState, useEffect, useRef } from 'react';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Tooltip } from 'recharts';
 import { useTranslation } from '../i18n';
 import { shortNameToKeyMap, keyToDescKeyMap } from '../lexicon-structure';
 
-// This component is stable and now correctly reads the flat payload object.
-const CustomRadarTooltipContent = ({ active, payload, t }: any) => {
-    if (active && payload) {
-        const tacticName = payload.tactic || "Unknown Tactic";
-        const realCount = (typeof payload.count === 'number') ? payload.count - 1 : 0;
-        // The color is now passed in a 'color' property on the payload.
-        const color = payload.color || '#8884d8';
-
-        const simpleKey = shortNameToKeyMap.get(tacticName);
-        const descKey = simpleKey ? keyToDescKeyMap.get(simpleKey) : null;
-        const description = descKey ? t(descKey) : '';
-
-        return (
-            <div className="max-w-xs p-3 bg-white border border-gray-300 rounded-lg shadow-xl text-sm">
-                <p className="font-bold text-gray-800">{tacticName}</p>
-                <p style={{ color: color }}>Detected: {realCount}</p>
-                {description && <p className="mt-2 text-gray-600">{description}</p>}
-            </div>
-        );
-    }
-    return null;
+// The Tooltip content component remains correct.
+const CustomRadarTooltip = ({ active, payload }: any) => {
+  const { t } = useTranslation();
+  if (active && payload && payload.length) {
+    const data = payload[0];
+    const tacticName = data.payload.tactic;
+    const realCount = data.value - 1;
+    const simpleKey = shortNameToKeyMap.get(tacticName);
+    const descKey = simpleKey ? keyToDescKeyMap.get(simpleKey) : null;
+    const description = descKey ? t(descKey) : '';
+    return (
+      <div className="max-w-xs p-3 bg-white border border-gray-300 rounded-lg shadow-xl text-sm pointer-events-none">
+        <p className="font-bold text-gray-800">{tacticName}</p>
+        <p style={{ color: data.stroke }}>Detected: {realCount}</p>
+        {description && <p className="mt-2 text-gray-600">{description}</p>}
+      </div>
+    );
+  }
+  return null;
 };
 
-// This component for wrapped labels is stable.
+// FINAL VERSION: This tick component is now fully dynamic and wraps intelligently.
 const CustomAngleTick = (props: any) => {
-    const { x, y, payload } = props;
-    const label = String(payload.value);
-    const MAX_WIDTH = 85;
+    const { x, y, payload, containerWidth } = props;
+
+    // A breakpoint to decide when to wrap. Adjust if needed.
+    const WRAP_BREAKPOINT = 380;
+    // Set a max-width for the label container ONLY when the chart is small.
+    const MAX_WIDTH = containerWidth < WRAP_BREAKPOINT ? 80 : 150;
+
+    // Trick for intelligent wrapping: add a space after a slash to make it a valid line-break point for the browser.
+    const label = String(payload.value).replace('/', '/ ');
 
     return (
         <g transform={`translate(${x},${y})`}>
-            <foreignObject x={-MAX_WIDTH / 2} y={-30} width={MAX_WIDTH} height={60}>
-                {/* @ts-ignore - This is a necessary attribute for SVG foreignObject to render HTML */}
+            <foreignObject x={-MAX_WIDTH / 2} y={-25} width={MAX_WIDTH} height={50}>
                 <div
+                    // @ts-ignore
                     xmlns="http://www.w3.org/1999/xhtml"
                     style={{
                         width: `${MAX_WIDTH}px`,
@@ -54,6 +58,7 @@ const CustomAngleTick = (props: any) => {
     );
 };
 
+
 interface ManipulationProfileChartProps {
   data: { tactic: string; count: number }[];
   color: string;
@@ -61,99 +66,89 @@ interface ManipulationProfileChartProps {
 }
 
 const ManipulationProfileChart: React.FC<ManipulationProfileChartProps> = ({ data, color, hasFindings }) => {
-    const { t } = useTranslation();
-    const [tooltipState, setTooltipState] = useState({
-        visible: false,
-        payload: null as any,
-        coordinate: { x: 0, y: 0 }
+  const [cursorPosition, setCursorPosition] = useState<{ x: number, y: number } | null>(null);
+
+  // State to hold the dynamic width, and a ref to the container div.
+  const [containerWidth, setContainerWidth] = useState(0);
+  const chartContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // This effect uses a ResizeObserver to get the real-time width of the container,
+  // making this component truly responsive.
+  useEffect(() => {
+    const observer = new ResizeObserver(entries => {
+      if (entries && entries[0]) {
+        setContainerWidth(entries[0].contentRect.width);
+      }
     });
 
-    const chartColor = hasFindings ? color : '#22c55e';
-    const fillColor = hasFindings ? color : '#bbf7d0';
-
-    if (data.length < 3) {
-        return null;
+    if (chartContainerRef.current) {
+      observer.observe(chartContainerRef.current);
     }
 
-    // This handler tracks the mouse position over the entire chart area.
-    const handleChartMouseMove = (chartState: any) => {
-        // We only need to update the coordinates if a tooltip is already active.
-        if (chartState.activeTooltipIndex !== undefined && tooltipState.visible) {
-             setTooltipState(prevState => ({ ...prevState, coordinate: { x: chartState.chartX, y: chartState.chartY } }));
-        }
+    return () => {
+      if (chartContainerRef.current) {
+        observer.unobserve(chartContainerRef.current);
+      }
     };
-
-    // This handler hides the tooltip when the mouse leaves the chart area.
-    const handleChartMouseLeave = () => {
-        setTooltipState(prevState => ({ ...prevState, visible: false }));
-    };
-
-    // CORRECTED: This handler now uses the direct, top-level object from the event.
-    const handleRadarMouseEnter = (data: any, index: number, e: React.MouseEvent<SVGElement>) => {
-        setTooltipState({
-            visible: true,
-            // Construct the payload by combining the hovered data with the line color.
-            payload: {
-                ...data,
-                color: chartColor
-            },
-            coordinate: { x: e.clientX, y: e.clientY }
-        });
-    };
-
-    const handleRadarMouseLeave = () => {
-         setTooltipState(prevState => ({ ...prevState, visible: false }));
-    };
+  }, []);
 
 
-    return (
-        <div className="bg-gray-50 p-4 rounded-lg shadow-md border border-gray-200 relative">
-            {/* The custom tooltip div, controlled by state */}
-            {tooltipState.visible && (
-                <div style={{
-                    position: 'fixed',
-                    left: tooltipState.coordinate.x + 15,
-                    top: tooltipState.coordinate.y + 15,
-                    pointerEvents: 'none',
-                    zIndex: 1000,
-                }}>
-                    <CustomRadarTooltipContent active={true} payload={tooltipState.payload} t={t} />
-                </div>
-            )}
+  const chartColor = hasFindings ? color : '#22c55e';
+  const fillColor = hasFindings ? color : '#bbf7d0';
 
-            <div style={{ width: '100%', height: 300 }}>
-                <ResponsiveContainer>
-                    {/* The onMouseMove and onMouseLeave events are now on the chart itself */}
-                    <RadarChart
-                        cx="50%"
-                        cy="50%"
-                        outerRadius="70%"
-                        data={data}
-                        margin={{ top: 20, right: 30, bottom: 20, left: 30 }}
-                        onMouseMove={handleChartMouseMove}
-                        onMouseLeave={handleChartMouseLeave}
-                    >
-                        <PolarGrid />
-                        <PolarAngleAxis dataKey="tactic" tick={<CustomAngleTick />} />
-                        <PolarRadiusAxis
-                            angle={30}
-                            domain={[0, 'auto']}
-                            tickFormatter={(tickValue) => `${tickValue - 1}`}
-                        />
-                        <Radar
-                            name="Count"
-                            dataKey="count"
-                            stroke={chartColor}
-                            fill={fillColor}
-                            fillOpacity={0.7}
-                            onMouseEnter={handleRadarMouseEnter}
-                            onMouseLeave={handleRadarMouseLeave}
-                        />
-                    </RadarChart>
-                </ResponsiveContainer>
-            </div>
-        </div>
-    );
+  if (data.length < 3) {
+    return null;
+  }
+
+  const handleMouseMove = (e: any) => {
+    if (e.activeCoordinate) {
+        setCursorPosition({ x: e.activeCoordinate.x, y: e.activeCoordinate.y });
+    } else {
+        setCursorPosition(null);
+    }
+  };
+
+  return (
+    <div className="bg-gray-50 p-4 rounded-lg shadow-md border border-gray-200">
+      {/* This div is our responsive container, watched by the ResizeObserver. */}
+      <div ref={chartContainerRef} style={{ width: '100%', height: 300 }}>
+        {/* We only render the chart if we have a valid width, preventing errors on the initial render. */}
+        {containerWidth > 0 && (
+          <RadarChart
+            width={containerWidth}
+            height={300}
+            cx="50%"
+            cy="50%"
+            outerRadius="70%"
+            data={data}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={() => setCursorPosition(null)}
+          >
+            <PolarGrid />
+            <PolarAngleAxis dataKey="tactic" tick={<CustomAngleTick containerWidth={containerWidth} />} />
+            <PolarRadiusAxis
+              angle={30}
+              domain={[0, 'auto']}
+              tickFormatter={(tickValue) => `${tickValue - 1}`}
+            />
+            <Radar
+              name="Count"
+              dataKey="count"
+              stroke={chartColor}
+              fill={fillColor}
+              fillOpacity={0.7}
+            />
+            <Tooltip
+              position={cursorPosition ? { x: cursorPosition.x + 10, y: cursorPosition.y + 10 } : undefined}
+              content={<CustomRadarTooltip />}
+              cursor={false}
+              isAnimationActive={false}
+            />
+          </RadarChart>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default ManipulationProfileChart;

@@ -1,5 +1,3 @@
-// src/lexicon-structure.ts
-
 // This file is the single source of truth for all pattern definitions.
 
 export const PATTERN_KEYS = {
@@ -58,18 +56,16 @@ export const keyToDescKeyMap = new Map<string, string>([
 
 export const shortNameToKeyMap = new Map<string, string>();
 
-// --- UPDATED SECTION ---
-// These are the short names that will actually be displayed on the chart.
 export const LEXICON_SECTIONS_BY_KEY: Record<string, Record<string, string>> = {
   "Interpersonal & Psychological": {
-    GUILT_TRIPPING: "Guilt Trip",
+    GUILT_TRIPPING: "Guilt Tripping",
     GASLIGHTING: "Gaslighting",
     THREATENING_COERCION: "Threatening",
     INVALIDATION_MINIMIZING: "Invalidation",
     DEFLECTION_BLAME: "Deflection",
     DARVO: "DARVO",
-    MOVING_GOALPOSTS: "Goalposts",
-    LOVE_BOMBING: "Love Bomb",
+    MOVING_GOALPOSTS: "Moving Goalposts",
+    LOVE_BOMBING: "Love Bombing",
     PROJECTION: "Projection",
     SPLITTING: "Splitting",
   },
@@ -80,9 +76,9 @@ export const LEXICON_SECTIONS_BY_KEY: Record<string, Record<string, string>> = {
   },
   "Sociopolitical & Rhetorical": {
     STRAW_MAN: "Straw Man",
-    CO_OPTATION_DISSENT: "Co-optation",
-    REDEFINING_TERRAIN: "Redefinition",
-    FORECLOSURE_ALTERNATIVES: "Foreclosure",
+    CO_OPTATION_DISSENT: "Co-optation of Dissent",
+    REDEFINING_TERRAIN: "Redefining Terrain",
+    FORECLOSURE_ALTERNATIVES: "Foreclosure of Alternatives",
     REFLEXIVE_IMPOTENCE: "Reflexive Impotence",
     PERSONALIZATION_SYSTEMIC: "Personalization",
     DOG_WHISTLING: "Dog-Whistling",
@@ -90,7 +86,7 @@ export const LEXICON_SECTIONS_BY_KEY: Record<string, Record<string, string>> = {
   }
 };
 
-// Populate the shortNameToKeyMap automatically from the new short names
+// Populate the shortNameToKeyMap automatically
 for (const section in LEXICON_SECTIONS_BY_KEY) {
   for (const key in LEXICON_SECTIONS_BY_KEY[section]) {
     shortNameToKeyMap.set((LEXICON_SECTIONS_BY_KEY[section] as any)[key], key);
