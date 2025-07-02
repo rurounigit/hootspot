@@ -3,7 +3,7 @@ import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Tooltip 
 import { useTranslation } from '../i18n';
 import { shortNameToKeyMap, keyToDescKeyMap } from '../lexicon-structure';
 
-// The Tooltip content component is correct.
+// Tooltip component remains correct.
 const CustomRadarTooltip = ({ active, payload }: any) => {
   const { t } = useTranslation();
   if (active && payload && payload.length) {
@@ -24,20 +24,25 @@ const CustomRadarTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-// The tick component with soft hyphens is correct.
+// FINAL, ROBUST VERSION: This tick component uses soft hyphens for guaranteed wrapping.
 const CustomAngleTick = (props: any) => {
     const { x, y, payload, containerWidth } = props;
     const WRAP_BREAKPOINT = 380;
     const MAX_WIDTH = containerWidth < WRAP_BREAKPOINT ? 80 : 150;
 
+    // This helper function inserts soft hyphens (­) at logical break points.
     const formatLabel = (label: string): string => {
+        // Add a soft hyphen after slashes and hyphens.
         let formatted = label.replace('/', '/\u00AD').replace('-', '-\u00AD');
+
+        // Manually add soft hyphens for specific long words.
         if (formatted === 'Personalization') {
             formatted = 'Personali\u00ADzation';
         }
-         if (formatted === 'Impotence') {
+        if (formatted === 'Impotence') {
             formatted = 'Impo\u00ADtence';
         }
+
         return formatted;
     };
 
@@ -54,8 +59,10 @@ const CustomAngleTick = (props: any) => {
                         textAlign: 'center',
                         fontSize: '12px',
                         lineHeight: '1.2',
+                        // The browser will now use our soft hyphens when it needs to wrap.
                         wordWrap: 'break-word',
                     }}
+                    // We use dangerouslySetInnerHTML to ensure the ­ character is rendered as HTML.
                     dangerouslySetInnerHTML={{ __html: label }}
                 />
             </foreignObject>
@@ -116,8 +123,6 @@ const ManipulationProfileChart: React.FC<ManipulationProfileChartProps> = ({ dat
             data={data}
             onMouseMove={handleMouseMove}
             onMouseLeave={() => setCursorPosition(null)}
-            // ADDED: Disable animation for instant resizing.
-            isAnimationActive={false}
           >
             <PolarGrid />
             <PolarAngleAxis dataKey="tactic" tick={<CustomAngleTick containerWidth={containerWidth} />} />
@@ -132,8 +137,6 @@ const ManipulationProfileChart: React.FC<ManipulationProfileChartProps> = ({ dat
               stroke={chartColor}
               fill={fillColor}
               fillOpacity={0.7}
-              // ADDED: Also disable animation on the Radar element itself.
-              isAnimationActive={false}
             />
             <Tooltip
               position={cursorPosition ? { x: cursorPosition.x + 10, y: cursorPosition.y + 10 } : undefined}

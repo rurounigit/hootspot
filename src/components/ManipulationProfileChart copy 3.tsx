@@ -3,7 +3,7 @@ import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Tooltip 
 import { useTranslation } from '../i18n';
 import { shortNameToKeyMap, keyToDescKeyMap } from '../lexicon-structure';
 
-// The Tooltip content component is correct.
+// The Tooltip content component remains correct.
 const CustomRadarTooltip = ({ active, payload }: any) => {
   const { t } = useTranslation();
   if (active && payload && payload.length) {
@@ -24,24 +24,17 @@ const CustomRadarTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-// The tick component with soft hyphens is correct.
+// FINAL VERSION: This tick component is now fully dynamic and wraps intelligently.
 const CustomAngleTick = (props: any) => {
     const { x, y, payload, containerWidth } = props;
+
+    // A breakpoint to decide when to wrap. Adjust if needed.
     const WRAP_BREAKPOINT = 380;
+    // Set a max-width for the label container ONLY when the chart is small.
     const MAX_WIDTH = containerWidth < WRAP_BREAKPOINT ? 80 : 150;
 
-    const formatLabel = (label: string): string => {
-        let formatted = label.replace('/', '/\u00AD').replace('-', '-\u00AD');
-        if (formatted === 'Personalization') {
-            formatted = 'Personali\u00ADzation';
-        }
-         if (formatted === 'Impotence') {
-            formatted = 'Impo\u00ADtence';
-        }
-        return formatted;
-    };
-
-    const label = formatLabel(String(payload.value));
+    // Trick for intelligent wrapping: add a space after a slash to make it a valid line-break point for the browser.
+    const label = String(payload.value).replace('/', '/ ');
 
     return (
         <g transform={`translate(${x},${y})`}>
@@ -55,13 +48,16 @@ const CustomAngleTick = (props: any) => {
                         fontSize: '12px',
                         lineHeight: '1.2',
                         wordWrap: 'break-word',
+                        color: '#666'
                     }}
-                    dangerouslySetInnerHTML={{ __html: label }}
-                />
+                >
+                    {label}
+                </div>
             </foreignObject>
         </g>
     );
 };
+
 
 interface ManipulationProfileChartProps {
   data: { tactic: string; count: number }[];
@@ -71,18 +67,24 @@ interface ManipulationProfileChartProps {
 
 const ManipulationProfileChart: React.FC<ManipulationProfileChartProps> = ({ data, color, hasFindings }) => {
   const [cursorPosition, setCursorPosition] = useState<{ x: number, y: number } | null>(null);
+
+  // State to hold the dynamic width, and a ref to the container div.
   const [containerWidth, setContainerWidth] = useState(0);
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
 
+  // This effect uses a ResizeObserver to get the real-time width of the container,
+  // making this component truly responsive.
   useEffect(() => {
     const observer = new ResizeObserver(entries => {
       if (entries && entries[0]) {
         setContainerWidth(entries[0].contentRect.width);
       }
     });
+
     if (chartContainerRef.current) {
       observer.observe(chartContainerRef.current);
     }
+
     return () => {
       if (chartContainerRef.current) {
         observer.unobserve(chartContainerRef.current);
@@ -90,10 +92,13 @@ const ManipulationProfileChart: React.FC<ManipulationProfileChartProps> = ({ dat
     };
   }, []);
 
+
   const chartColor = hasFindings ? color : '#22c55e';
   const fillColor = hasFindings ? color : '#bbf7d0';
 
-  if (data.length < 3) return null;
+  if (data.length < 3) {
+    return null;
+  }
 
   const handleMouseMove = (e: any) => {
     if (e.activeCoordinate) {
@@ -105,7 +110,9 @@ const ManipulationProfileChart: React.FC<ManipulationProfileChartProps> = ({ dat
 
   return (
     <div className="bg-gray-50 p-4 rounded-lg shadow-md border border-gray-200">
+      {/* This div is our responsive container, watched by the ResizeObserver. */}
       <div ref={chartContainerRef} style={{ width: '100%', height: 300 }}>
+        {/* We only render the chart if we have a valid width, preventing errors on the initial render. */}
         {containerWidth > 0 && (
           <RadarChart
             width={containerWidth}
@@ -116,8 +123,6 @@ const ManipulationProfileChart: React.FC<ManipulationProfileChartProps> = ({ dat
             data={data}
             onMouseMove={handleMouseMove}
             onMouseLeave={() => setCursorPosition(null)}
-            // ADDED: Disable animation for instant resizing.
-            isAnimationActive={false}
           >
             <PolarGrid />
             <PolarAngleAxis dataKey="tactic" tick={<CustomAngleTick containerWidth={containerWidth} />} />
@@ -132,8 +137,6 @@ const ManipulationProfileChart: React.FC<ManipulationProfileChartProps> = ({ dat
               stroke={chartColor}
               fill={fillColor}
               fillOpacity={0.7}
-              // ADDED: Also disable animation on the Radar element itself.
-              isAnimationActive={false}
             />
             <Tooltip
               position={cursorPosition ? { x: cursorPosition.x + 10, y: cursorPosition.y + 10 } : undefined}
