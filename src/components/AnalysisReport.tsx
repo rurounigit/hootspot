@@ -1,11 +1,11 @@
 // src/components/AnalysisReport.tsx
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { GeminiAnalysisResponse, GeminiFinding } from '../types';
 import { InfoIcon } from '../constants';
 import { useTranslation } from '../i18n';
 import ManipulationProfileChart from './ManipulationProfileChart';
-import ShareMenu from './ShareMenu'; // Import the new component
+import ShareMenu from './ShareMenu';
 import { LEXICON_SECTIONS_BY_KEY, fullNameToKeyMap, keyToDescKeyMap } from '../lexicon-structure';
 
 // A color palette for pattern identification
@@ -87,7 +87,7 @@ interface HighlightedTextProps {
   patternColorMap: Map<string, { hex: string, border: string, text: string }>;
 }
 
-const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches, patternColorMap }) => {
+export const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches, patternColorMap }) => {
   const { t } = useTranslation();
   const [tooltip, setTooltip] = useState({ visible: false, title: '', description: '', x: 0, y: 0, color: '', textColor: '' });
 
@@ -156,15 +156,19 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
   const { t } = useTranslation();
   const { findings } = analysis;
   const hasFindings = findings && findings.length > 0;
-  const reportContainerRef = useRef<HTMLDivElement>(null); // Create a ref for the report container
 
   const [activeTab, setActiveTab] = useState<string | null>(null);
 
-  const patternColorMap = new Map<string, typeof findingColors[0]>();
-  if (hasFindings) {
-    const uniquePatternNames = [...new Set(findings.map(f => f.pattern_name))];
-    uniquePatternNames.forEach((name, index) => { patternColorMap.set(name, findingColors[index % findingColors.length]); });
-  }
+  const patternColorMap = useMemo(() => {
+    const map = new Map<string, typeof findingColors[0]>();
+    if (hasFindings) {
+      const uniquePatternNames = [...new Set(findings.map(f => f.pattern_name))];
+      uniquePatternNames.forEach((name, index) => {
+        map.set(name, findingColors[index % findingColors.length]);
+      });
+    }
+    return map;
+  }, [findings, hasFindings]);
 
   const profileDataBySection = useMemo(() => {
     const CATEGORY_ICONS: Record<string, string> = {
@@ -211,73 +215,83 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
 
   useEffect(() => {
     if (profileDataBySection && profileDataBySection.length > 0) {
-      setActiveTab(profileDataBySection[0].title);
+      const firstActiveSection = profileDataBySection.find(s => s.hasFindings) || profileDataBySection[0];
+      setActiveTab(firstActiveSection.title);
     }
   }, [profileDataBySection]);
 
-  const matchesByPosition = new Map<string, { start: number; end: number; findings: GeminiFinding[] }>();
-  if (hasFindings && sourceText) {
-    findings.forEach(finding => {
-      const quote = finding.specific_quote;
-      if (!quote || typeof quote !== 'string' || quote.trim() === '') return;
-      const escapedQuote = escapeRegex(quote);
-      const regex = new RegExp(escapedQuote, 'g');
-      let match;
-      while ((match = regex.exec(sourceText))) {
-        const key = `${match.index}-${match.index + quote.length}`;
-        const existing = matchesByPosition.get(key);
-        if (existing) {
-          if (!existing.findings.some(f => f.pattern_name === finding.pattern_name)) {
-            existing.findings.push(finding);
+  const finalHighlights = useMemo(() => {
+    const matchesByPosition = new Map<string, { start: number; end: number; findings: GeminiFinding[] }>();
+    if (hasFindings && sourceText) {
+      findings.forEach(finding => {
+        const quote = finding.specific_quote;
+        if (!quote || typeof quote !== 'string' || quote.trim() === '') return;
+        const escapedQuote = escapeRegex(quote);
+        const regex = new RegExp(escapedQuote, 'g');
+        let match;
+        while ((match = regex.exec(sourceText))) {
+          const key = `${match.index}-${match.index + quote.length}`;
+          const existing = matchesByPosition.get(key);
+          if (existing) {
+            if (!existing.findings.some(f => f.pattern_name === finding.pattern_name)) {
+              existing.findings.push(finding);
+            }
+          } else {
+            matchesByPosition.set(key, { start: match.index, end: match.index + quote.length, findings: [finding] });
           }
-        } else {
-          matchesByPosition.set(key, { start: match.index, end: match.index + quote.length, findings: [finding] });
         }
-      }
-    });
-  }
-
-  const sortedMatches = Array.from(matchesByPosition.values()).sort((a, b) => a.start - b.start);
-  const allFindingsForDisplay = sortedMatches.flatMap(match => match.findings);
-  const findingToIndexMap = new Map<GeminiFinding, number>();
-  allFindingsForDisplay.forEach((finding, index) => {
-    findingToIndexMap.set(finding, index);
-  });
-
-  const matchesWithCorrectIndex = sortedMatches.map(match => ({
-    ...match,
-    findings: match.findings.map(f => ({
-      ...f,
-      displayIndex: findingToIndexMap.get(f) as number
-    }))
-  }));
-
-  const finalHighlights: typeof matchesWithCorrectIndex = [];
-  if (matchesWithCorrectIndex.length > 0) {
-    let currentHighlight = { ...matchesWithCorrectIndex[0] };
-    for (let i = 1; i < matchesWithCorrectIndex.length; i++) {
-        const nextMatch = matchesWithCorrectIndex[i];
-        if (nextMatch.start < currentHighlight.end) {
-            nextMatch.findings.forEach(findingToAdd => {
-                if (!currentHighlight.findings.some(existing => existing.pattern_name === findingToAdd.pattern_name)) {
-                    currentHighlight.findings.push(findingToAdd);
-                }
-            });
-            currentHighlight.end = Math.max(currentHighlight.end, nextMatch.end);
-        } else {
-            finalHighlights.push(currentHighlight);
-            currentHighlight = { ...nextMatch };
-        }
+      });
     }
-    finalHighlights.push(currentHighlight);
-  }
+
+    const sortedMatches = Array.from(matchesByPosition.values()).sort((a, b) => a.start - b.start);
+    const allFindingsForDisplay = sortedMatches.flatMap(match => match.findings);
+    const findingToIndexMap = new Map<GeminiFinding, number>();
+    allFindingsForDisplay.forEach((finding, index) => {
+        findingToIndexMap.set(finding, index);
+    });
+
+    const matchesWithCorrectIndex = sortedMatches.map(match => ({
+        ...match,
+        findings: match.findings.map(f => ({
+        ...f,
+        displayIndex: findingToIndexMap.get(f) as number
+        }))
+    }));
+
+    const highlights: typeof matchesWithCorrectIndex = [];
+    if (matchesWithCorrectIndex.length > 0) {
+        let currentHighlight = { ...matchesWithCorrectIndex[0] };
+        for (let i = 1; i < matchesWithCorrectIndex.length; i++) {
+            const nextMatch = matchesWithCorrectIndex[i];
+            if (nextMatch.start < currentHighlight.end) {
+                nextMatch.findings.forEach(findingToAdd => {
+                    if (!currentHighlight.findings.some(existing => existing.pattern_name === findingToAdd.pattern_name)) {
+                        currentHighlight.findings.push(findingToAdd);
+                    }
+                });
+                currentHighlight.end = Math.max(currentHighlight.end, nextMatch.end);
+            } else {
+                highlights.push(currentHighlight);
+                currentHighlight = { ...nextMatch };
+            }
+        }
+        highlights.push(currentHighlight);
+    }
+    return highlights;
+  }, [findings, sourceText, hasFindings]);
 
   return (
-    <div className="mt-4" ref={reportContainerRef}> {/* Attach the ref to the main container */}
+    <div className="mt-4">
       <div className="flex justify-between items-center mb-4 border-b">
         <h2 className="text-lg font-semibold text-gray-800 pb-0">{t('report_title')}</h2>
         {hasFindings && (
-           <ShareMenu analysis={analysis} sourceText={sourceText} reportRef={reportContainerRef} />
+           <ShareMenu
+              analysis={analysis}
+              sourceText={sourceText}
+              profileData={profileDataBySection}
+              highlightData={finalHighlights}
+              patternColorMap={patternColorMap}
+           />
         )}
       </div>
 
@@ -343,7 +357,7 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
         <div>
           <h3 className="text-lg font-semibold text-gray-700 mb-3">{t('report_detected_patterns_title')}</h3>
           <div className="space-y-4">
-            {allFindingsForDisplay.map((finding, index) => {
+            {findings.map((finding, index) => {
               const color = patternColorMap.get(finding.pattern_name) || { hex: '#e5e7eb', border: 'border-gray-300', text: 'text-gray-800' };
               const i18nKey = patternNameToI18nKeyMap.get(finding.pattern_name) || finding.pattern_name;
               return (
