@@ -2,7 +2,7 @@
 
 ![HootSpot AI Logo](public/images/icons/icon128_onwhite.png)
 
-**HootSpot is a Chrome Extension designed to help you to identify and explain a wide range of psychological, rhetorical, and political manipulation tactics.**
+**HootSpot is a Chrome Extension designed to help you identify and explain a wide range of psychological, rhetorical, and political manipulation tactics.**
 
 [![React](https://img.shields.io/badge/React-19-blue?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue?logo=typescript)](https://www.typescriptlang.org/)
@@ -11,7 +11,7 @@
 [![Recharts](https://img.shields.io/badge/Recharts-3.0-purple)](https://recharts.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-This tool acts as a "side panel" in your browser, allowing you to paste text and receive an instant, in-depth analysis of its underlying messaging and potential manipulative techniques.
+This tool acts as a "side panel" in your browser, allowing you to select text from any webpage or paste it directly to receive an instant, in-depth analysis of its underlying messaging and potential manipulative techniques.
 
 ---
 
@@ -20,20 +20,20 @@ This tool acts as a "side panel" in your browser, allowing you to paste text and
 *   **Advanced Rhetorical Analysis**: Leverages a comprehensive, built-in **"Analyst's Lexicon"** to detect over 20 distinct patterns of manipulation, from simple guilt-tripping to complex socio-political rhetoric.
 *   **📊 Visual Manipulation Profile**: Instantly understand the nature of the text with a dynamic radar chart that visualizes the frequency and categories of detected manipulative tactics.
 *   **📝 Detailed, Actionable Reports**: Provides a multi-faceted report including an AI-generated summary, color-coded highlights in the source text, and detailed explanations for each detected pattern.
+*   **Seamless Context Menu Integration**: Right-click any selected text on a webpage to instantly send it to the HootSpot side panel. Choose to simply copy the text or to trigger an immediate analysis, streamlining your workflow.
 *   **⚙️ Privacy-Focused & Customizable**: Your API key and custom settings are stored securely and locally in your browser. Configure your experience by setting a custom character limit for analysis to manage API usage.
 *   **Multi-language Support**: The user interface is available in English, German, French, and Spanish out of the box.
 *   **🤖 AI-Powered Language Management**: A unique feature that allows you to use the AI to translate the extension's entire interface into any language. Simply provide a language code (e.g., "it" for Italian), and the AI handles the rest.
-*   **Seamless Integration**: Works as a Chrome Side Panel for easy access while you browse the web.
 
 ## 📸 Demo
 
-*(To be replaced with an actual demo GIF)*
+*(A demo GIF will be added here, showing a user selecting text on a news article, right-clicking to send it to HootSpot, and then reviewing the visual profile chart and detailed report in the side panel.)*
 
 ## 🔬 How It Works
 
 The core of HootSpot is the **`ANALYST_LEXICON`**, a detailed, multi-section prompt that provides the AI with a framework for understanding manipulative language. This lexicon is an integral part of the system prompt sent to the Google Gemini API.
 
-1.  When you submit a text for analysis, the extension sends it to the Google Gemini API along with the system prompt.
+1.  When you submit a text for analysis (either by right-clicking or pasting), the extension sends it to the Google Gemini API along with the system prompt.
 2.  This instructs the AI to act as an expert in linguistics, psychology, and rhetoric, and to use the lexicon to find matching patterns in your text.
 3.  The Gemini API returns a structured JSON response containing the analysis.
 4.  The extension parses this JSON and renders an interactive, multi-part report in the side panel, including the summary, visual chart, and highlighted text.
@@ -52,8 +52,8 @@ If you want to run the project locally for development or testing, follow these 
 
 1.  **Clone the Repository**
     ```bash
-    git clone https://github.com/rurounigit/athena-ai-text-analyzer.git
-    cd athena-ai-text-analyzer
+    git clone https://github.com/rurounigit/hootspot.git
+    cd hootspot
     ```
 
 2.  **Install Dependencies**
@@ -76,12 +76,25 @@ If you want to run the project locally for development or testing, follow these 
 
 ## 🚀 Getting Started
 
-1.  Click the **HootSpot AI icon** in your Chrome toolbar to open the side panel.
-2.  In the side panel, expand the **"Configuration"** section.
-3.  You'll need a Google Gemini API key. You can get one for free from **[Google AI Studio](https://aistudio.google.com/app/apikey)**.
-4.  Paste your key into the API key input field. You can also adjust the maximum character limit for analysis to control costs. Click **"Save & Test Configuration"**. The extension will validate the key.
-5.  Once the key is saved, paste any text you want to analyze into the text area and click **"Analyze Text"**.
-6.  Scroll down to review the generated report, complete with a visual profile, highlights, and explanations.
+1.  **First-Time Setup: Configure your API Key**
+    *   Click the **HootSpot AI icon** in your Chrome toolbar to open the side panel.
+    *   Expand the **"Configuration"** section.
+    *   You'll need a Google Gemini API key. You can get one for free from **[Google AI Studio](https://aistudio.google.com/app/apikey)**.
+    *   Paste your key into the API key input field and click **"Save & Test Configuration"**. The extension will validate the key. This is a one-time setup.
+
+2.  **Analyze Text from Any Webpage (Recommended Workflow)**
+    *   Highlight any text on a webpage.
+    *   Right-click the selected text.
+    *   Choose **"Analyze selected text with HootSpot"** from the context menu.
+    *   The side panel will open and automatically begin the analysis.
+
+3.  **Analyze Text Manually**
+    *   Open the side panel by clicking the HootSpot icon.
+    *   Paste any text you want to analyze into the text area.
+    *   Click **"Analyze Text"**.
+
+4.  **Review the Report**
+    *   Scroll down to review the generated report, complete with a visual profile, highlights, and explanations.
 
 ## 📖 The Analyst's Lexicon
 
@@ -120,4 +133,4 @@ This tool is intended for educational and analytical purposes. The analysis is g
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.
