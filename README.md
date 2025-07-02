@@ -21,13 +21,14 @@ This tool acts as a "side panel" in your browser, allowing you to select text fr
 *   **📊 Visual Manipulation Profile**: Instantly understand the nature of the text with a dynamic radar chart that visualizes the frequency and categories of detected manipulative tactics.
 *   **📝 Detailed, Actionable Reports**: Provides a multi-faceted report including an AI-generated summary, color-coded highlights in the source text, and detailed explanations for each detected pattern.
 *   **Seamless Context Menu Integration**: Right-click any selected text on a webpage to instantly send it to the HootSpot side panel. Choose to simply copy the text or to trigger an immediate analysis, streamlining your workflow.
-*   **⚙️ Privacy-Focused & Customizable**: Your API key and custom settings are stored securely and locally in your browser. Configure your experience by setting a custom character limit for analysis to manage API usage.
+*   **⚙️ Flexible AI Model Selection**: Choose from a list of available Google Gemini models to tailor the analysis to your needs, from fast, lightweight models to more powerful, nuanced ones.
+*   **Privacy-Focused & Customizable**: Your API key and custom settings are stored securely and locally in your browser. Configure your experience by setting a custom character limit for analysis to manage API usage.
 *   **Multi-language Support**: The user interface is available in English, German, French, and Spanish out of the box.
 *   **🤖 AI-Powered Language Management**: A unique feature that allows you to use the AI to translate the extension's entire interface into any language. Simply provide a language code (e.g., "it" for Italian), and the AI handles the rest.
 
 ## 📸 Demo
 
-*(A demo GIF will be added here, showing a user selecting text on a news article, right-clicking to send it to HootSpot, and then reviewing the visual profile chart and detailed report in the side panel.)*
+*[A demo GIF will be added here, showing a user selecting text, right-clicking to analyze, and reviewing the visual profile chart and detailed report in the side panel.]*
 
 ## 🔬 How It Works
 
@@ -98,7 +99,7 @@ If you want to run the project locally for development or testing, follow these 
 
 ## 📖 The Analyst's Lexicon
 
-HootSpot identifies patterns based on a detailed lexicon, which is categorized into three main sections. Each pattern in the lexicon is meticulously defined, complete with telltale signs, common phrases, and illustrative examples to ensure a high degree of analytical accuracy.
+HootSpot identifies patterns based on a detailed lexicon, which is categorized into three main sections. Each pattern is meticulously defined, complete with telltale signs and illustrative examples.
 
 *   **Section 1: Interpersonal & Psychological Manipulation Tactics**
     *   *(e.g., Gaslighting, Guilt Tripping, Love Bombing, DARVO)*
