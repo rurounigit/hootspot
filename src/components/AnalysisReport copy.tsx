@@ -1,11 +1,10 @@
 // src/components/AnalysisReport.tsx
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { GeminiAnalysisResponse, GeminiFinding } from '../types';
 import { InfoIcon } from '../constants';
 import { useTranslation } from '../i18n';
 import ManipulationProfileChart from './ManipulationProfileChart';
-import ShareMenu from './ShareMenu'; // Import the new component
 import { LEXICON_SECTIONS_BY_KEY, fullNameToKeyMap, keyToDescKeyMap } from '../lexicon-structure';
 
 // A color palette for pattern identification
@@ -156,7 +155,6 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
   const { t } = useTranslation();
   const { findings } = analysis;
   const hasFindings = findings && findings.length > 0;
-  const reportContainerRef = useRef<HTMLDivElement>(null); // Create a ref for the report container
 
   const [activeTab, setActiveTab] = useState<string | null>(null);
 
@@ -273,13 +271,8 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
   }
 
   return (
-    <div className="mt-4" ref={reportContainerRef}> {/* Attach the ref to the main container */}
-      <div className="flex justify-between items-center mb-4 border-b">
-        <h2 className="text-lg font-semibold text-gray-800 pb-0">{t('report_title')}</h2>
-        {hasFindings && (
-           <ShareMenu analysis={analysis} sourceText={sourceText} reportRef={reportContainerRef} />
-        )}
-      </div>
+    <div className="mt-4">
+      <h2 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-0">{t('report_title')}</h2>
 
       <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-md shadow-sm mb-6">
         <h3 className="text-lg font-semibold text-blue-800 mb-1">{t('report_summary_title')}</h3>
