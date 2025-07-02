@@ -25,6 +25,7 @@ const App: React.FC = () => {
   const [currentTextAnalyzed, setCurrentTextAnalyzed] = useState<string | null>(null);
   const [isKeyValid, setIsKeyValid] = useState<boolean>(false);
   const [textToAnalyze, setTextToAnalyze] = useState('');
+  const [pendingAnalysis, setPendingAnalysis] = useState<{ text: string } | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const textWasSetProgrammatically = useRef(false);
@@ -37,29 +38,33 @@ const App: React.FC = () => {
     const storedMaxCharLimit = localStorage.getItem(MAX_CHAR_LIMIT_STORAGE_KEY);
     if (storedMaxCharLimit) { setMaxCharLimit(parseInt(storedMaxCharLimit, 10) || DEFAULT_MAX_CHAR_LIMIT); }
 
-    // --- SETUP PUSH LISTENER ---
-    // This handles new text selections when the panel is *already open*.
-    const pushListener = (request: any) => {
+    // --- SETUP MESSAGE LISTENER (for both push and pull) ---
+    const messageListener = (request: any) => {
       if (request.type === 'PUSH_TEXT_TO_PANEL' && request.text) {
         textWasSetProgrammatically.current = true;
         setTextToAnalyze(request.text);
+        if (request.autoAnalyze) {
+          setPendingAnalysis({ text: request.text });
+        }
       }
     };
-    chrome.runtime.onMessage.addListener(pushListener);
+    chrome.runtime.onMessage.addListener(messageListener);
 
     // --- EXECUTE PULL MECHANISM ---
-    // This runs once on mount to get text selected *before* the panel opened.
     chrome.runtime.sendMessage({ type: 'PULL_INITIAL_TEXT' }, (response) => {
       if (chrome.runtime.lastError) { return; }
       if (response && response.text) {
         textWasSetProgrammatically.current = true;
         setTextToAnalyze(response.text);
+        if (response.autoAnalyze) {
+          setPendingAnalysis({ text: response.text });
+        }
       }
     });
 
     // --- Cleanup function ---
     return () => {
-      chrome.runtime.onMessage.removeListener(pushListener);
+      chrome.runtime.onMessage.removeListener(messageListener);
     };
   }, []);
 
@@ -71,6 +76,35 @@ const App: React.FC = () => {
       textWasSetProgrammatically.current = false; // Reset the flag
     }
   }, [textToAnalyze]);
+
+  const handleAnalyzeText = useCallback(async (text: string) => {
+    if (!apiKey) {
+      setError(t('error_api_key_not_configured'));
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
+    setAnalysisResult(null);
+    setCurrentTextAnalyzed(text);
+
+    try {
+      const result = await analyzeText(apiKey, text, t, language);
+      setAnalysisResult(result);
+    } catch (err: any) {
+      setError(err.message || "An unknown error occurred during analysis.");
+      setAnalysisResult(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [apiKey, t, language]);
+
+  // This effect triggers the auto-analysis once the API key is confirmed to be loaded.
+  useEffect(() => {
+    if (pendingAnalysis && apiKey) {
+      handleAnalyzeText(pendingAnalysis.text);
+      setPendingAnalysis(null); // Clear the pending request
+    }
+  }, [pendingAnalysis, apiKey, handleAnalyzeText]);
 
   useEffect(() => {
     if (analysisResult && analysisReportRef.current) {
@@ -95,27 +129,6 @@ const App: React.FC = () => {
     localStorage.setItem(MAX_CHAR_LIMIT_STORAGE_KEY, newLimit.toString());
     setMaxCharLimit(newLimit);
   }, []);
-
-  const handleAnalyzeText = async (text: string) => {
-    if (!apiKey) {
-      setError(t('error_api_key_not_configured'));
-      return;
-    }
-    setIsLoading(true);
-    setError(null);
-    setAnalysisResult(null);
-    setCurrentTextAnalyzed(text);
-
-    try {
-      const result = await analyzeText(apiKey, text, t, language);
-      setAnalysisResult(result);
-    } catch (err: any) { // Typo is fixed here
-      setError(err.message || "An unknown error occurred during analysis.");
-      setAnalysisResult(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <div className="relative flex flex-col h-screen bg-gradient-to-br from-athena-logo-bg to-athena-logo-bg">
@@ -163,7 +176,7 @@ const App: React.FC = () => {
           </div>
 
           {(!isLoading && !error && !analysisResult && currentTextAnalyzed && !apiKey) && (
-            <div className="mt-4 p-4 bg-yellow-100 border-yellow-400 text-yellow-700 rounded-md shadow-md">
+            <div className="mt-4 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded-md shadow-md">
                 {t('error_no_api_key_for_results')}
             </div>
           )}
