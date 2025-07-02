@@ -1,14 +1,25 @@
+// src/components/ApiKeyManager.tsx
+
 import React, { useState, useEffect } from 'react';
 import { SaveIcon, SettingsIcon, ExternalLinkIcon, InfoIcon } from '../constants';
 import { testApiKey } from '../services/geminiService';
 import { useTranslation } from '../i18n';
 import LanguageManager from './LanguageManager';
+import { GeminiModel } from '../types';
 
 interface ApiKeyManagerProps {
   currentApiKey: string | null;
   onApiKeySave: (key: string) => Promise<{success: boolean, error?: string}>;
   currentMaxCharLimit: number;
   onMaxCharLimitSave: (limit: number) => void;
+  models: GeminiModel[];
+  selectedModel: string;
+  onModelChange: (model: string) => void;
+  isThinkingEnabled: boolean;
+  onThinkingChange: (enabled: boolean) => void;
+  currentModelDetails: GeminiModel | null;
+  areModelsLoading: boolean;
+  modelsError: string | null;
 }
 
 const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
@@ -16,13 +27,21 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
   onApiKeySave,
   currentMaxCharLimit,
   onMaxCharLimitSave,
+  models,
+  selectedModel,
+  onModelChange,
+  isThinkingEnabled,
+  onThinkingChange,
+  currentModelDetails,
+  areModelsLoading,
+  modelsError,
 }) => {
   const { t } = useTranslation();
   const [apiKeyInput, setApiKeyInput] = useState(currentApiKey || '');
   const [maxCharLimitInput, setMaxCharLimitInput] = useState(currentMaxCharLimit.toString());
   const [isTesting, setIsTesting] = useState(false);
   const [testStatus, setTestStatus] = useState<{message: string, type: 'success' | 'error' } | null>(null);
-  const [isCollapsed, setIsCollapsed] = useState(() => !!localStorage.getItem('athenaAIApiKey')); // Collapse if API key is already in storage
+  const [isCollapsed, setIsCollapsed] = useState(() => !!localStorage.getItem('athenaAIApiKey'));
 
   useEffect(() => {
     setApiKeyInput(currentApiKey || '');
@@ -32,40 +51,48 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
     setMaxCharLimitInput(currentMaxCharLimit.toString());
   }, [currentMaxCharLimit]);
 
+  const safeModels = models || [];
+
+  // MODIFIED: This function now uses a try/catch block for clearer logic.
   const handleSave = async () => {
     setIsTesting(true);
     setTestStatus(null);
     const trimmedApiKey = apiKeyInput.trim();
-    if (!trimmedApiKey) {
-      setTestStatus({ message: t('error_api_key_empty'), type: 'error'});
-      setIsTesting(false);
-      return;
-    }
 
-    const { isValid, error: testError } = await testApiKey(trimmedApiKey, t);
-    if (isValid) {
-      const {success, error: saveError} = await onApiKeySave(trimmedApiKey);
-      if (success) {
-        setTestStatus({ message: t('success_api_key_saved'), type: 'success' });
-        setIsCollapsed(true); // Collapse after successful save
-      } else {
-         setTestStatus({ message: saveError || t('error_save_api_key'), type: 'error' });
+    try {
+      // 1. Test the API key against the currently selected model.
+      // This will throw an error if it fails, which the catch block will handle.
+      await testApiKey(trimmedApiKey, t, selectedModel);
+
+      // 2. If the test passes, proceed with saving everything.
+      const { success, error: saveError } = await onApiKeySave(trimmedApiKey);
+      if (!success) {
+        // This handles potential localStorage saving errors.
+        throw new Error(saveError || t('error_save_api_key'));
       }
-    } else {
-      setTestStatus({ message: testError || t('error_api_key_test_failed_generic'), type: 'error' });
-    }
 
-    const newLimit = parseInt(maxCharLimitInput, 10);
-    if (!isNaN(newLimit) && newLimit > 0) {
-      onMaxCharLimitSave(newLimit);
-    } else {
-      setTestStatus(prev => ({
-        message: `${prev ? prev.message + " " : ""}${t('error_invalid_char_limit')}`,
-        type: prev?.type === 'success' ? 'success' : 'error' // Keep success if API key was fine
-      }));
-      setMaxCharLimitInput(currentMaxCharLimit.toString()); // Reset to valid value
+      const newLimit = parseInt(maxCharLimitInput, 10);
+      if (!isNaN(newLimit) && newLimit > 0) {
+        onMaxCharLimitSave(newLimit);
+      } else {
+        setMaxCharLimitInput(currentMaxCharLimit.toString());
+        // Show a success message but also inform about the invalid limit.
+        setTestStatus({ message: `${t('success_api_key_saved')} ${t('error_invalid_char_limit')}`, type: 'success' });
+        setIsTesting(false);
+        return; // Early return after setting status
+      }
+
+      // 3. If everything was successful, show the success message.
+      setTestStatus({ message: t('success_api_key_saved'), type: 'success' });
+      setIsCollapsed(true);
+
+    } catch (err: any) {
+      // 4. If testApiKey (or any other step in try) fails, display the error.
+      setTestStatus({ message: err.message, type: 'error' });
+    } finally {
+      // 5. Always stop the loading spinner.
+      setIsTesting(false);
     }
-    setIsTesting(false);
   };
 
   return (
@@ -127,7 +154,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
             />
           </div>
 
-          <div className="mb-6">
+          <div className="mb-4">
             <label htmlFor="maxCharLimit" className="block text-sm font-medium text-gray-700 mb-1">
               {t('config_max_chars_label')}
             </label>
@@ -142,7 +169,42 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
             />
             <p className="text-xs text-gray-500 mt-1">{t('config_max_chars_info')}</p>
           </div>
-
+          <div className="mb-6">
+            <label htmlFor="modelSelector" className="block text-sm font-medium text-gray-700 mb-1">
+              {t('config_model_label')}
+            </label>
+            <div className="flex items-center space-x-2">
+              <select
+                id="modelSelector"
+                value={selectedModel}
+                onChange={(e) => onModelChange(e.target.value)}
+                disabled={areModelsLoading || safeModels.length === 0}
+                className="flex-grow w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+              >
+                {areModelsLoading && <option>Loading models...</option>}
+                {modelsError && <option>Error loading models</option>}
+                {!areModelsLoading && !modelsError && safeModels.map(model => (
+                  <option key={model.name} value={model.name}>
+                    {model.displayName}
+                  </option>
+                ))}
+              </select>
+              <div className="flex items-center pl-2" title={!currentModelDetails?.thinking ? "This model does not support the 'thinking' feature." : "Enable 'thinking' feature"}>
+                  <input
+                    type="checkbox"
+                    id="thinkingToggle"
+                    checked={isThinkingEnabled}
+                    onChange={(e) => onThinkingChange(e.target.checked)}
+                    disabled={!currentModelDetails?.thinking}
+                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+                  />
+                  <label htmlFor="thinkingToggle" className={`ml-2 text-sm font-medium ${!currentModelDetails?.thinking ? 'text-gray-400' : 'text-gray-700'}`}>
+                    Thinking
+                  </label>
+              </div>
+            </div>
+            {modelsError && <p className="text-xs text-red-500 mt-1">{modelsError}</p>}
+          </div>
           <button
             onClick={handleSave}
             disabled={isTesting}

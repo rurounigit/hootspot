@@ -37,4 +37,10 @@ export interface GeminiApiResponseWithGrounding {
   candidates?: Candidate[];
   // Include other relevant fields from GenerateContentResponse if needed
 }
-    
+
+export interface GeminiModel {
+  name: string;
+  displayName: string;
+  supportedGenerationMethods: string[];
+  thinking?: boolean;
+}

@@ -2,20 +2,26 @@
 
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { GEMINI_MODEL_NAME, SYSTEM_PROMPT, TRANSLATION_SYSTEM_PROMPT } from "../constants";
-import { GeminiAnalysisResponse } from "../types";
+import { GeminiAnalysisResponse, GeminiModel } from "../types";
 import { LanguageCode } from "../i18n";
 
-// Type for the translation function, passed from components
 type TFunction = (key: string, replacements?: Record<string, string | number>) => string;
 
-export const testApiKey = async (apiKey: string, t: TFunction): Promise<{isValid: boolean, error?: string}> => {
+// MODIFIED: This function now throws an error on failure instead of returning an object.
+export const testApiKey = async (
+  apiKey: string,
+  t: TFunction,
+  modelName: string
+): Promise<void> => {
   if (!apiKey) {
-    return {isValid: false, error: t('error_api_key_empty')};
+    // Throw an error that the calling function can catch.
+    throw new Error(t('error_api_key_empty'));
   }
   try {
     const ai = new GoogleGenAI({ apiKey });
     const response: GenerateContentResponse = await ai.models.generateContent({
-      model: GEMINI_MODEL_NAME,
+      // Use the dynamically selected model for the test.
+      model: modelName || GEMINI_MODEL_NAME,
       contents: "Hello",
       config: {
         temperature: 0,
@@ -23,24 +29,34 @@ export const testApiKey = async (apiKey: string, t: TFunction): Promise<{isValid
         topP: 0,
       }
     });
-    if (response.text && response.text.trim().length > 0) {
-        return {isValid: true};
-    } else {
-        return {isValid: false, error: t('test_query_returned_empty')};
+
+    // If the response is empty or invalid, it's a failure.
+    if (!response.text || response.text.trim().length === 0) {
+        throw new Error(t('test_query_returned_empty'));
     }
+    // If we reach here, the function completes successfully.
   } catch (error: any) {
     console.error("API Key test failed:", error);
-    let errorMessage = t('error_api_key_test_failed_generic');
-    if (error.message) {
-      if (error.toString().includes("API key not valid")) {
-        errorMessage = t('error_api_key_invalid');
-      } else if (error.toString().includes("fetch")) {
-        errorMessage = t('error_api_key_network');
-      } else {
-        errorMessage = t('error_api_key_test_failed_message', { message: error.message });
-      }
+
+    // Use the same robust error parsing as analyzeText.
+    let apiErrorObject;
+    try {
+      apiErrorObject = JSON.parse(error.message);
+    } catch (e) {
+      // It's not a JSON error from the API, so use the original message.
+      throw new Error(t('error_api_key_test_failed_message', { message: error.message || 'Unknown error' }));
     }
-    return {isValid: false, error: errorMessage};
+
+    if (apiErrorObject && apiErrorObject.error && apiErrorObject.error.message) {
+      const { code, status, message } = apiErrorObject.error;
+      if (status === 'RESOURCE_EXHAUSTED' || code === 429) {
+        throw new Error(t('error_quota_exhausted', { message: message }));
+      }
+      throw new Error(t('error_api_generic', { message: message }));
+    }
+
+    // Fallback for any other kind of error.
+    throw new Error(t('error_api_key_test_failed_generic'));
   }
 };
 
@@ -48,7 +64,8 @@ export const analyzeText = async (
   apiKey: string,
   textToAnalyze: string,
   t: TFunction,
-  language: LanguageCode
+  language: LanguageCode,
+  modelName: string,
 ): Promise<GeminiAnalysisResponse> => {
   if (!apiKey) {
     throw new Error(t('error_api_key_not_configured'));
@@ -66,7 +83,7 @@ export const analyzeText = async (
 
   try {
     const response: GenerateContentResponse = await ai.models.generateContent({
-      model: GEMINI_MODEL_NAME,
+      model: modelName || GEMINI_MODEL_NAME,
       contents: [
         { role: "user", parts: [{ text: `Please analyze the following text: ${textToAnalyze}` }] }
       ],
@@ -100,10 +117,71 @@ export const analyzeText = async (
     }
   } catch (error: any) {
     console.error("Error analyzing text with Gemini API:", error);
+
     if (error.message && error.message.includes("SAFETY")) {
         throw new Error(t('error_safety_block'));
     }
+
+    let apiErrorObject;
+    try {
+      apiErrorObject = JSON.parse(error.message);
+    } catch (parseError) {
+      throw new Error(t('error_analysis_failed', { message: error.message || "Unknown API error" }));
+    }
+
+    if (apiErrorObject && apiErrorObject.error && apiErrorObject.error.message) {
+      const { code, status, message } = apiErrorObject.error;
+      if (status === 'RESOURCE_EXHAUSTED' || code === 429) {
+        throw new Error(t('error_quota_exhausted', { message: message }));
+      } else {
+        throw new Error(t('error_api_generic', { message: message }));
+      }
+    }
+
     throw new Error(t('error_analysis_failed', { message: error.message || "Unknown API error" }));
+  }
+};
+
+export const fetchModels = async (apiKey: string): Promise<GeminiModel[]> => {
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error.message || `HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+
+    if (!Array.isArray(data.models)) {
+      if (data.error) {
+        throw new Error(data.error.message);
+      }
+      console.warn("API did not return a models array. Response:", data);
+      return [];
+    }
+
+    const models = data.models as GeminiModel[];
+
+    const filteredModels = models.filter(model =>
+      model.supportedGenerationMethods.includes("generateContent") &&
+      !model.name.includes("embedding") &&
+      !model.name.includes("aqa") &&
+      !model.name.includes("imagen")
+    );
+
+    filteredModels.sort((a, b) => {
+      const aIsPreview = a.displayName.toLowerCase().includes('preview');
+      const bIsPreview = b.displayName.toLowerCase().includes('preview');
+
+      if (aIsPreview && !bIsPreview) return -1;
+      if (!aIsPreview && bIsPreview) return 1;
+
+      return a.displayName.localeCompare(b.displayName);
+    });
+
+    return filteredModels;
+  } catch (error) {
+    console.error("Failed to fetch models:", error);
+    throw error;
   }
 };
 

@@ -1,6 +1,16 @@
 import React from 'react';
 
 export const GEMINI_MODEL_NAME = 'gemini-2.5-flash-lite-preview-06-17';
+//models/gemini-2.5-pro-preview-03-25
+//models/gemini-2.5-flash-preview-04-17
+//models/gemini-2.5-flash-preview-05-20
+//models/gemini-2.5-flash-preview-04-17-thinking
+//models/gemini-2.5-flash-lite-preview-06-17
+//models/gemini-2.5-pro-preview-05-06
+//models/gemini-2.5-pro-preview-06-05
+//models/gemini-2.0-flash-lite-preview-02-05
+//models/gemini-2.0-flash-lite-preview
+
 
 const ANALYST_LEXICON = `
 The Analyst's Lexicon: A Guide to Manipulative Language
@@ -296,6 +306,7 @@ RULES:
 export const API_KEY_STORAGE_KEY = 'athenaAIApiKey';
 export const MAX_CHAR_LIMIT_STORAGE_KEY = 'athenaAIMaxCharLimit';
 export const CUSTOM_LANGUAGES_KEY = 'athenaAICustomLanguages';
+export const SELECTED_MODEL_STORAGE_KEY = 'athenaAISelectedModel';
 export const DEFAULT_MAX_CHAR_LIMIT = 6000;
 
 export const HootSpotLogoIcon: React.FC<{ className?: string }> = ({ className }) => (

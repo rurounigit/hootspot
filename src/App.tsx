@@ -7,17 +7,26 @@ import AnalysisReport from './components/AnalysisReport';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import { useTranslation } from './i18n';
 import { analyzeText } from './services/geminiService';
-import { GeminiAnalysisResponse } from './types';
+import { useModels } from './hooks/useModels';
+import { GeminiAnalysisResponse, GeminiModel } from './types';
 import {
   API_KEY_STORAGE_KEY,
   MAX_CHAR_LIMIT_STORAGE_KEY,
   DEFAULT_MAX_CHAR_LIMIT,
-  HootSpotLogoIcon
+  HootSpotLogoIcon,
+  SELECTED_MODEL_STORAGE_KEY,
+  GEMINI_MODEL_NAME
 } from './constants';
 
 const App: React.FC = () => {
   const { t, language } = useTranslation();
   const [apiKey, setApiKey] = useState<string | null>(null);
+  const { models, isLoading: areModelsLoading, error: modelsError } = useModels(apiKey);
+  const [selectedModel, setSelectedModel] = useState<string>(() => {
+    return localStorage.getItem(SELECTED_MODEL_STORAGE_KEY) || GEMINI_MODEL_NAME;
+  });
+  const [isThinkingEnabled, setIsThinkingEnabled] = useState<boolean>(false);
+  const [currentModelDetails, setCurrentModelDetails] = useState<GeminiModel | null>(null);
   const [maxCharLimit, setMaxCharLimit] = useState<number>(DEFAULT_MAX_CHAR_LIMIT);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,6 +77,30 @@ const App: React.FC = () => {
     };
   }, []);
 
+  // *** THIS IS THE REPLACEMENT FOR THE TWO PREVIOUS useEffect HOOKS ***
+  useEffect(() => {
+    // 1. Save the user's selection to local storage
+    localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel);
+
+    // 2. Find the full details of the currently selected model from the fetched list
+    const details = models.find(m => m.name === selectedModel) || null;
+    setCurrentModelDetails(details);
+
+    // 3. If the list of models has finished loading and the currently selected model
+    // is NOT in that list, we reset to a sensible default to avoid a blank selection.
+    if (models.length > 0 && !details) {
+      const defaultModel = models.find(m => m.name === GEMINI_MODEL_NAME) || models[0];
+      setSelectedModel(defaultModel.name);
+    }
+
+    // 4. Update the 'thinking' toggle based on the selected model's capability.
+    // If the model does not support 'thinking', we ensure the checkbox is disabled and unchecked.
+    if (!details?.thinking) {
+      setIsThinkingEnabled(false);
+    }
+  }, [selectedModel, models]);
+
+
   // This effect handles focusing the textarea when text is set programmatically.
   useEffect(() => {
     if (textWasSetProgrammatically.current) {
@@ -88,7 +121,7 @@ const App: React.FC = () => {
     setCurrentTextAnalyzed(text);
 
     try {
-      const result = await analyzeText(apiKey, text, t, language);
+      const result = await analyzeText(apiKey, text, t, language, selectedModel);
       setAnalysisResult(result);
     } catch (err: any) {
       setError(err.message || "An unknown error occurred during analysis.");
@@ -96,7 +129,7 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [apiKey, t, language]);
+  }, [apiKey, t, language, selectedModel]);
 
   // This effect triggers the auto-analysis once the API key is confirmed to be loaded.
   useEffect(() => {
@@ -145,11 +178,20 @@ const App: React.FC = () => {
         </header>
 
         <main className="flex-grow">
+          {/* *** ADDED THE REQUIRED PROPS HERE *** */}
           <ApiKeyManager
             currentApiKey={apiKey}
             onApiKeySave={handleApiKeySave}
             currentMaxCharLimit={maxCharLimit}
             onMaxCharLimitSave={handleMaxCharLimitSave}
+            models={models}
+            selectedModel={selectedModel}
+            onModelChange={setSelectedModel}
+            isThinkingEnabled={isThinkingEnabled}
+            onThinkingChange={setIsThinkingEnabled}
+            currentModelDetails={currentModelDetails}
+            areModelsLoading={areModelsLoading}
+            modelsError={modelsError}
           />
 
           <TextAnalyzer
