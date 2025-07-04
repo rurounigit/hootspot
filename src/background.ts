@@ -79,7 +79,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ text: null, autoAnalyze: false });
     }
   }
-  // This is crucial for enabling the asynchronous sendResponse.
+  // This block is updated to use request.url instead of request.dataUrl
+  else if (request.type === 'DOWNLOAD_PDF') {
+    // Check for the 'url' property sent from ShareMenu.tsx
+    if (request.url) {
+      chrome.downloads.download({
+        url: request.url, // Use the received blob: URL
+        filename: 'HootSpot_Analysis_Report.pdf',
+        saveAs: true // This is generally better UX for extensions
+      });
+    }
+  }
+
+  // This is crucial for enabling asynchronous sendResponse and must remain.
   return true;
 });
 

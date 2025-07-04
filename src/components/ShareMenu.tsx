@@ -1,7 +1,7 @@
 // src/components/ShareMenu.tsx
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { GeminiAnalysisResponse, GeminiFinding } from '../types';
 import { ShareIcon } from '../constants';
 import { useTranslation } from '../i18n';
@@ -10,29 +10,26 @@ import { LEXICON_SECTIONS_BY_KEY, fullNameToKeyMap } from '../lexicon-structure'
 interface ShareMenuProps {
   analysis: GeminiAnalysisResponse;
   sourceText: string | null;
+  profileData: any[];
   highlightData: any[];
-  patternColorMap: Map<string, any>;
 }
 
-const keyToCategoryMap = new Map<string, string>();
-Object.entries(LEXICON_SECTIONS_BY_KEY).forEach(([category, patterns]) => {
-  Object.keys(patterns).forEach(key => {
-    keyToCategoryMap.set(key, category);
-  });
-});
-
-const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightData, patternColorMap }) => {
+const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, profileData, highlightData }) => {
   const { t } = useTranslation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
   const findingsByCategory = useMemo(() => {
+    const keyToCategoryMap = new Map<string, string>();
+    Object.entries(LEXICON_SECTIONS_BY_KEY).forEach(([category, patterns]) => {
+      Object.keys(patterns).forEach(key => keyToCategoryMap.set(key, category));
+    });
     return analysis.findings.reduce((acc, finding) => {
       const simpleKey = fullNameToKeyMap.get(finding.pattern_name);
       const category = simpleKey ? keyToCategoryMap.get(simpleKey) || 'Uncategorized' : 'Uncategorized';
-      if (!acc[category]) {
-        acc[category] = [];
-      }
+      if (!acc[category]) acc[category] = [];
       acc[category].push(finding);
       return acc;
     }, {} as Record<string, GeminiFinding[]>);
@@ -40,151 +37,82 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsMenuOpen(false);
-      }
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) setIsMenuOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handlePdfDownload = () => {
-    const doc = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 40;
-    const contentWidth = pageWidth - margin * 2;
-    let y = 0;
+  const cleanup = () => {
+    if (iframeRef.current) {
+      document.body.removeChild(iframeRef.current);
+      iframeRef.current = null;
+    }
+    window.removeEventListener('message', handlePdfMessage);
+    setIsGenerating(false);
+  };
 
-    // --- PDF DRAWING HELPER FUNCTIONS ---
+  const handlePdfMessage = (event: MessageEvent) => {
+    if (event.origin !== window.location.origin) return;
 
-    const drawTextAndCalcHeight = (text: string, x: number, startY: number, maxWidth: number, options: any = {}) => {
-        doc.setFont(options.font || 'helvetica', options.style || 'normal');
-        doc.setFontSize(options.fontSize || 10);
-        doc.setTextColor(options.textColor || '#000000');
+    const { type, blob, error } = event.data;
 
-        const lines = doc.splitTextToSize(text, maxWidth);
-        const textHeight = doc.getTextDimensions(lines).h;
+    if (type === 'PDF_GENERATED' && blob) {
+      // Create a short-lived, temporary URL for the blob
+      const objectUrl = URL.createObjectURL(blob);
 
-        // Check for page break BEFORE drawing
-        if (startY + textHeight > doc.internal.pageSize.getHeight() - margin) {
-            doc.addPage();
-            startY = margin;
-        }
+      // Send this short URL to the background script, avoiding message size limits
+      chrome.runtime.sendMessage({ type: 'DOWNLOAD_PDF', url: objectUrl });
 
-        doc.text(lines, x, startY);
-        return startY + textHeight;
-    };
+      // Revoke the URL after a short delay to give the download API time to access it.
+      // This prevents memory leaks.
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
 
-    const drawHighlightedText = (text: string, ranges: any[], startY: number) => {
-        let currentY = startY;
-        const fontSize = 10;
-        const lineHeight = fontSize * 1.5;
-        doc.setFontSize(fontSize);
-        doc.setTextColor('#374151');
-
-        const sortedRanges = ranges.sort((a, b) => a.start - b.start);
-        let segments: { text: string; highlighted: boolean }[] = [];
-        let lastIndex = 0;
-
-        sortedRanges.forEach(range => {
-            if (range.start > lastIndex) {
-                segments.push({ text: text.substring(lastIndex, range.start), highlighted: false });
-            }
-            segments.push({ text: text.substring(range.start, range.end), highlighted: true });
-            lastIndex = range.end;
-        });
-        if (lastIndex < text.length) {
-            segments.push({ text: text.substring(lastIndex), highlighted: false });
-        }
-
-        let currentX = margin;
-        segments.forEach(segment => {
-            const words = segment.text.split(/(\s+)/); // Split by space but keep it
-            words.forEach(word => {
-                if (word.trim() === '') {
-                    currentX += doc.getStringUnitWidth(word) * fontSize / doc.internal.scaleFactor;
-                    return;
-                }
-                const wordWidth = doc.getStringUnitWidth(word) * fontSize / doc.internal.scaleFactor;
-                if (currentX + wordWidth > pageWidth - margin) {
-                    currentY += lineHeight;
-                    currentX = margin;
-                }
-                if (segment.highlighted) {
-                    doc.setFillColor('#FECACA');
-                    doc.rect(currentX, currentY - fontSize + 2, wordWidth, fontSize + 2, 'F');
-                }
-                doc.text(word, currentX, currentY);
-                currentX += wordWidth;
-            });
-        });
-        return currentY + lineHeight;
-    };
-
-    // --- START BUILDING THE PDF ---
-
-    y = margin + 20;
-    doc.setFont('helvetica', 'bold');
-    y = drawTextAndCalcHeight("HootSpot AI Analysis Report", pageWidth / 2, y, contentWidth, { fontSize: 24, align: 'center' });
-    y += 10;
-    doc.setDrawColor('#DDDDDD');
-    doc.line(margin, y, pageWidth - margin, y);
-    y += 20;
-
-    y = drawTextAndCalcHeight("Analysis Summary", margin, y, contentWidth, { fontSize: 16, style: 'bold', textColor: '#1F2937' });
-    y += 5;
-    y = drawTextAndCalcHeight(analysis.analysis_summary, margin, y, contentWidth, { fontSize: 11, textColor: '#374151' });
-    y += 20;
-
-    if (sourceText) {
-        y = drawTextAndCalcHeight("Highlighted Source Text", margin, y, contentWidth, { fontSize: 16, style: 'bold', textColor: '#1F2937' });
-        y += 10;
-        y = drawHighlightedText(sourceText, highlightData, y);
-        y += 20;
+    } else if (type === 'PDF_ERROR') {
+      console.error("PDF generation failed in sandbox:", error);
     }
 
-    y = drawTextAndCalcHeight("Detected Patterns", margin, y, contentWidth, { fontSize: 16, style: 'bold', textColor: '#1F2937' });
+    cleanup();
+  };
 
-    Object.entries(findingsByCategory).forEach(([category, findings]) => {
-        y += 20;
-        y = drawTextAndCalcHeight(category, margin, y, contentWidth, { fontSize: 14, style: 'bold', textColor: '#4B5563' });
-
-        findings.forEach(finding => {
-            const color = patternColorMap.get(finding.pattern_name) || { hex: '#F9FAFB' };
-
-            // Estimate card height to check for page break
-            const quoteHeight = doc.getTextDimensions(doc.splitTextToSize(finding.specific_quote, contentWidth - 20)).h;
-            const explanationHeight = doc.getTextDimensions(doc.splitTextToSize(finding.explanation, contentWidth - 20)).h;
-            const cardHeight = 60 + quoteHeight + explanationHeight;
-
-            if (y + cardHeight > doc.internal.pageSize.getHeight() - margin) {
-                doc.addPage();
-                y = margin;
-            }
-
-            y += 10;
-            doc.setFillColor(color.hex);
-            doc.roundedRect(margin, y, contentWidth, cardHeight, 5, 5, 'F');
-
-            let innerY = y + 15;
-            innerY = drawTextAndCalcHeight(finding.pattern_name, margin + 10, innerY, contentWidth - 20, { fontSize: 11, style: 'bold' });
-            innerY += 10;
-
-            innerY = drawTextAndCalcHeight("Specific Quote:", margin + 10, innerY, contentWidth - 20, { fontSize: 9, style: 'bold', textColor: '#4B5563' });
-            innerY = drawTextAndCalcHeight(`"${finding.specific_quote}"`, margin + 10, innerY, contentWidth - 20, { fontSize: 10, style: 'italic' });
-            innerY += 10;
-
-            innerY = drawTextAndCalcHeight("Explanation:", margin + 10, innerY, contentWidth - 20, { fontSize: 9, style: 'bold', textColor: '#4B5563' });
-            innerY = drawTextAndCalcHeight(finding.explanation, margin + 10, innerY, contentWidth - 20, { fontSize: 10 });
-
-            y += cardHeight + 10;
-        });
-    });
-
-    doc.save('HootSpot_Analysis_Report.pdf');
+  const handlePdfDownload = async () => {
     setIsMenuOpen(false);
+    setIsGenerating(true);
+
+    const chartImages: Record<string, string> = {};
+    for (const section of profileData) {
+      if (section.hasFindings) {
+        const chartElement = document.getElementById(`chart-container-${section.title}`);
+        if (chartElement) {
+          try {
+            const canvas = await html2canvas(chartElement, { scale: 2, backgroundColor: null });
+            chartImages[section.title] = canvas.toDataURL('image/png');
+          } catch (error) {
+            console.error("Failed to capture chart image:", error);
+          }
+        }
+      }
+    }
+
+    const dataForPdf = {
+      analysis: { ...analysis, findingsByCategory },
+      sourceText,
+      highlightData,
+      chartImages,
+      profileData,
+    };
+
+    window.addEventListener('message', handlePdfMessage);
+
+    const iframe = document.createElement('iframe');
+    iframe.src = chrome.runtime.getURL('pdf-generator.html');
+    iframe.style.display = 'none';
+    iframeRef.current = iframe;
+    document.body.appendChild(iframe);
+
+    iframe.onload = () => {
+      iframe.contentWindow?.postMessage({ type: 'GENERATE_PDF', data: dataForPdf }, '*');
+    };
   };
 
   const handleJsonDownload = () => {
@@ -197,17 +125,14 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
     const jsonString = JSON.stringify(structuredData, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'HootSpot_Analysis_Report.json';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    chrome.downloads.download({ url: url, filename: 'HootSpot_Analysis_Report.json' });
+    // Revoke URL to prevent memory leak
+    setTimeout(() => URL.revokeObjectURL(url), 100);
     setIsMenuOpen(false);
   };
 
   const handleTwitterShare = () => {
+    // This function remains the same
     const summary = analysis.analysis_summary;
     const detectedPatterns = [...new Set(analysis.findings.map(f => f.pattern_name))];
     let tweetText = `I analyzed a text with HootSpot AI and found these patterns: ${detectedPatterns.slice(0, 2).join(', ')}. Summary: "${summary}"`;
@@ -223,10 +148,15 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
     <div className="relative share-menu-container" ref={menuRef}>
       <button
         onClick={() => setIsMenuOpen(!isMenuOpen)}
-        className="p-2 text-gray-500 hover:text-blue-600 rounded-full hover:bg-gray-100"
+        disabled={isGenerating}
+        className="p-2 text-gray-500 hover:text-blue-600 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-wait"
         title="Share or Download Report"
       >
-        <ShareIcon className="w-5 h-5" />
+        {isGenerating ? (
+          <div className="spinner w-5 h-5 border-t-blue-600"></div>
+        ) : (
+          <ShareIcon className="w-5 h-5" />
+        )}
       </button>
 
       {isMenuOpen && (

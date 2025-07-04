@@ -3,10 +3,11 @@
   "name": "HootSpot AI Text Analyzer Extension",
   "version": "1.0.0",
   "description": "An application to analyze text for psychological and rhetorical patterns using the Gemini API. Users provide their own API key.",
-   "permissions": [
+  "permissions": [
     "storage",
     "contextMenus",
-    "sidePanel"
+    "sidePanel",
+    "downloads"
   ],
   "action": {
     "default_icon": {
@@ -27,17 +28,26 @@
   "side_panel": {
     "default_path": "index.html"
   },
-  "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://generativelanguage.googleapis.com;"
-  },
   "web_accessible_resources": [
     {
       "resources": [
         "assets/*",
         "background.js",
-        "images/*"
+        "images/*",
+        "pdf-generator.html"
       ],
-      "matches": ["<all_urls>"]
+      "matches": [
+        "<all_urls>"
+      ]
     }
-  ]
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://generativelanguage.googleapis.com;",
+    "sandbox": "sandbox allow-scripts; script-src 'self' 'unsafe-eval' blob:;"
+  },
+  "sandbox": {
+    "pages": [
+      "pdf-generator.html"
+    ]
+  }
 }

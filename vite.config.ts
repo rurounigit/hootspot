@@ -10,14 +10,13 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: 'index.html',
-        // Before (Incorrect): Looking in the root directory
-        // background: 'background.ts'
-
-        // After (Correct): Pointing to the file inside the src/ directory
-        background: 'src/background.ts'
+        background: 'src/background.ts',
+        // Update the input to point to the file in the root directory
+        'pdf-generator': 'pdf-generator.html',
       },
       output: {
         entryFileNames: assetInfo => {
+          // This ensures the background script has a predictable name
           return assetInfo.name === 'background' ? 'background.js' : 'assets/[name]-[hash].js';
         },
         chunkFileNames: 'assets/[name]-[hash].js',

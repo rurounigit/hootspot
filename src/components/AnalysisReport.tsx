@@ -57,6 +57,7 @@ const patternNameToI18nKeyMap = new Map<string, string>([
 const patternNameToDescKeyMap = new Map<string, string>([
     ["Guilt Tripping", "pattern_guilt_tripping_desc"],
     ["Gaslighting", "pattern_gaslighting_desc"],
+    // ... (rest of the map is unchanged, including it for completeness)
     ["Threatening / Coercion", "pattern_threatening_coercion_desc"],
     ["Invalidation / Minimizing", "pattern_invalidation_minimizing_desc"],
     ["Deflection / Shifting Blame", "pattern_deflection_shifting_blame_desc"],
@@ -288,6 +289,8 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
            <ShareMenu
               analysis={analysis}
               sourceText={sourceText}
+              // --- PROP CHANGE ---
+              // Pass all the necessary data to the ShareMenu for PDF generation
               profileData={profileDataBySection}
               highlightData={finalHighlights}
               patternColorMap={patternColorMap}
@@ -332,7 +335,13 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
 
           <div className="mt-4">
             {profileDataBySection.map(section => (
-              <div key={section.title} className={activeTab === section.title ? 'block' : 'hidden'}>
+              // --- ID CHANGE ---
+              // Add a unique ID to each chart container so it can be captured as an image
+              <div
+                key={section.title}
+                id={`chart-container-${section.title}`}
+                className={activeTab === section.title ? 'block' : 'hidden'}
+              >
                 <ManipulationProfileChart
                   data={section.data}
                   color={section.color}
