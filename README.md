@@ -20,15 +20,16 @@ This tool acts as a "side panel" in your browser, allowing you to select text fr
 *   **Advanced Rhetorical Analysis**: Leverages a comprehensive, built-in **"Analyst's Lexicon"** to detect over 20 distinct patterns of manipulation, from simple guilt-tripping to complex socio-political rhetoric.
 *   **📊 Visual Manipulation Profile**: Instantly understand the nature of the text with a dynamic radar chart that visualizes the frequency and categories of detected manipulative tactics.
 *   **📝 Detailed, Actionable Reports**: Provides a multi-faceted report including an AI-generated summary, color-coded highlights in the source text, and detailed explanations for each detected pattern.
+*   **📥 Export and Share Reports**: Easily share your findings. Download a complete, professionally formatted PDF report, including highlights and visual charts. You can also export the raw analysis as a JSON file or share a brief summary directly to X (Twitter).
 *   **Seamless Context Menu Integration**: Right-click any selected text on a webpage to instantly send it to the HootSpot side panel. Choose to simply copy the text or to trigger an immediate analysis, streamlining your workflow.
-*   **⚙️ Flexible AI Model Selection**: Choose from a list of available Google Gemini models to tailor the analysis to your needs, from fast, lightweight models to more powerful, nuanced ones.
+*   **⚙️ Flexible AI Model Selection**: Choose from a list of Google Gemini models that are automatically fetched and updated. Models are conveniently grouped into "Stable" and "Preview" categories, allowing you to tailor the analysis to your needs—from fast, lightweight models to more powerful, nuanced ones.
 *   **Privacy-Focused & Customizable**: Your API key and custom settings are stored securely and locally in your browser. Configure your experience by setting a custom character limit for analysis to manage API usage.
 *   **Multi-language Support**: The user interface is available in English, German, French, and Spanish out of the box.
 *   **🤖 AI-Powered Language Management**: A unique feature that allows you to use the AI to translate the extension's entire interface into any language. Simply provide a language code (e.g., "it" for Italian), and the AI handles the rest.
 
 ## 📸 Demo
 
-*[A demo GIF will be added here, showing a user selecting text, right-clicking to analyze, and reviewing the visual profile chart and detailed report in the side panel.]*
+*[A demo GIF will be added here, showing a user selecting text, right-clicking to analyze, reviewing the visual profile and detailed report, and using the Share Menu to export a PDF.]*
 
 ## 🔬 How It Works
 
