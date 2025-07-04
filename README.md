@@ -29,7 +29,7 @@ This tool acts as a "side panel" in your browser, allowing you to select text fr
 
 ## 📸 Demo
 
-*[A demo GIF will be added here, showing a user selecting text, right-clicking to analyze, reviewing the visual profile and detailed report, and using the Share Menu to export a PDF.]*
+![HootSpot AI Logo](public/images/screenshot.jpg)
 
 ## 🔬 How It Works
 
