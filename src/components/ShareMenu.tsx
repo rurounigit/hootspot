@@ -53,7 +53,9 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, profileData
   };
 
   const handlePdfMessage = (event: MessageEvent) => {
-    if (event.origin !== window.location.origin) return;
+    if (event.source !== iframeRef.current?.contentWindow) {
+      return;
+      }
 
     const { type, blob, error } = event.data;
 

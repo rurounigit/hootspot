@@ -35,7 +35,7 @@ const generatePdf = async (event: MessageEvent) => {
     ).toBlob();
 
     console.log('SANDBOX: PDF generation successful. Sending blob back to parent.'); // LOG 4
-    window.parent.postMessage({ type: 'PDF_GENERATED', blob }, window.location.origin);
+    window.parent.postMessage({ type: 'PDF_GENERATED', blob }, '*');
 
   } catch (error) {
     console.error("SANDBOX: PDF Generation Failed! Error:", error); // LOG 5
