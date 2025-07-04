@@ -20,7 +20,8 @@ const generatePdf = async (event: MessageEvent) => {
 
   console.log('SANDBOX: Received GENERATE_PDF command with data:', data); // LOG 2
 
-  const { analysis, sourceText, highlightData, chartImages, profileData } = data;
+  // Destructure the new property here
+  const { analysis, sourceText, highlightData, chartImages, profileData, patternColorMap } = data;
 
   try {
     console.log('SANDBOX: Starting PDF generation with @react-pdf/renderer...'); // LOG 3
@@ -31,6 +32,7 @@ const generatePdf = async (event: MessageEvent) => {
         highlightData={highlightData}
         chartImages={chartImages}
         profileData={profileData}
+        patternColorMap={patternColorMap}
       />
     ).toBlob();
 

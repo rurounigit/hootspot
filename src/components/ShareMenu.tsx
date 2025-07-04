@@ -7,14 +7,20 @@ import { ShareIcon } from '../constants';
 import { useTranslation } from '../i18n';
 import { LEXICON_SECTIONS_BY_KEY, fullNameToKeyMap } from '../lexicon-structure';
 
+// Define the type for the color info
+type ColorInfo = { hex: string; border: string; text: string };
+
+// 1. UPDATE THE PROPS INTERFACE
 interface ShareMenuProps {
   analysis: GeminiAnalysisResponse;
   sourceText: string | null;
   profileData: any[];
   highlightData: any[];
+  patternColorMap: Map<string, ColorInfo>; // <<< ADD THIS PROP
 }
 
-const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, profileData, highlightData }) => {
+// 2. UPDATE THE COMPONENT SIGNATURE
+const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, profileData, highlightData, patternColorMap }) => {
   const { t } = useTranslation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -54,22 +60,15 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, profileData
 
   const handlePdfMessage = (event: MessageEvent) => {
     if (event.source !== iframeRef.current?.contentWindow) {
-      return;
-      }
+        return;
+    }
 
     const { type, blob, error } = event.data;
 
     if (type === 'PDF_GENERATED' && blob) {
-      // Create a short-lived, temporary URL for the blob
       const objectUrl = URL.createObjectURL(blob);
-
-      // Send this short URL to the background script, avoiding message size limits
       chrome.runtime.sendMessage({ type: 'DOWNLOAD_PDF', url: objectUrl });
-
-      // Revoke the URL after a short delay to give the download API time to access it.
-      // This prevents memory leaks.
       setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
-
     } else if (type === 'PDF_ERROR') {
       console.error("PDF generation failed in sandbox:", error);
     }
@@ -96,12 +95,16 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, profileData
       }
     }
 
+    // This variable is now defined because we receive it as a prop
+    const patternColorMapObject = Object.fromEntries(patternColorMap.entries());
+
     const dataForPdf = {
       analysis: { ...analysis, findingsByCategory },
       sourceText,
       highlightData,
       chartImages,
       profileData,
+      patternColorMap: patternColorMapObject,
     };
 
     window.addEventListener('message', handlePdfMessage);
@@ -128,13 +131,11 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, profileData
     const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     chrome.downloads.download({ url: url, filename: 'HootSpot_Analysis_Report.json' });
-    // Revoke URL to prevent memory leak
     setTimeout(() => URL.revokeObjectURL(url), 100);
     setIsMenuOpen(false);
   };
 
   const handleTwitterShare = () => {
-    // This function remains the same
     const summary = analysis.analysis_summary;
     const detectedPatterns = [...new Set(analysis.findings.map(f => f.pattern_name))];
     let tweetText = `I analyzed a text with HootSpot AI and found these patterns: ${detectedPatterns.slice(0, 2).join(', ')}. Summary: "${summary}"`;

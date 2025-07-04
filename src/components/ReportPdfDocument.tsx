@@ -2,13 +2,15 @@
 
 import React from 'react';
 import { Page, Text, View, Document, StyleSheet, Image } from '@react-pdf/renderer';
-import { GeminiAnalysisResponse, GeminiFinding } from '../types';
+import { GeminiFinding } from '../types';
 
-// NO MORE Font.register CALLS. WE ARE USING BUILT-IN FONTS.
+// Define a type for our color map object for clarity
+type ColorInfo = { hex: string; border: string; text: string };
+type PatternColorMap = Record<string, ColorInfo>;
 
+// --- STYLESHEET UPDATES ---
 const styles = StyleSheet.create({
   page: {
-    // Use the built-in 'Helvetica' font family
     fontFamily: 'Helvetica',
     fontSize: 10,
     paddingTop: 40,
@@ -19,7 +21,7 @@ const styles = StyleSheet.create({
     color: '#374151',
   },
   header: {
-    fontFamily: 'Helvetica-Bold', // Use the specific bold version
+    fontFamily: 'Helvetica-Bold',
     fontSize: 24,
     color: '#1f2937',
     textAlign: 'center',
@@ -31,6 +33,7 @@ const styles = StyleSheet.create({
     borderLeftColor: '#60a5fa',
     padding: 12,
     marginBottom: 24,
+    borderRadius: 4, // Add rounded corners
   },
   summaryTitle: {
     fontFamily: 'Helvetica-Bold',
@@ -60,8 +63,8 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   highlightedText: {
-    backgroundColor: '#fecaca',
-    color: '#000',
+    backgroundColor: '#fecaca', // This is the light red highlight color from your screenshot
+    color: '#1f2937',
   },
   sourceText: {
     fontSize: 9,
@@ -77,16 +80,15 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   findingCard: {
-    border: '1px solid #e5e7eb',
-    borderRadius: 4,
+    // borderWidth is now set dynamically
+    borderRadius: 6, // Add rounded corners
     marginBottom: 12,
     breakInside: 'avoid',
+    overflow: 'hidden', // Important for rounded corners to clip content
   },
   findingHeader: {
-    padding: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-    backgroundColor: '#f9fafb',
+    padding: 10,
+    // borderBottomWidth is now set dynamically
   },
   findingPatternName: {
     fontFamily: 'Helvetica-Bold',
@@ -95,6 +97,7 @@ const styles = StyleSheet.create({
   },
   findingBody: {
     padding: 12,
+    backgroundColor: '#f9fafb', // A light gray for the body
   },
   findingQuoteLabel: {
     fontFamily: 'Helvetica-Bold',
@@ -103,12 +106,11 @@ const styles = StyleSheet.create({
     color: '#4b5563',
   },
   findingQuote: {
-    // Use the specific italic version: 'Helvetica-Oblique'
     fontFamily: 'Helvetica-Oblique',
-    borderLeftWidth: 3,
-    borderLeftColor: '#d1d5db',
-    paddingLeft: 8,
+    padding: 8,
+    // borderLeftWidth is now set dynamically
     marginBottom: 12,
+    borderRadius: 4,
   },
   findingExplanationLabel: {
     fontFamily: 'Helvetica-Bold',
@@ -132,6 +134,8 @@ const styles = StyleSheet.create({
   },
 });
 
+
+// --- PROPS INTERFACE UPDATE ---
 interface ReportPdfDocumentProps {
   analysis: {
     analysis_summary: string;
@@ -141,31 +145,98 @@ interface ReportPdfDocumentProps {
   highlightData: { start: number; end: number }[];
   chartImages: Record<string, string>;
   profileData: any[];
+  patternColorMap: PatternColorMap; // Add the new prop
 }
 
+// Helper component to render highlighted text
 const HighlightedSourceTextView: React.FC<{ text: string, highlights: { start: number; end: number }[] }> = ({ text, highlights }) => {
     const segments: React.ReactNode[] = [];
     let lastIndex = 0;
     if (!highlights) return <Text style={styles.sourceText}>{text}</Text>;
+
     const sortedHighlights = [...highlights].sort((a, b) => a.start - b.start);
+
     sortedHighlights.forEach((h, i) => {
-      if (h.start > lastIndex) segments.push(<Text key={`text-${i}`}>{text.substring(lastIndex, h.start)}</Text>);
+      if (h.start > lastIndex) {
+        segments.push(<Text key={`text-${i}`}>{text.substring(lastIndex, h.start)}</Text>);
+      }
       segments.push(<Text key={`highlight-${i}`} style={styles.highlightedText}>{text.substring(h.start, h.end)}</Text>);
       lastIndex = h.end;
     });
-    if (lastIndex < text.length) segments.push(<Text key="text-end">{text.substring(lastIndex)}</Text>);
+
+    if (lastIndex < text.length) {
+        segments.push(<Text key="text-end">{text.substring(lastIndex)}</Text>);
+    }
+
     return <Text style={styles.sourceText}>{segments}</Text>;
 };
 
-export const ReportPdfDocument: React.FC<ReportPdfDocumentProps> = ({ analysis, sourceText, highlightData, chartImages, profileData }) => (
-  <Document title="HootSpot AI Analysis Report" author="HootSpot AI">
-    <Page size="A4" style={styles.page}>
-      <Text style={styles.header}>HootSpot AI Analysis Report</Text>
-      <View style={styles.summaryContainer}><Text style={styles.summaryTitle}>Analysis Summary</Text><Text style={styles.summaryText}>{analysis.analysis_summary}</Text></View>
-      {sourceText && (<View><Text style={styles.sectionTitle}>Highlighted Source Text</Text><View style={styles.sourceTextContainer}><HighlightedSourceTextView text={sourceText} highlights={highlightData} /></View></View>)}
-      {profileData.some(s => s.hasFindings) && (<View break><Text style={styles.sectionTitle}>Manipulation Profile</Text>{profileData.map(section => (section.hasFindings && chartImages[section.title] ? (<Image key={section.title} src={chartImages[section.title]} style={styles.chartImage} />) : null))}</View>)}
-      <View break><Text style={styles.sectionTitle}>Detected Patterns</Text>{Object.entries(analysis.findingsByCategory).map(([category, findings]) => (<View key={category} style={styles.categoryContainer}><Text style={styles.categoryTitle}>{category}</Text>{findings.map((finding, index) => (<View key={index} style={styles.findingCard}><View style={styles.findingHeader}><Text style={styles.findingPatternName}>{finding.pattern_name}</Text></View><View style={styles.findingBody}><Text style={styles.findingQuoteLabel}>Specific Quote</Text><Text style={styles.findingQuote}>"{finding.specific_quote}"</Text><Text style={styles.findingExplanationLabel}>Explanation</Text><Text>{finding.explanation}</Text></View></View>))}</View>))}</View>
-      <Text style={styles.pageNumber} render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} fixed />
-    </Page>
-  </Document>
-);
+// --- MAIN COMPONENT WITH DYNAMIC STYLING ---
+export const ReportPdfDocument: React.FC<ReportPdfDocumentProps> = ({ analysis, sourceText, highlightData, chartImages, profileData, patternColorMap }) => {
+  // A default color object for safety in case a pattern isn't in the map
+  const defaultColor: ColorInfo = { hex: '#f3f4f6', border: '#d1d5db', text: '#1f2937' };
+
+  return (
+    <Document title="HootSpot AI Analysis Report" author="HootSpot AI">
+      <Page size="A4" style={styles.page}>
+        <Text style={styles.header}>HootSpot AI Analysis Report</Text>
+
+        <View style={styles.summaryContainer}>
+            <Text style={styles.summaryTitle}>Analysis Summary</Text>
+            <Text style={styles.summaryText}>{analysis.analysis_summary}</Text>
+        </View>
+
+        {sourceText && (
+            <View>
+                <Text style={styles.sectionTitle}>Highlighted Source Text</Text>
+                <View style={styles.sourceTextContainer}>
+                    <HighlightedSourceTextView text={sourceText} highlights={highlightData} />
+                </View>
+            </View>
+        )}
+
+        {profileData.some(s => s.hasFindings) && (
+            <View break>
+                <Text style={styles.sectionTitle}>Manipulation Profile</Text>
+                {profileData.map(section => (
+                    section.hasFindings && chartImages[section.title] ? (
+                        <Image key={section.title} src={chartImages[section.title]} style={styles.chartImage} />
+                    ) : null
+                ))}
+            </View>
+        )}
+
+        <View break>
+          <Text style={styles.sectionTitle}>Detected Patterns</Text>
+          {Object.entries(analysis.findingsByCategory).map(([category, findings]) => (
+            <View key={category} style={styles.categoryContainer}>
+              <Text style={styles.categoryTitle}>{category}</Text>
+              {findings.map((finding, index) => {
+                // Get the color for this specific pattern from the map
+                const color = patternColorMap[finding.pattern_name] || defaultColor;
+
+                return (
+                  <View key={index} style={[styles.findingCard, { border: `1px solid ${color.border}` }]}>
+                    <View style={[styles.findingHeader, { backgroundColor: color.hex, borderBottom: `1px solid ${color.border}` }]}>
+                      <Text style={[styles.findingPatternName, { color: color.text }]}>{finding.pattern_name}</Text>
+                    </View>
+                    <View style={styles.findingBody}>
+                      <Text style={styles.findingQuoteLabel}>Specific Quote</Text>
+                      <Text style={[styles.findingQuote, { backgroundColor: color.hex, borderLeftColor: color.border, borderLeftWidth: 3 }]}>
+                        <Text style={{ color: color.text }}>"{finding.specific_quote}"</Text>
+                      </Text>
+                      <Text style={styles.findingExplanationLabel}>Explanation</Text>
+                      <Text>{finding.explanation}</Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          ))}
+        </View>
+
+        <Text style={styles.pageNumber} render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} fixed />
+      </Page>
+    </Document>
+  );
+};
