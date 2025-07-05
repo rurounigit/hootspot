@@ -259,7 +259,7 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
 
   return (
     <div className="mt-4">
-      <div className="flex justify-between items-center mb-4 border-b">
+      <div className="flex items-center mb-4 border-b">
         <h2 className="text-lg font-semibold text-gray-800 pb-0">{t('report_title')}</h2>
         {hasFindings && (
            <ShareMenu

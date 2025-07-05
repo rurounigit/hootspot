@@ -1,3 +1,5 @@
+// src/constants.tsx
+
 import React from 'react';
 
 export const GEMINI_MODEL_NAME = 'gemini-2.5-flash-lite-preview-06-17';
@@ -164,7 +166,7 @@ This section details large-scale strategies used in media and politics to direct
       * Person A: "Perhaps we could reduce the military budget by a small percentage to better fund education."
       * Person B (Straw Man): "You want to leave our nation defenseless? I cannot believe you're suggesting we disarm our military and invite our enemies to attack us."
 
-2. The Co-optation of Dissent: "Radical" Language for Status Quo Ends
+2. The Co-optation of Dissent
   - Core Definition: The mechanism of adopting the language, symbols, and energy of rebellion, revolution, or social justice to channel popular anger toward goals that do not threaten—and often reinforce—the existing structures of power.
   - How it Works: It neutralizes genuine threats by absorbing them. It provides a cathartic, but ultimately harmless, outlet for public anger. The rebellion is monetized, performative, or redirected.
   - Examples:
@@ -175,7 +177,7 @@ This section details large-scale strategies used in media and politics to direct
     * A credit card company, whose business model relies on consumer debt, uses the slogan "Live Your Best Life" and "Financial Freedom" to encourage spending.
     * An automotive company known for producing large, gas-guzzling SUVs runs an ad campaign featuring one of their vehicles on a pristine, untouched mountain landscape, branding their product with the very nature it threatens.
 
-3. Redefining the Terrain: The "Culture War" as Economic Distraction
+3. Redefining the Terrain
   - Core Definition: The deliberate amplification, and sometimes manufacturing, of cultural, social, or identity-based grievances to distract the public from pressing economic issues (e.g., wage stagnation, wealth inequality, unaffordable healthcare/housing).
   - How it Works: It exploits the emotional and identity-laden nature of cultural issues to capture public attention and media cycles. It shifts the "enemy" from an abstract economic system or a powerful donor class to a more tangible (and often less powerful) cultural group. This is often accomplished by creating and attacking a Straw Man Fallacy (#1).
   - Examples:
@@ -185,7 +187,7 @@ This section details large-scale strategies used in media and politics to direct
     * A media focus on which books are available in school libraries to ignite parental anger, diverting attention from widespread school funding shortages and teacher pay issues.
     * Debates over the gender of a plastic potato toy or the ethnicity of a fictional mermaid character are elevated to national news, consuming media cycles that could be spent on topics like pharmaceutical price gouging or infrastructure decay.
 
-4. The Foreclosure of Alternatives: "There Is No Alternative" (TINA) 2.0
+4. The Foreclosure of Alternatives
   - Core Definition: A rhetorical strategy that frames any policy deviating from market-based orthodoxy as not just misguided, but as fiscally impossible, dangerously naive, or a gateway to tyranny. The goal is to make the status quo seem like the only viable reality.
   - How it Works: It shuts down debate before it can begin by positioning alternatives as outside the realm of serious consideration. It relies on appeals to "common sense," fear-mongering about economic collapse, and the selective use of data.
   - Examples:
@@ -195,7 +197,7 @@ This section details large-scale strategies used in media and politics to direct
     * "We must provide subsidies to the oil industry to keep gas prices low." This is framed as a necessity, foreclosing debate on investing in public transit or renewable energy to reduce demand for oil in the first place.
     * When discussing student debt cancellation, framing the argument as, "Why should taxpayers who didn't go to college have to pay for those who did?" This ignores alternative funding mechanisms (like a wealth tax) and shuts down discussion about the societal benefit of an educated populace.
 
-5. Manufacturing Reflexive Impotence: "Both Sides" and Information Overload
+5. Manufacturing Reflexive Impotence
   - Core Definition: The mechanism of fostering exhausted cynicism and political apathy by overwhelming the public with information, creating false equivalencies, and promoting the idea that all political actors are equally corrupt and that the system is unchangeable.
   - How it Works: It preys on the limits of human attention and the desire for simple narratives. By flooding the zone with noise or framing every issue as having two equally flawed sides, it makes engagement feel futile and confusing, leading to disengagement.
   - Examples:
@@ -265,7 +267,7 @@ Primary Tactics Identified:
     * "defuse tensions" and "ensure the conflict does not intensify": This language is used immediately after announcing a major military escalation. This creates a powerful rhetorical dissonance, framing a profoundly escalatory act with the language of de-escalation and peace.
     * "addresses all concerns": This is vague diplomatic jargon. It sounds reasonable and comprehensive but avoids specifying the exact (and likely non-negotiable) demands being made of Iran.
 
-2. The Foreclosure of Alternatives (TINA) 2.0 (Section 3, #4)
+2. The Foreclosure of Alternatives (Section 3, #4)
   - Application: The statement constructs a narrative where military action was not a choice among many, but an inevitable consequence of the situation. This rhetorical structure effectively shuts down debate on other possible options.
   - Logical Framing:
     * The statement establishes an absolute, non-negotiable premise: "We have consistently been clear that Iran can never have a nuclear weapon..."

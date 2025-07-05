@@ -2,6 +2,7 @@
 
 // This file is the single source of truth for all pattern definitions.
 
+// FIX: Shorten the pattern names to remove subtitles for robust AI matching.
 export const PATTERN_KEYS = {
   GUILT_TRIPPING: "Guilt Tripping",
   GASLIGHTING: "Gaslighting",
@@ -17,16 +18,16 @@ export const PATTERN_KEYS = {
   WEAPONIZED_INCOMPETENCE: "Weaponized Incompetence",
   SILENT_TREATMENT: "The Silent Treatment (Stonewalling)",
   STRAW_MAN: "The Straw Man Fallacy",
-  CO_OPTATION_DISSENT: "The Co-optation of Dissent: \"Radical\" Language for Status Quo Ends",
-  REDEFINING_TERRAIN: "Redefining the Terrain: The \"Culture War\" as Economic Distraction",
-  FORECLOSURE_ALTERNATIVES: "The Foreclosure of Alternatives: \"There Is No Alternative\" (TINA) 2.0",
-  REFLEXIVE_IMPOTENCE: "Manufacturing Reflexive Impotence: \"Both Sides\" and Information Overload",
+  CO_OPTATION_DISSENT: "The Co-optation of Dissent",
+  REDEFINING_TERRAIN: "Redefining the Terrain",
+  FORECLOSURE_ALTERNATIVES: "The Foreclosure of Alternatives",
+  REFLEXIVE_IMPOTENCE: "Manufacturing Reflexive Impotence",
   PERSONALIZATION_SYSTEMIC: "The Personalization of Systemic Problems",
   DOG_WHISTLING: "Dog-Whistling",
   EUPHEMISM_JARGON: "Euphemism & Jargon",
 };
 
-// Maps the full pattern name from the API to its translation key for the title.
+// FIX: Update the map to use the new, shorter keys.
 export const patternNameToI18nKeyMap = new Map<string, string>([
     ["Guilt Tripping", "pattern_guilt_tripping"],
     ["Gaslighting", "pattern_gaslighting"],
@@ -42,10 +43,10 @@ export const patternNameToI18nKeyMap = new Map<string, string>([
     ["Weaponized Incompetence", "pattern_weaponized_incompetence"],
     ["The Silent Treatment (Stonewalling)", "pattern_the_silent_treatment"],
     ["The Straw Man Fallacy", "pattern_the_straw_man_fallacy"],
-    ["The Co-optation of Dissent: \"Radical\" Language for Status Quo Ends", "pattern_the_co_optation_of_dissent"],
-    ["Redefining the Terrain: The \"Culture War\" as Economic Distraction", "pattern_redefining_the_terrain"],
-    ["The Foreclosure of Alternatives: \"There Is No Alternative\" (TINA) 2.0", "pattern_the_foreclosure_of_alternatives"],
-    ["Manufacturing Reflexive Impotence: \"Both Sides\" and Information Overload", "pattern_manufacturing_reflexive_impotence"],
+    ["The Co-optation of Dissent", "pattern_the_co_optation_of_dissent"],
+    ["Redefining the Terrain", "pattern_redefining_the_terrain"],
+    ["The Foreclosure of Alternatives", "pattern_the_foreclosure_of_alternatives"],
+    ["Manufacturing Reflexive Impotence", "pattern_manufacturing_reflexive_impotence"],
     ["The Personalization of Systemic Problems", "pattern_the_personalization_of_systemic_problems"],
     ["Dog-Whistling", "pattern_dog-whistling"],
     ["Euphemism & Jargon", "pattern_euphemism_jargon"]
