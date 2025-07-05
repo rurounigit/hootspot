@@ -85,7 +85,7 @@
   "share_menu_pdf": "Download PDF",
   "share_menu_json": "Download JSON",
   "share_menu_twitter": "Share on X (Twitter)",
-  "share_twitter_text": "I analyzed a text with HootSpot AI and found these patterns: {patterns}. Summary: \"{summary}\"",
+  "share_twitter_text": "HootSpot: \"{summary}\"",
   "pdf_report_title": "HootSpot AI Analysis Report",
   "pdf_page_number": "{pageNumber} / {totalPages}",
   "category_interpersonal_psychological": "Interpersonal & Psychological",
