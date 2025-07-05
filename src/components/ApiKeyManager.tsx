@@ -172,12 +172,12 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
                 disabled={areModelsLoading || allModelsEmpty}
                 className="flex-grow w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
               >
-                {areModelsLoading && <option>Loading models...</option>}
-                {modelsError && <option>Error loading models</option>}
+                {areModelsLoading && <option>{t('config_model_loading')}</option>}
+                {modelsError && <option>{t('config_model_error')}</option>}
                 {!areModelsLoading && !modelsError && (
                   <>
                     {models.preview.length > 0 && (
-                      <optgroup label="Preview Models">
+                      <optgroup label={t('config_model_preview_group')}>
                         {models.preview.map(model => (
                           <option key={model.name} value={model.name}>
                             {model.displayName}
@@ -186,7 +186,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
                       </optgroup>
                     )}
                     {models.stable.length > 0 && (
-                       <optgroup label="Stable Models">
+                       <optgroup label={t('config_model_stable_group')}>
                         {models.stable.map(model => (
                           <option key={model.name} value={model.name}>
                             {model.displayName}
@@ -197,7 +197,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
                   </>
                 )}
               </select>
-              <div className="flex items-center pl-2" title={!currentModelDetails?.thinking ? "This model does not support the 'thinking' feature." : "Enable 'thinking' feature"}>
+              <div className="flex items-center pl-2" title={!currentModelDetails?.thinking ? t('config_thinking_tooltip_disabled') : t('config_thinking_tooltip')}>
                   <input
                     type="checkbox"
                     id="thinkingToggle"
@@ -207,7 +207,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
                     className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
                   />
                   <label htmlFor="thinkingToggle" className={`ml-2 text-sm font-medium ${!currentModelDetails?.thinking ? 'text-gray-400' : 'text-gray-700'}`}>
-                    Thinking
+                    {t('config_thinking_label')}
                   </label>
               </div>
             </div>

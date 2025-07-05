@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "HootSpot AI Text Analyzer Extension",
+  "name": "__MSG_extName__",
   "version": "1.0.0",
-  "description": "An application to analyze text for psychological and rhetorical patterns using the Gemini API. Users provide their own API key.",
+  "description": "__MSG_extDescription__",
+  "default_locale": "en",
   "permissions": [
     "storage",
     "contextMenus",

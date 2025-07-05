@@ -1,0 +1,14 @@
+{
+  "contextMenuCopy": {
+    "message": "Copiar texto a HootSpot"
+  },
+  "contextMenuAnalyze": {
+    "message": "Analizar texto seleccionado con HootSpot"
+  },
+  "extName": {
+    "message": "Extensión Analizador de Texto IA HootSpot"
+  },
+  "extDescription": {
+    "message": "Una aplicación para analizar texto en busca de patrones psicológicos y retóricos usando la API de Gemini. Los usuarios proporcionan su propia clave de API."
+  }
+}

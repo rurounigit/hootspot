@@ -8,7 +8,7 @@ import { pdf } from '@react-pdf/renderer';
 import { ReportPdfDocument } from './components/ReportPdfDocument';
 
 const generatePdf = async (event: MessageEvent) => {
-  console.log('SANDBOX: Message received from parent window.'); // LOG 1
+  console.log('SANDBOX: Message received from parent window.');
 
   if (event.origin !== window.location.origin) {
     console.warn("SANDBOX: Message rejected from unknown origin:", event.origin);
@@ -18,13 +18,21 @@ const generatePdf = async (event: MessageEvent) => {
   const { type, data } = event.data;
   if (type !== 'GENERATE_PDF') return;
 
-  console.log('SANDBOX: Received GENERATE_PDF command with data:', data); // LOG 2
+  console.log('SANDBOX: Received GENERATE_PDF command with data:', data);
 
-  // Destructure the new property here
-  const { analysis, sourceText, highlightData, chartImages, profileData, patternColorMap } = data;
+  // CORRECTED: Destructure the 'translations' object from the data prop
+  const {
+    analysis,
+    sourceText,
+    highlightData,
+    chartImages,
+    profileData,
+    patternColorMap,
+    translations, // <<< THIS WAS MISSING
+  } = data;
 
   try {
-    console.log('SANDBOX: Starting PDF generation with @react-pdf/renderer...'); // LOG 3
+    console.log('SANDBOX: Starting PDF generation with @react-pdf/renderer...');
     const blob = await pdf(
       <ReportPdfDocument
         analysis={analysis}
@@ -33,14 +41,15 @@ const generatePdf = async (event: MessageEvent) => {
         chartImages={chartImages}
         profileData={profileData}
         patternColorMap={patternColorMap}
+        translations={translations} // <<< THIS WAS MISSING
       />
     ).toBlob();
 
-    console.log('SANDBOX: PDF generation successful. Sending blob back to parent.'); // LOG 4
+    console.log('SANDBOX: PDF generation successful. Sending blob back to parent.');
     window.parent.postMessage({ type: 'PDF_GENERATED', blob }, '*');
 
   } catch (error) {
-    console.error("SANDBOX: PDF Generation Failed! Error:", error); // LOG 5
+    console.error("SANDBOX: PDF Generation Failed! Error:", error);
     window.parent.postMessage({ type: 'PDF_ERROR', error: error.message }, window.location.origin);
   }
 };

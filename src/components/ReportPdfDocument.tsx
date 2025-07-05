@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
     borderLeftColor: '#60a5fa',
     padding: 12,
     marginBottom: 24,
-    borderRadius: 4, // Add rounded corners
+    borderRadius: 4,
   },
   summaryTitle: {
     fontFamily: 'Helvetica-Bold',
@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   highlightedText: {
-    backgroundColor: '#fecaca', // This is the light red highlight color from your screenshot
+    backgroundColor: '#fecaca',
     color: '#1f2937',
   },
   sourceText: {
@@ -80,15 +80,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   findingCard: {
-    // borderWidth is now set dynamically
-    borderRadius: 6, // Add rounded corners
+    borderRadius: 6,
     marginBottom: 12,
     breakInside: 'avoid',
-    overflow: 'hidden', // Important for rounded corners to clip content
+    overflow: 'hidden',
   },
   findingHeader: {
     padding: 10,
-    // borderBottomWidth is now set dynamically
   },
   findingPatternName: {
     fontFamily: 'Helvetica-Bold',
@@ -97,7 +95,7 @@ const styles = StyleSheet.create({
   },
   findingBody: {
     padding: 12,
-    backgroundColor: '#f9fafb', // A light gray for the body
+    backgroundColor: '#f9fafb',
   },
   findingQuoteLabel: {
     fontFamily: 'Helvetica-Bold',
@@ -108,7 +106,7 @@ const styles = StyleSheet.create({
   findingQuote: {
     fontFamily: 'Helvetica-Oblique',
     padding: 8,
-    // borderLeftWidth is now set dynamically
+    borderLeftWidth: 3,
     marginBottom: 12,
     borderRadius: 4,
   },
@@ -134,7 +132,6 @@ const styles = StyleSheet.create({
   },
 });
 
-
 // --- PROPS INTERFACE UPDATE ---
 interface ReportPdfDocumentProps {
   analysis: {
@@ -145,7 +142,18 @@ interface ReportPdfDocumentProps {
   highlightData: { start: number; end: number }[];
   chartImages: Record<string, string>;
   profileData: any[];
-  patternColorMap: PatternColorMap; // Add the new prop
+  patternColorMap: PatternColorMap;
+  translations: {
+    reportTitle: string;
+    summaryTitle: string;
+    highlightedTextTitle: string;
+    profileTitle: string;
+    detectedPatternsTitle: string;
+    quoteLabel: string;
+    explanationLabel: string;
+    pageNumber: string;
+    patternNames: Record<string, string>;
+  };
 }
 
 // Helper component to render highlighted text
@@ -172,23 +180,22 @@ const HighlightedSourceTextView: React.FC<{ text: string, highlights: { start: n
 };
 
 // --- MAIN COMPONENT WITH DYNAMIC STYLING ---
-export const ReportPdfDocument: React.FC<ReportPdfDocumentProps> = ({ analysis, sourceText, highlightData, chartImages, profileData, patternColorMap }) => {
-  // A default color object for safety in case a pattern isn't in the map
+export const ReportPdfDocument: React.FC<ReportPdfDocumentProps> = ({ analysis, sourceText, highlightData, chartImages, profileData, translations, patternColorMap }) => {
   const defaultColor: ColorInfo = { hex: '#f3f4f6', border: '#d1d5db', text: '#1f2937' };
 
   return (
-    <Document title="HootSpot AI Analysis Report" author="HootSpot AI">
+    <Document title={translations.reportTitle} author="HootSpot AI">
       <Page size="A4" style={styles.page}>
-        <Text style={styles.header}>HootSpot AI Analysis Report</Text>
+        <Text style={styles.header}>{translations.reportTitle}</Text>
 
         <View style={styles.summaryContainer}>
-            <Text style={styles.summaryTitle}>Analysis Summary</Text>
+            <Text style={styles.summaryTitle}>{translations.summaryTitle}</Text>
             <Text style={styles.summaryText}>{analysis.analysis_summary}</Text>
         </View>
 
         {sourceText && (
             <View>
-                <Text style={styles.sectionTitle}>Highlighted Source Text</Text>
+                <Text style={styles.sectionTitle}>{translations.highlightedTextTitle}</Text>
                 <View style={styles.sourceTextContainer}>
                     <HighlightedSourceTextView text={sourceText} highlights={highlightData} />
                 </View>
@@ -197,35 +204,38 @@ export const ReportPdfDocument: React.FC<ReportPdfDocumentProps> = ({ analysis, 
 
         {profileData.some(s => s.hasFindings) && (
             <View break>
-                <Text style={styles.sectionTitle}>Manipulation Profile</Text>
+                <Text style={styles.sectionTitle}>{translations.profileTitle}</Text>
                 {profileData.map(section => (
-                    section.hasFindings && chartImages[section.title] ? (
-                        <Image key={section.title} src={chartImages[section.title]} style={styles.chartImage} />
+                    section.hasFindings && chartImages[section.translatedTitle] ? (
+                        <Image key={section.translatedTitle} src={chartImages[section.translatedTitle]} style={styles.chartImage} />
                     ) : null
                 ))}
             </View>
         )}
 
         <View break>
-          <Text style={styles.sectionTitle}>Detected Patterns</Text>
+          <Text style={styles.sectionTitle}>{translations.detectedPatternsTitle}</Text>
           {Object.entries(analysis.findingsByCategory).map(([category, findings]) => (
             <View key={category} style={styles.categoryContainer}>
               <Text style={styles.categoryTitle}>{category}</Text>
               {findings.map((finding, index) => {
-                // Get the color for this specific pattern from the map
+                // The finding.pattern_name is the original English one, so this lookup works.
                 const color = patternColorMap[finding.pattern_name] || defaultColor;
 
                 return (
                   <View key={index} style={[styles.findingCard, { border: `1px solid ${color.border}` }]}>
                     <View style={[styles.findingHeader, { backgroundColor: color.hex, borderBottom: `1px solid ${color.border}` }]}>
-                      <Text style={[styles.findingPatternName, { color: color.text }]}>{finding.pattern_name}</Text>
+                      {/* Use the translations map to display the correct language name */}
+                      <Text style={[styles.findingPatternName, { color: color.text }]}>
+                        {translations.patternNames[finding.pattern_name] || finding.pattern_name}
+                      </Text>
                     </View>
                     <View style={styles.findingBody}>
-                      <Text style={styles.findingQuoteLabel}>Specific Quote</Text>
+                      <Text style={styles.findingQuoteLabel}>{translations.quoteLabel}</Text>
                       <Text style={[styles.findingQuote, { backgroundColor: color.hex, borderLeftColor: color.border, borderLeftWidth: 3 }]}>
                         <Text style={{ color: color.text }}>"{finding.specific_quote}"</Text>
                       </Text>
-                      <Text style={styles.findingExplanationLabel}>Explanation</Text>
+                      <Text style={styles.findingExplanationLabel}>{translations.explanationLabel}</Text>
                       <Text>{finding.explanation}</Text>
                     </View>
                   </View>
@@ -235,7 +245,7 @@ export const ReportPdfDocument: React.FC<ReportPdfDocumentProps> = ({ analysis, 
           ))}
         </View>
 
-        <Text style={styles.pageNumber} render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} fixed />
+        <Text style={styles.pageNumber} render={({ pageNumber, totalPages }) => translations.pageNumber.replace('{pageNumber}', String(pageNumber)).replace('{totalPages}', String(totalPages))} fixed />
       </Page>
     </Document>
   );

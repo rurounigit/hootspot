@@ -1,0 +1,14 @@
+{
+  "contextMenuCopy": {
+    "message": "Text nach HootSpot kopieren"
+  },
+  "contextMenuAnalyze": {
+    "message": "Ausgewählten Text mit HootSpot analysieren"
+  },
+  "extName": {
+    "message": "HootSpot KI Text-Analysator Erweiterung"
+  },
+  "extDescription": {
+    "message": "Eine Anwendung zur Analyse von Texten auf psychologische und rhetorische Muster mit der Gemini API. Benutzer stellen ihren eigenen API-Schlüssel zur Verfügung."
+  }
+}

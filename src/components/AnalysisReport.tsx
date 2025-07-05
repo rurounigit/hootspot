@@ -6,7 +6,7 @@ import { InfoIcon } from '../constants';
 import { useTranslation } from '../i18n';
 import ManipulationProfileChart from './ManipulationProfileChart';
 import ShareMenu from './ShareMenu';
-import { LEXICON_SECTIONS_BY_KEY, fullNameToKeyMap, keyToDescKeyMap } from '../lexicon-structure';
+import { LEXICON_SECTIONS_BY_KEY, fullNameToKeyMap, keyToDescKeyMap, patternNameToI18nKeyMap } from '../lexicon-structure';
 
 // A color palette for pattern identification
 const findingColors = [
@@ -21,64 +21,12 @@ const findingColors = [
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
-  'Interpersonal & Psychological': '#8884d8',
-  'Covert & Indirect Control': '#82ca9d',
-  'Sociopolitical & Rhetorical': '#ffc658',
+  'category_interpersonal_psychological': '#8884d8',
+  'category_covert_indirect_control': '#82ca9d',
+  'category_sociopolitical_rhetorical': '#ffc658',
 };
 
 const UNIFORM_HIGHLIGHT_COLOR = 'bg-red-200';
-
-// Maps the full pattern name from the API to its translation key for the title.
-const patternNameToI18nKeyMap = new Map<string, string>([
-    ["Guilt Tripping", "pattern_guilt_tripping"],
-    ["Gaslighting", "pattern_gaslighting"],
-    ["Threatening / Coercion", "pattern_threatening_coercion"],
-    ["Invalidation / Minimizing", "pattern_invalidation_minimizing"],
-    ["Deflection / Shifting Blame", "pattern_deflection_shifting_blame"],
-    ["DARVO (Deny, Attack, and Reverse Victim and Offender)", "pattern_darvo"],
-    ["Moving the Goalposts", "pattern_moving_the_goalposts"],
-    ["Love Bombing", "pattern_love_bombing"],
-    ["Projection", "pattern_projection"],
-    ["Splitting (or Black-and-White Thinking)", "pattern_splitting"],
-    ["The Backhanded Compliment", "pattern_the_backhanded_compliment"],
-    ["Weaponized Incompetence", "pattern_weaponized_incompetence"],
-    ["The Silent Treatment (Stonewalling)", "pattern_the_silent_treatment"],
-    ["The Straw Man Fallacy", "pattern_the_straw_man_fallacy"],
-    ["The Co-optation of Dissent: \"Radical\" Language for Status Quo Ends", "pattern_the_co_optation_of_dissent"],
-    ["Redefining the Terrain: The \"Culture War\" as Economic Distraction", "pattern_redefining_the_terrain"],
-    ["The Foreclosure of Alternatives: \"There Is No Alternative\" (TINA) 2.0", "pattern_the_foreclosure_of_alternatives"],
-    ["Manufacturing Reflexive Impotence: \"Both Sides\" and Information Overload", "pattern_manufacturing_reflexive_impotence"],
-    ["The Personalization of Systemic Problems", "pattern_the_personalization_of_systemic_problems"],
-    ["Dog-Whistling", "pattern_dog-whistling"],
-    ["Euphemism & Jargon", "pattern_euphemism_jargon"]
-]);
-
-// Maps the full pattern name to its new translation key for the description.
-const patternNameToDescKeyMap = new Map<string, string>([
-    ["Guilt Tripping", "pattern_guilt_tripping_desc"],
-    ["Gaslighting", "pattern_gaslighting_desc"],
-    // ... (rest of the map is unchanged, including it for completeness)
-    ["Threatening / Coercion", "pattern_threatening_coercion_desc"],
-    ["Invalidation / Minimizing", "pattern_invalidation_minimizing_desc"],
-    ["Deflection / Shifting Blame", "pattern_deflection_shifting_blame_desc"],
-    ["DARVO (Deny, Attack, and Reverse Victim and Offender)", "pattern_darvo_desc"],
-    ["Moving the Goalposts", "pattern_moving_the_goalposts_desc"],
-    ["Love Bombing", "pattern_love_bombing_desc"],
-    ["Projection", "pattern_projection_desc"],
-    ["Splitting (or Black-and-White Thinking)", "pattern_splitting_desc"],
-    ["The Backhanded Compliment", "pattern_the_backhanded_compliment_desc"],
-    ["Weaponized Incompetence", "pattern_weaponized_incompetence_desc"],
-    ["The Silent Treatment (Stonewalling)", "pattern_the_silent_treatment_desc"],
-    ["The Straw Man Fallacy", "pattern_the_straw_man_fallacy_desc"],
-    ["The Co-optation of Dissent: \"Radical\" Language for Status Quo Ends", "pattern_the_co_optation_of_dissent_desc"],
-    ["Redefining the Terrain: The \"Culture War\" as Economic Distraction", "pattern_redefining_the_terrain_desc"],
-    ["The Foreclosure of Alternatives: \"There Is No Alternative\" (TINA) 2.0", "pattern_the_foreclosure_of_alternatives_desc"],
-    ["Manufacturing Reflexive Impotence: \"Both Sides\" and Information Overload", "pattern_manufacturing_reflexive_impotence_desc"],
-    ["The Personalization of Systemic Problems", "pattern_the_personalization_of_systemic_problems_desc"],
-    ["Dog-Whistling", "pattern_dog-whistling_desc"],
-    ["Euphemism & Jargon", "pattern_euphemism_jargon_desc"]
-]);
-
 
 function escapeRegex(string: string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 
@@ -106,11 +54,13 @@ export const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches,
 
   const handlePillMouseOver = (event: React.MouseEvent, finding: GeminiFinding, color: { hex: string, text: string }) => {
     const i18nKey = patternNameToI18nKeyMap.get(finding.pattern_name) || finding.pattern_name;
-    const descI18nKey = patternNameToDescKeyMap.get(finding.pattern_name) || '';
+    const simpleKey = fullNameToKeyMap.get(finding.pattern_name);
+    const descI18nKey = simpleKey ? keyToDescKeyMap.get(simpleKey) : '';
+
     setTooltip({
       visible: true,
       title: t(i18nKey),
-      description: t(descI18nKey),
+      description: descI18nKey ? t(descI18nKey) : '',
       x: event.clientX,
       y: event.clientY,
       color: color.hex,
@@ -173,9 +123,9 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
 
   const profileDataBySection = useMemo(() => {
     const CATEGORY_ICONS: Record<string, string> = {
-      'Interpersonal & Psychological': 'images/category-icons/psychological.png',
-      'Covert & Indirect Control': 'images/category-icons/control.png',
-      'Sociopolitical & Rhetorical': 'images/category-icons/sociopolitical.png',
+      'category_interpersonal_psychological': 'images/category-icons/psychological.png',
+      'category_covert_indirect_control': 'images/category-icons/control.png',
+      'category_sociopolitical_rhetorical': 'images/category-icons/sociopolitical.png',
     };
 
     const counts = new Map<string, number>();
@@ -188,36 +138,39 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
       }
     }
 
-    const sections = Object.entries(LEXICON_SECTIONS_BY_KEY).map(([sectionTitle, patterns]) => {
+    const sections = Object.entries(LEXICON_SECTIONS_BY_KEY).map(([sectionTitleKey, patterns]) => {
       let totalFindings = 0;
-      const data = Object.entries(patterns).map(([simpleKey, shortName]) => {
+      const data = Object.entries(patterns).map(([simpleKey, shortNameKey]) => {
         const count = counts.get(simpleKey) || 0;
         totalFindings += count;
         return {
-          tactic: shortName,
+          tactic: t(shortNameKey), // Translate short name
           count: 1 + count,
+          simpleKey: simpleKey, // Pass simpleKey for reliable tooltip lookup
         };
       });
 
+      const translatedTitle = t(sectionTitleKey);
       return {
-        title: sectionTitle,
-        icon: CATEGORY_ICONS[sectionTitle],
+        titleKey: sectionTitleKey,
+        translatedTitle: translatedTitle,
+        icon: CATEGORY_ICONS[sectionTitleKey],
         data: data,
         hasFindings: totalFindings > 0,
         totalFindings: totalFindings,
-        color: CATEGORY_COLORS[sectionTitle],
+        color: CATEGORY_COLORS[sectionTitleKey],
       };
     });
 
     sections.sort((a, b) => b.totalFindings - a.totalFindings);
 
     return sections;
-  }, [findings, hasFindings]);
+  }, [findings, hasFindings, t]);
 
   useEffect(() => {
     if (profileDataBySection && profileDataBySection.length > 0) {
       const firstActiveSection = profileDataBySection.find(s => s.hasFindings) || profileDataBySection[0];
-      setActiveTab(firstActiveSection.title);
+      setActiveTab(firstActiveSection.translatedTitle);
     }
   }, [profileDataBySection]);
 
@@ -245,18 +198,26 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
     }
 
     const sortedMatches = Array.from(matchesByPosition.values()).sort((a, b) => a.start - b.start);
-    const allFindingsForDisplay = sortedMatches.flatMap(match => match.findings);
-    const findingToIndexMap = new Map<GeminiFinding, number>();
-    allFindingsForDisplay.forEach((finding, index) => {
-        findingToIndexMap.set(finding, index);
+
+    // Create a stable index for each unique finding instance for jump-to-card functionality
+    const uniqueFindingsWithIndices = new Map<string, number>();
+    let findingCounter = 0;
+    findings.forEach(finding => {
+        const uniqueId = `${finding.pattern_name}::${finding.specific_quote}`;
+        if (!uniqueFindingsWithIndices.has(uniqueId)) {
+            uniqueFindingsWithIndices.set(uniqueId, findingCounter++);
+        }
     });
 
     const matchesWithCorrectIndex = sortedMatches.map(match => ({
         ...match,
-        findings: match.findings.map(f => ({
-        ...f,
-        displayIndex: findingToIndexMap.get(f) as number
-        }))
+        findings: match.findings.map(f => {
+            const uniqueId = `${f.pattern_name}::${f.specific_quote}`;
+            return {
+                ...f,
+                displayIndex: uniqueFindingsWithIndices.get(uniqueId) as number
+            };
+        })
     }));
 
     const highlights: typeof matchesWithCorrectIndex = [];
@@ -281,6 +242,21 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
     return highlights;
   }, [findings, sourceText, hasFindings]);
 
+  const indexedFindings = useMemo(() => {
+    const uniqueFindingsWithIndices = new Map<string, number>();
+    let findingCounter = 0;
+    return findings.map(finding => {
+        const uniqueId = `${finding.pattern_name}::${finding.specific_quote}`;
+        if (!uniqueFindingsWithIndices.has(uniqueId)) {
+            uniqueFindingsWithIndices.set(uniqueId, findingCounter++);
+        }
+        return {
+            ...finding,
+            displayIndex: uniqueFindingsWithIndices.get(uniqueId) as number
+        };
+    });
+  }, [findings]);
+
   return (
     <div className="mt-4">
       <div className="flex justify-between items-center mb-4 border-b">
@@ -289,8 +265,6 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
            <ShareMenu
               analysis={analysis}
               sourceText={sourceText}
-              // --- PROP CHANGE ---
-              // Pass all the necessary data to the ShareMenu for PDF generation
               profileData={profileDataBySection}
               highlightData={finalHighlights}
               patternColorMap={patternColorMap}
@@ -311,13 +285,13 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
             <nav className="-mb-px flex space-x-4" aria-label="Tabs">
               {profileDataBySection.map(section => (
                 <button
-                  key={section.title}
-                  onClick={() => section.hasFindings && setActiveTab(section.title)}
+                  key={section.titleKey}
+                  onClick={() => section.hasFindings && setActiveTab(section.translatedTitle)}
                   disabled={!section.hasFindings}
-                  title={section.hasFindings ? section.title : t('report_profile_no_findings_in_category')}
+                  title={section.hasFindings ? section.translatedTitle : t('report_profile_no_findings_in_category')}
                   className={`
                     whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm
-                    ${activeTab === section.title
+                    ${activeTab === section.translatedTitle
                       ? 'border-blue-500 text-blue-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
                     ${!section.hasFindings ? 'text-gray-400 cursor-not-allowed hover:border-transparent' : ''}
@@ -325,7 +299,7 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
                 >
                   <img
                     src={chrome.runtime.getURL(section.icon)}
-                    alt={section.title}
+                    alt={section.translatedTitle}
                     className="w-12 h-12"
                   />
                 </button>
@@ -335,12 +309,10 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
 
           <div className="mt-4">
             {profileDataBySection.map(section => (
-              // --- ID CHANGE ---
-              // Add a unique ID to each chart container so it can be captured as an image
               <div
-                key={section.title}
-                id={`chart-container-${section.title}`}
-                className={activeTab === section.title ? 'block' : 'hidden'}
+                key={section.titleKey}
+                id={`chart-container-${section.translatedTitle}`}
+                className={activeTab === section.translatedTitle ? 'block' : 'hidden'}
               >
                 <ManipulationProfileChart
                   data={section.data}
@@ -366,11 +338,11 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
         <div>
           <h3 className="text-lg font-semibold text-gray-700 mb-3">{t('report_detected_patterns_title')}</h3>
           <div className="space-y-4">
-            {findings.map((finding, index) => {
+            {indexedFindings.map((finding, index) => {
               const color = patternColorMap.get(finding.pattern_name) || { hex: '#e5e7eb', border: 'border-gray-300', text: 'text-gray-800' };
               const i18nKey = patternNameToI18nKeyMap.get(finding.pattern_name) || finding.pattern_name;
               return (
-                <div key={index} id={`finding-card-${index}`} className={`bg-gray-50 border ${color.border} rounded-lg shadow-md overflow-hidden`}>
+                <div key={index} id={`finding-card-${finding.displayIndex}`} className={`bg-gray-50 border ${color.border} rounded-lg shadow-md overflow-hidden`}>
                   <div className={`p-4 border-b ${color.border}`} style={{ backgroundColor: color.hex }}>
                     <h4 className={`text-l font-bold ${color.text} uppercase`}>{t(i18nKey)}</h4>
                   </div>

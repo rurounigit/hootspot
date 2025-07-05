@@ -13,27 +13,24 @@ chrome.runtime.onInstalled.addListener(() => {
     // Menu item 1: Just copy
     chrome.contextMenus.create({
       id: CONTEXT_MENU_ID_COPY,
-      title: "Copy text to HootSpot",
+      title: chrome.i18n.getMessage("contextMenuCopy"),
       contexts: ["selection"],
     });
 
     // Menu item 2: Copy and analyze
     chrome.contextMenus.create({
       id: CONTEXT_MENU_ID_ANALYZE,
-      title: "Analyze selected text with HootSpot",
+      title: chrome.i18n.getMessage("contextMenuAnalyze"),
       contexts: ["selection"],
     });
   };
 
   // Attempt to remove the old context menu item.
-  chrome.contextMenus.remove("HOOTSPOT_CONTEXT_MENU", () => {
-    // This is the crucial fix: we check for chrome.runtime.lastError.
-    // If it exists, it means the menu item wasn't found, which is okay.
-    // We can safely ignore the error and proceed.
+  chrome.contextMenus.removeAll(() => {
     if (chrome.runtime.lastError) {
-      // The old menu item might not exist, which is fine.
+      // Ignore errors, which can happen on first install
     }
-    // Now, create the new menus regardless of whether the old one was found.
+    // Now, create the new menus.
     createMenus();
   });
 });

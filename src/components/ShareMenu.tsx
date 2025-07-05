@@ -5,21 +5,19 @@ import html2canvas from 'html2canvas';
 import { GeminiAnalysisResponse, GeminiFinding } from '../types';
 import { ShareIcon } from '../constants';
 import { useTranslation } from '../i18n';
-import { LEXICON_SECTIONS_BY_KEY, fullNameToKeyMap } from '../lexicon-structure';
+import { LEXICON_SECTIONS_BY_KEY, fullNameToKeyMap, patternNameToI18nKeyMap } from '../lexicon-structure';
 
 // Define the type for the color info
 type ColorInfo = { hex: string; border: string; text: string };
 
-// 1. UPDATE THE PROPS INTERFACE
 interface ShareMenuProps {
   analysis: GeminiAnalysisResponse;
   sourceText: string | null;
   profileData: any[];
   highlightData: any[];
-  patternColorMap: Map<string, ColorInfo>; // <<< ADD THIS PROP
+  patternColorMap: Map<string, ColorInfo>;
 }
 
-// 2. UPDATE THE COMPONENT SIGNATURE
 const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, profileData, highlightData, patternColorMap }) => {
   const { t } = useTranslation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -29,17 +27,18 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, profileData
 
   const findingsByCategory = useMemo(() => {
     const keyToCategoryMap = new Map<string, string>();
-    Object.entries(LEXICON_SECTIONS_BY_KEY).forEach(([category, patterns]) => {
-      Object.keys(patterns).forEach(key => keyToCategoryMap.set(key, category));
+    Object.entries(LEXICON_SECTIONS_BY_KEY).forEach(([categoryKey, patterns]) => {
+      Object.keys(patterns).forEach(key => keyToCategoryMap.set(key, t(categoryKey)));
     });
+
     return analysis.findings.reduce((acc, finding) => {
       const simpleKey = fullNameToKeyMap.get(finding.pattern_name);
-      const category = simpleKey ? keyToCategoryMap.get(simpleKey) || 'Uncategorized' : 'Uncategorized';
+      const category = simpleKey ? (keyToCategoryMap.get(simpleKey) || 'Uncategorized') : 'Uncategorized';
       if (!acc[category]) acc[category] = [];
       acc[category].push(finding);
       return acc;
     }, {} as Record<string, GeminiFinding[]>);
-  }, [analysis.findings]);
+  }, [analysis.findings, t]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -83,11 +82,11 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, profileData
     const chartImages: Record<string, string> = {};
     for (const section of profileData) {
       if (section.hasFindings) {
-        const chartElement = document.getElementById(`chart-container-${section.title}`);
+        const chartElement = document.getElementById(`chart-container-${section.translatedTitle}`);
         if (chartElement) {
           try {
             const canvas = await html2canvas(chartElement, { scale: 2, backgroundColor: null });
-            chartImages[section.title] = canvas.toDataURL('image/png');
+            chartImages[section.translatedTitle] = canvas.toDataURL('image/png');
           } catch (error) {
             console.error("Failed to capture chart image:", error);
           }
@@ -95,8 +94,15 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, profileData
       }
     }
 
-    // This variable is now defined because we receive it as a prop
     const patternColorMapObject = Object.fromEntries(patternColorMap.entries());
+
+    // Create a map of original pattern names to their translations
+    const patternNameTranslations = Object.fromEntries(
+        Array.from(patternNameToI18nKeyMap.entries()).map(([originalName, i18nKey]) => [
+            originalName,
+            t(i18nKey)
+        ])
+    );
 
     const dataForPdf = {
       analysis: { ...analysis, findingsByCategory },
@@ -105,6 +111,17 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, profileData
       chartImages,
       profileData,
       patternColorMap: patternColorMapObject,
+      translations: {
+        reportTitle: t('pdf_report_title'),
+        summaryTitle: t('report_summary_title'),
+        highlightedTextTitle: t('report_highlighted_text_title'),
+        profileTitle: t('report_profile_title'),
+        detectedPatternsTitle: t('report_detected_patterns_title'),
+        quoteLabel: t('report_quote_label'),
+        explanationLabel: t('report_explanation_label'),
+        pageNumber: t('pdf_page_number'),
+        patternNames: patternNameTranslations,
+      }
     };
 
     window.addEventListener('message', handlePdfMessage);
@@ -137,8 +154,10 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, profileData
 
   const handleTwitterShare = () => {
     const summary = analysis.analysis_summary;
-    const detectedPatterns = [...new Set(analysis.findings.map(f => f.pattern_name))];
-    let tweetText = `I analyzed a text with HootSpot AI and found these patterns: ${detectedPatterns.slice(0, 2).join(', ')}. Summary: "${summary}"`;
+    const detectedPatterns = [...new Set(analysis.findings.map(f => t(patternNameToI18nKeyMap.get(f.pattern_name) || f.pattern_name)))];
+    let patternsText = detectedPatterns.slice(0, 2).join(', ');
+    let tweetText = t('share_twitter_text', { patterns: patternsText, summary: summary });
+
     if (tweetText.length > 260) {
         tweetText = `${tweetText.substring(0, 257)}...`;
     }
@@ -153,7 +172,7 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, profileData
         onClick={() => setIsMenuOpen(!isMenuOpen)}
         disabled={isGenerating}
         className="p-2 text-gray-500 hover:text-blue-600 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-wait"
-        title="Share or Download Report"
+        title={t('share_menu_tooltip')}
       >
         {isGenerating ? (
           <div className="spinner w-5 h-5 border-t-blue-600"></div>
@@ -165,9 +184,9 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, profileData
       {isMenuOpen && (
         <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 border border-gray-200">
           <ul className="py-1">
-            <li><button onClick={handlePdfDownload} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Download PDF</button></li>
-            <li><button onClick={handleJsonDownload} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Download JSON</button></li>
-            <li><button onClick={handleTwitterShare} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Share on X (Twitter)</button></li>
+            <li><button onClick={handlePdfDownload} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">{t('share_menu_pdf')}</button></li>
+            <li><button onClick={handleJsonDownload} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">{t('share_menu_json')}</button></li>
+            <li><button onClick={handleTwitterShare} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">{t('share_menu_twitter')}</button></li>
           </ul>
         </div>
       )}

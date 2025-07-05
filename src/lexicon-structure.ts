@@ -26,6 +26,31 @@ export const PATTERN_KEYS = {
   EUPHEMISM_JARGON: "Euphemism & Jargon",
 };
 
+// Maps the full pattern name from the API to its translation key for the title.
+export const patternNameToI18nKeyMap = new Map<string, string>([
+    ["Guilt Tripping", "pattern_guilt_tripping"],
+    ["Gaslighting", "pattern_gaslighting"],
+    ["Threatening / Coercion", "pattern_threatening_coercion"],
+    ["Invalidation / Minimizing", "pattern_invalidation_minimizing"],
+    ["Deflection / Shifting Blame", "pattern_deflection_shifting_blame"],
+    ["DARVO (Deny, Attack, and Reverse Victim and Offender)", "pattern_darvo"],
+    ["Moving the Goalposts", "pattern_moving_the_goalposts"],
+    ["Love Bombing", "pattern_love_bombing"],
+    ["Projection", "pattern_projection"],
+    ["Splitting (or Black-and-White Thinking)", "pattern_splitting"],
+    ["The Backhanded Compliment", "pattern_the_backhanded_compliment"],
+    ["Weaponized Incompetence", "pattern_weaponized_incompetence"],
+    ["The Silent Treatment (Stonewalling)", "pattern_the_silent_treatment"],
+    ["The Straw Man Fallacy", "pattern_the_straw_man_fallacy"],
+    ["The Co-optation of Dissent: \"Radical\" Language for Status Quo Ends", "pattern_the_co_optation_of_dissent"],
+    ["Redefining the Terrain: The \"Culture War\" as Economic Distraction", "pattern_redefining_the_terrain"],
+    ["The Foreclosure of Alternatives: \"There Is No Alternative\" (TINA) 2.0", "pattern_the_foreclosure_of_alternatives"],
+    ["Manufacturing Reflexive Impotence: \"Both Sides\" and Information Overload", "pattern_manufacturing_reflexive_impotence"],
+    ["The Personalization of Systemic Problems", "pattern_the_personalization_of_systemic_problems"],
+    ["Dog-Whistling", "pattern_dog-whistling"],
+    ["Euphemism & Jargon", "pattern_euphemism_jargon"]
+]);
+
 export const fullNameToKeyMap = new Map<string, string>();
 for (const key in PATTERN_KEYS) {
   fullNameToKeyMap.set((PATTERN_KEYS as any)[key], key);
@@ -56,43 +81,34 @@ export const keyToDescKeyMap = new Map<string, string>([
   ["EUPHEMISM_JARGON", "pattern_euphemism_jargon_desc"],
 ]);
 
-export const shortNameToKeyMap = new Map<string, string>();
-
-// --- UPDATED SECTION ---
-// These are the short names that will actually be displayed on the chart.
+// The values are now i18n keys for the short names on the chart.
+// The structure maps a section's i18n key to its patterns.
 export const LEXICON_SECTIONS_BY_KEY: Record<string, Record<string, string>> = {
-  "Interpersonal & Psychological": {
-    GUILT_TRIPPING: "Guilt Trip",
-    GASLIGHTING: "Gaslighting",
-    THREATENING_COERCION: "Threatening",
-    INVALIDATION_MINIMIZING: "Invalidation",
-    DEFLECTION_BLAME: "Deflection",
-    DARVO: "DARVO",
-    MOVING_GOALPOSTS: "Goalposts",
-    LOVE_BOMBING: "Love Bomb",
-    PROJECTION: "Projection",
-    SPLITTING: "Splitting",
+  "category_interpersonal_psychological": {
+    GUILT_TRIPPING: "pattern_short_guilt_trip",
+    GASLIGHTING: "pattern_short_gaslighting",
+    THREATENING_COERCION: "pattern_short_threatening",
+    INVALIDATION_MINIMIZING: "pattern_short_invalidation",
+    DEFLECTION_BLAME: "pattern_short_deflection",
+    DARVO: "pattern_short_darvo",
+    MOVING_GOALPOSTS: "pattern_short_goalposts",
+    LOVE_BOMBING: "pattern_short_love_bomb",
+    PROJECTION: "pattern_short_projection",
+    SPLITTING: "pattern_short_splitting",
   },
-  "Covert & Indirect Control": {
-    BACKHANDED_COMPLIMENT: "Backhanded Compliment",
-    WEAPONIZED_INCOMPETENCE: "Weaponized Incompetence",
-    SILENT_TREATMENT: "Silent Treatment",
+  "category_covert_indirect_control": {
+    BACKHANDED_COMPLIMENT: "pattern_short_backhanded_compliment",
+    WEAPONIZED_INCOMPETENCE: "pattern_short_weaponized_incompetence",
+    SILENT_TREATMENT: "pattern_short_silent_treatment",
   },
-  "Sociopolitical & Rhetorical": {
-    STRAW_MAN: "Straw Man",
-    CO_OPTATION_DISSENT: "Co-optation",
-    REDEFINING_TERRAIN: "Redefinition",
-    FORECLOSURE_ALTERNATIVES: "Foreclosure",
-    REFLEXIVE_IMPOTENCE: "Reflexive Impotence",
-    PERSONALIZATION_SYSTEMIC: "Personalization",
-    DOG_WHISTLING: "Dog-Whistling",
-    EUPHEMISM_JARGON: "Euphemism/Jargon",
+  "category_sociopolitical_rhetorical": {
+    STRAW_MAN: "pattern_short_straw_man",
+    CO_OPTATION_DISSENT: "pattern_short_co-optation",
+    REDEFINING_TERRAIN: "pattern_short_redefinition",
+    FORECLOSURE_ALTERNATIVES: "pattern_short_foreclosure",
+    REFLEXIVE_IMPOTENCE: "pattern_short_reflexive_impotence",
+    PERSONALIZATION_SYSTEMIC: "pattern_short_personalization",
+    DOG_WHISTLING: "pattern_short_dog-whistling",
+    EUPHEMISM_JARGON: "pattern_short_euphemism_jargon",
   }
 };
-
-// Populate the shortNameToKeyMap automatically from the new short names
-for (const section in LEXICON_SECTIONS_BY_KEY) {
-  for (const key in LEXICON_SECTIONS_BY_KEY[section]) {
-    shortNameToKeyMap.set((LEXICON_SECTIONS_BY_KEY[section] as any)[key], key);
-  }
-}

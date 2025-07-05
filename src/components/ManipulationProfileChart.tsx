@@ -1,23 +1,40 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Tooltip } from 'recharts';
 import { useTranslation } from '../i18n';
-import { shortNameToKeyMap, keyToDescKeyMap } from '../lexicon-structure';
+import { LEXICON_SECTIONS_BY_KEY } from '../lexicon-structure';
 
-// The Tooltip content component is correct.
-const CustomRadarTooltip = ({ active, payload }: any) => {
-  const { t } = useTranslation();
+// Find the original simple key (e.g., GUILT_TRIPPING) from the translated short name.
+// This is more robust than relying on the displayed name.
+const findKeyByTranslatedTactic = (translatedTactic: string, t: (key: string) => string): string | null => {
+  for (const sectionKey in LEXICON_SECTIONS_BY_KEY) {
+    const section = LEXICON_SECTIONS_BY_KEY[sectionKey];
+    for (const patternKey in section) {
+      const i18nKey = section[patternKey];
+      if (t(i18nKey) === translatedTactic) {
+        return patternKey;
+      }
+    }
+  }
+  return null;
+}
+
+const CustomRadarTooltip = ({ active, payload, t }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0];
-    const tacticName = data.payload.tactic;
+    // The simpleKey is now passed directly in the payload for reliability.
+    const simpleKey = data.payload.simpleKey;
+    const tacticName = data.payload.tactic; // This is the already translated name.
     const realCount = data.value - 1;
-    const simpleKey = shortNameToKeyMap.get(tacticName);
-    const descKey = simpleKey ? keyToDescKeyMap.get(simpleKey) : null;
-    const description = descKey ? t(descKey) : '';
+
+    // Use the reliable simpleKey to find the description key.
+    const descKey = `pattern_${simpleKey.toLowerCase()}_desc`;
+    const description = t(descKey); // t() will handle if the key doesn't exist.
+
     return (
       <div className="max-w-xs p-3 bg-white border border-gray-300 rounded-lg shadow-xl text-sm pointer-events-none">
         <p className="font-bold text-gray-800">{tacticName}</p>
-        <p style={{ color: data.stroke }}>Detected: {realCount}</p>
-        {description && <p className="mt-2 text-gray-600">{description}</p>}
+        <p style={{ color: data.stroke }}>{t('report_tooltip_detected', { count: realCount })}</p>
+        {description && description !== descKey && <p className="mt-2 text-gray-600">{description}</p>}
       </div>
     );
   }
@@ -32,11 +49,12 @@ const CustomAngleTick = (props: any) => {
 
     const formatLabel = (label: string): string => {
         let formatted = label.replace('/', '/\u00AD').replace('-', '-\u00AD');
-        if (formatted === 'Personalization') {
-            formatted = 'Personali\u00ADzation';
+        // Add hyphens for other languages if needed, e.g., German
+        if (label.includes("Personalisierung")) {
+           formatted = "Personali\u00ADsierung";
         }
-         if (formatted === 'Impotence') {
-            formatted = 'Impo\u00ADtence';
+        if (label.includes("Inkompetenz")) {
+            formatted = "Inkompe\u00ADtenz";
         }
         return formatted;
     };
@@ -64,12 +82,13 @@ const CustomAngleTick = (props: any) => {
 };
 
 interface ManipulationProfileChartProps {
-  data: { tactic: string; count: number }[];
+  data: { tactic: string; count: number, simpleKey: string }[];
   color: string;
   hasFindings: boolean;
 }
 
 const ManipulationProfileChart: React.FC<ManipulationProfileChartProps> = ({ data, color, hasFindings }) => {
+  const { t } = useTranslation();
   const [cursorPosition, setCursorPosition] = useState<{ x: number, y: number } | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
@@ -116,7 +135,6 @@ const ManipulationProfileChart: React.FC<ManipulationProfileChartProps> = ({ dat
             data={data}
             onMouseMove={handleMouseMove}
             onMouseLeave={() => setCursorPosition(null)}
-            // ADDED: Disable animation for instant resizing.
             isAnimationActive={false}
           >
             <PolarGrid />
@@ -132,12 +150,11 @@ const ManipulationProfileChart: React.FC<ManipulationProfileChartProps> = ({ dat
               stroke={chartColor}
               fill={fillColor}
               fillOpacity={0.7}
-              // ADDED: Also disable animation on the Radar element itself.
               isAnimationActive={false}
             />
             <Tooltip
               position={cursorPosition ? { x: cursorPosition.x + 10, y: cursorPosition.y + 10 } : undefined}
-              content={<CustomRadarTooltip />}
+              content={<CustomRadarTooltip t={t} />}
               cursor={false}
               isAnimationActive={false}
             />
