@@ -8,8 +8,6 @@ import { GroupedModels } from "../hooks/useModels";
 
 type TFunction = (key: string, replacements?: Record<string, string | number>) => string;
 
-// testApiKey and analyzeText functions remain the same...
-
 export const testApiKey = async (
   apiKey: string,
   t: TFunction,
@@ -58,7 +56,6 @@ export const analyzeText = async (
   language: LanguageCode,
   modelName: string,
 ): Promise<GeminiAnalysisResponse> => {
-    // ... (implementation is unchanged)
     if (!apiKey) {
     throw new Error(t('error_api_key_not_configured'));
   }
@@ -71,7 +68,7 @@ export const analyzeText = async (
 
   const ai = new GoogleGenAI({ apiKey });
 
-  const dynamicSystemPrompt = `${SYSTEM_PROMPT}\n\nIMPORTANT: The 'analysis_summary' and all 'explanation' fields in the JSON response must be in the following language: ${language}.`;
+  const dynamicSystemPrompt = `${SYSTEM_PROMPT}\n\nIMPORTANT: The 'analysis_summary' and all 'explanation' fields in the JSON response must be in the following language: ${language}. The 'pattern_name' value MUST be the exact, untranslated English name from the Lexicon.`;
 
   try {
     const response: GenerateContentResponse = await ai.models.generateContent({
@@ -222,7 +219,6 @@ export const translateUI = async (
   baseTranslationsJSON: string,
   t: TFunction
 ): Promise<Record<string, string>> => {
-    // ... (implementation is unchanged)
     if (!apiKey) {
         throw new Error(t('error_api_key_not_configured'));
     }

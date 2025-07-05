@@ -25,20 +25,21 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, profileData
   const menuRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
+  // FIX: Group findings by their stable i18n category key, not the translated string.
   const findingsByCategory = useMemo(() => {
-    const keyToCategoryMap = new Map<string, string>();
+    const keyToCategoryKeyMap = new Map<string, string>();
     Object.entries(LEXICON_SECTIONS_BY_KEY).forEach(([categoryKey, patterns]) => {
-      Object.keys(patterns).forEach(key => keyToCategoryMap.set(key, t(categoryKey)));
+      Object.keys(patterns).forEach(key => keyToCategoryKeyMap.set(key, categoryKey));
     });
 
     return analysis.findings.reduce((acc, finding) => {
       const simpleKey = fullNameToKeyMap.get(finding.pattern_name);
-      const category = simpleKey ? (keyToCategoryMap.get(simpleKey) || 'Uncategorized') : 'Uncategorized';
-      if (!acc[category]) acc[category] = [];
-      acc[category].push(finding);
+      const categoryKey = simpleKey ? (keyToCategoryKeyMap.get(simpleKey) || 'Uncategorized') : 'Uncategorized';
+      if (!acc[categoryKey]) acc[categoryKey] = [];
+      acc[categoryKey].push(finding);
       return acc;
     }, {} as Record<string, GeminiFinding[]>);
-  }, [analysis.findings, t]);
+  }, [analysis.findings]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -96,12 +97,16 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, profileData
 
     const patternColorMapObject = Object.fromEntries(patternColorMap.entries());
 
-    // Create a map of original pattern names to their translations
     const patternNameTranslations = Object.fromEntries(
         Array.from(patternNameToI18nKeyMap.entries()).map(([originalName, i18nKey]) => [
             originalName,
             t(i18nKey)
         ])
+    );
+
+    // FIX: Create a translations map for the category keys to pass to the PDF generator.
+    const categoryNameTranslations = Object.fromEntries(
+        Object.keys(LEXICON_SECTIONS_BY_KEY).map(key => [key, t(key)])
     );
 
     const dataForPdf = {
@@ -121,6 +126,7 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, profileData
         explanationLabel: t('report_explanation_label'),
         pageNumber: t('pdf_page_number'),
         patternNames: patternNameTranslations,
+        categoryNames: categoryNameTranslations, // Pass the category translations
       }
     };
 
@@ -138,11 +144,17 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, profileData
   };
 
   const handleJsonDownload = () => {
+    // FIX: Translate category keys from i18n keys to human-readable names for the export.
+    const translatedFindingsByCategory = Object.entries(findingsByCategory).reduce((acc, [categoryKey, findings]) => {
+        acc[t(categoryKey) || categoryKey] = findings;
+        return acc;
+    }, {} as Record<string, GeminiFinding[]>);
+
     const structuredData = {
       reportTitle: "HootSpot AI Analysis Report",
       analysisSummary: analysis.analysis_summary,
       sourceText: sourceText,
-      findingsByCategory: findingsByCategory,
+      findingsByCategory: translatedFindingsByCategory,
     };
     const jsonString = JSON.stringify(structuredData, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });

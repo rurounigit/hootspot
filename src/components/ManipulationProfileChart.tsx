@@ -1,7 +1,9 @@
+// src/components/ManipulationProfileChart.tsx
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Tooltip } from 'recharts';
 import { useTranslation } from '../i18n';
-import { LEXICON_SECTIONS_BY_KEY } from '../lexicon-structure';
+import { LEXICON_SECTIONS_BY_KEY, keyToDescKeyMap } from '../lexicon-structure'; // Import keyToDescKeyMap
 
 // Find the original simple key (e.g., GUILT_TRIPPING) from the translated short name.
 // This is more robust than relying on the displayed name.
@@ -26,9 +28,9 @@ const CustomRadarTooltip = ({ active, payload, t }: any) => {
     const tacticName = data.payload.tactic; // This is the already translated name.
     const realCount = data.value - 1;
 
-    // Use the reliable simpleKey to find the description key.
-    const descKey = `pattern_${simpleKey.toLowerCase()}_desc`;
-    const description = t(descKey); // t() will handle if the key doesn't exist.
+    // FIX: Use the 'keyToDescKeyMap' for a reliable lookup instead of manual string construction.
+    const descKey = keyToDescKeyMap.get(simpleKey);
+    const description = descKey ? t(descKey) : '';
 
     return (
       <div className="max-w-xs p-3 bg-white border border-gray-300 rounded-lg shadow-xl text-sm pointer-events-none">

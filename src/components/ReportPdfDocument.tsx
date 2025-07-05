@@ -8,7 +8,7 @@ import { GeminiFinding } from '../types';
 type ColorInfo = { hex: string; border: string; text: string };
 type PatternColorMap = Record<string, ColorInfo>;
 
-// --- STYLESHEET UPDATES ---
+// ... (styles are unchanged)
 const styles = StyleSheet.create({
   page: {
     fontFamily: 'Helvetica',
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   },
 });
 
-// --- PROPS INTERFACE UPDATE ---
+// FIX: Update props to include categoryNames translation map
 interface ReportPdfDocumentProps {
   analysis: {
     analysis_summary: string;
@@ -153,10 +153,11 @@ interface ReportPdfDocumentProps {
     explanationLabel: string;
     pageNumber: string;
     patternNames: Record<string, string>;
+    categoryNames: Record<string, string>; // Add this line
   };
 }
 
-// Helper component to render highlighted text
+// ... (HighlightedSourceTextView is unchanged)
 const HighlightedSourceTextView: React.FC<{ text: string, highlights: { start: number; end: number }[] }> = ({ text, highlights }) => {
     const segments: React.ReactNode[] = [];
     let lastIndex = 0;
@@ -179,7 +180,6 @@ const HighlightedSourceTextView: React.FC<{ text: string, highlights: { start: n
     return <Text style={styles.sourceText}>{segments}</Text>;
 };
 
-// --- MAIN COMPONENT WITH DYNAMIC STYLING ---
 export const ReportPdfDocument: React.FC<ReportPdfDocumentProps> = ({ analysis, sourceText, highlightData, chartImages, profileData, translations, patternColorMap }) => {
   const defaultColor: ColorInfo = { hex: '#f3f4f6', border: '#d1d5db', text: '#1f2937' };
 
@@ -215,17 +215,16 @@ export const ReportPdfDocument: React.FC<ReportPdfDocumentProps> = ({ analysis, 
 
         <View break>
           <Text style={styles.sectionTitle}>{translations.detectedPatternsTitle}</Text>
-          {Object.entries(analysis.findingsByCategory).map(([category, findings]) => (
-            <View key={category} style={styles.categoryContainer}>
-              <Text style={styles.categoryTitle}>{category}</Text>
+          {Object.entries(analysis.findingsByCategory).map(([categoryKey, findings]) => (
+            <View key={categoryKey} style={styles.categoryContainer}>
+              {/* FIX: Use the translations map to look up the category title */}
+              <Text style={styles.categoryTitle}>{translations.categoryNames[categoryKey] || categoryKey}</Text>
               {findings.map((finding, index) => {
-                // The finding.pattern_name is the original English one, so this lookup works.
                 const color = patternColorMap[finding.pattern_name] || defaultColor;
 
                 return (
                   <View key={index} style={[styles.findingCard, { border: `1px solid ${color.border}` }]}>
                     <View style={[styles.findingHeader, { backgroundColor: color.hex, borderBottom: `1px solid ${color.border}` }]}>
-                      {/* Use the translations map to display the correct language name */}
                       <Text style={[styles.findingPatternName, { color: color.text }]}>
                         {translations.patternNames[finding.pattern_name] || finding.pattern_name}
                       </Text>
