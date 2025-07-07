@@ -5,7 +5,6 @@ import html2canvas from 'html2canvas';
 import { GeminiAnalysisResponse, GeminiFinding } from '../types';
 import { ShareIcon } from '../constants';
 import { useTranslation } from '../i18n';
-import { LEXICON_SECTIONS_BY_KEY, fullNameToKeyMap, patternNameToI18nKeyMap } from '../lexicon-structure';
 
 // Define the type for the color info
 type ColorInfo = { hex: string; border: string; text: string };
@@ -13,28 +12,21 @@ type ColorInfo = { hex: string; border: string; text: string };
 interface ShareMenuProps {
   analysis: GeminiAnalysisResponse;
   sourceText: string | null;
-  profileData: any[];
   highlightData: any[];
   patternColorMap: Map<string, ColorInfo>;
 }
 
-const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, profileData, highlightData, patternColorMap }) => {
+const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightData, patternColorMap }) => {
   const { t } = useTranslation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
-  // FIX: Group findings by their stable i18n category key, not the translated string.
+  // UPDATED: Group findings by the LLM-provided category key
   const findingsByCategory = useMemo(() => {
-    const keyToCategoryKeyMap = new Map<string, string>();
-    Object.entries(LEXICON_SECTIONS_BY_KEY).forEach(([categoryKey, patterns]) => {
-      Object.keys(patterns).forEach(key => keyToCategoryKeyMap.set(key, categoryKey));
-    });
-
     return analysis.findings.reduce((acc, finding) => {
-      const simpleKey = fullNameToKeyMap.get(finding.pattern_name);
-      const categoryKey = simpleKey ? (keyToCategoryKeyMap.get(simpleKey) || 'Uncategorized') : 'Uncategorized';
+      const categoryKey = finding.category || 'Uncategorized';
       if (!acc[categoryKey]) acc[categoryKey] = [];
       acc[categoryKey].push(finding);
       return acc;
@@ -80,42 +72,25 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, profileData
     setIsMenuOpen(false);
     setIsGenerating(true);
 
-    const chartImages: Record<string, string> = {};
-    for (const section of profileData) {
-      if (section.hasFindings) {
-        const chartElement = document.getElementById(`chart-container-${section.translatedTitle}`);
-        if (chartElement) {
-          try {
-            const canvas = await html2canvas(chartElement, { scale: 2, backgroundColor: null });
-            chartImages[section.translatedTitle] = canvas.toDataURL('image/png');
-          } catch (error) {
+    // UPDATED: Capture the single bubble chart
+    let chartImage: string | null = null;
+    const chartElement = document.getElementById('bubble-chart-container');
+    if (chartElement) {
+        try {
+            const canvas = await html2canvas(chartElement, { scale: 2, backgroundColor: '#f9fafb' });
+            chartImage = canvas.toDataURL('image/png');
+        } catch (error) {
             console.error("Failed to capture chart image:", error);
-          }
         }
-      }
     }
 
-    const patternColorMapObject = Object.fromEntries(patternColorMap.entries());
-
-    const patternNameTranslations = Object.fromEntries(
-        Array.from(patternNameToI18nKeyMap.entries()).map(([originalName, i18nKey]) => [
-            originalName,
-            t(i18nKey)
-        ])
-    );
-
-    // FIX: Create a translations map for the category keys to pass to the PDF generator.
-    const categoryNameTranslations = Object.fromEntries(
-        Object.keys(LEXICON_SECTIONS_BY_KEY).map(key => [key, t(key)])
-    );
-
+    // UPDATED: Prepare the new, simpler data structure for the PDF generator
     const dataForPdf = {
       analysis: { ...analysis, findingsByCategory },
       sourceText,
       highlightData,
-      chartImages,
-      profileData,
-      patternColorMap: patternColorMapObject,
+      chartImage: chartImage,
+      patternColorMap: Object.fromEntries(patternColorMap.entries()),
       translations: {
         reportTitle: t('pdf_report_title'),
         summaryTitle: t('report_summary_title'),
@@ -125,8 +100,12 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, profileData
         quoteLabel: t('report_quote_label'),
         explanationLabel: t('report_explanation_label'),
         pageNumber: t('pdf_page_number'),
-        patternNames: patternNameTranslations,
-        categoryNames: categoryNameTranslations, // Pass the category translations
+        // Pass translated category names for PDF section headers
+        categoryNames: {
+            'category_interpersonal_psychological': t('category_interpersonal_psychological'),
+            'category_covert_indirect_control': t('category_covert_indirect_control'),
+            'category_sociopolitical_rhetorical': t('category_sociopolitical_rhetorical'),
+        }
       }
     };
 
@@ -144,7 +123,7 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, profileData
   };
 
   const handleJsonDownload = () => {
-    // FIX: Translate category keys from i18n keys to human-readable names for the export.
+    // This logic still works perfectly
     const translatedFindingsByCategory = Object.entries(findingsByCategory).reduce((acc, [categoryKey, findings]) => {
         acc[t(categoryKey) || categoryKey] = findings;
         return acc;
@@ -165,14 +144,16 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, profileData
   };
 
   const handleTwitterShare = () => {
+    // UPDATED: Use dynamic English names and a simpler format
     const summary = analysis.analysis_summary;
-    const detectedPatterns = [...new Set(analysis.findings.map(f => t(patternNameToI18nKeyMap.get(f.pattern_name) || f.pattern_name)))];
+    const detectedPatterns = [...new Set(analysis.findings.map(f => f.pattern_name))];
     let patternsText = detectedPatterns.slice(0, 2).join(', ');
-    let tweetText = t('share_twitter_text', { patterns: patternsText, summary: summary });
 
+    let tweetText = t('share_twitter_text', { summary: summary, patterns: patternsText });
     if (tweetText.length > 260) {
-        tweetText = `${tweetText.substring(0, 257)}...`;
+      tweetText = `HootSpot: "${summary}" Detected: ${patternsText}...`; // Fallback format
     }
+
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&hashtags=HootSpotAI,CriticalThinking`;
     window.open(twitterUrl, '_blank', 'noopener,noreferrer');
     setIsMenuOpen(false);

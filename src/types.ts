@@ -3,6 +3,8 @@ export interface GeminiFinding {
   pattern_name: string;
   specific_quote: string;
   explanation: string;
+  strength: number; // A score from 1 (subtle) to 10 (overt)
+  category: string; // Will contain a key like "category_interpersonal_psychological"
 }
 
 export interface GeminiAnalysisResponse {

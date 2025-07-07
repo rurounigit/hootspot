@@ -8,7 +8,6 @@ import { GeminiFinding } from '../types';
 type ColorInfo = { hex: string; border: string; text: string };
 type PatternColorMap = Record<string, ColorInfo>;
 
-// ... (styles are unchanged)
 const styles = StyleSheet.create({
   page: {
     fontFamily: 'Helvetica',
@@ -72,6 +71,7 @@ const styles = StyleSheet.create({
   },
   categoryContainer: {
     marginBottom: 16,
+    breakInside: 'avoid',
   },
   categoryTitle: {
     fontFamily: 'Helvetica-Bold',
@@ -120,6 +120,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 'auto',
     marginBottom: 20,
+    alignSelf: 'center',
   },
   pageNumber: {
     position: 'absolute',
@@ -132,7 +133,7 @@ const styles = StyleSheet.create({
   },
 });
 
-// FIX: Update props to include categoryNames translation map
+// UPDATED: The props interface is simplified
 interface ReportPdfDocumentProps {
   analysis: {
     analysis_summary: string;
@@ -140,8 +141,7 @@ interface ReportPdfDocumentProps {
   };
   sourceText: string | null;
   highlightData: { start: number; end: number }[];
-  chartImages: Record<string, string>;
-  profileData: any[];
+  chartImage: string | null;
   patternColorMap: PatternColorMap;
   translations: {
     reportTitle: string;
@@ -152,12 +152,10 @@ interface ReportPdfDocumentProps {
     quoteLabel: string;
     explanationLabel: string;
     pageNumber: string;
-    patternNames: Record<string, string>;
-    categoryNames: Record<string, string>; // Add this line
+    categoryNames: Record<string, string>;
   };
 }
 
-// ... (HighlightedSourceTextView is unchanged)
 const HighlightedSourceTextView: React.FC<{ text: string, highlights: { start: number; end: number }[] }> = ({ text, highlights }) => {
     const segments: React.ReactNode[] = [];
     let lastIndex = 0;
@@ -180,7 +178,7 @@ const HighlightedSourceTextView: React.FC<{ text: string, highlights: { start: n
     return <Text style={styles.sourceText}>{segments}</Text>;
 };
 
-export const ReportPdfDocument: React.FC<ReportPdfDocumentProps> = ({ analysis, sourceText, highlightData, chartImages, profileData, translations, patternColorMap }) => {
+export const ReportPdfDocument: React.FC<ReportPdfDocumentProps> = ({ analysis, sourceText, highlightData, chartImage, translations, patternColorMap }) => {
   const defaultColor: ColorInfo = { hex: '#f3f4f6', border: '#d1d5db', text: '#1f2937' };
 
   return (
@@ -193,7 +191,7 @@ export const ReportPdfDocument: React.FC<ReportPdfDocumentProps> = ({ analysis, 
             <Text style={styles.summaryText}>{analysis.analysis_summary}</Text>
         </View>
 
-        {sourceText && (
+        {sourceText && highlightData && highlightData.length > 0 && (
             <View>
                 <Text style={styles.sectionTitle}>{translations.highlightedTextTitle}</Text>
                 <View style={styles.sourceTextContainer}>
@@ -202,47 +200,47 @@ export const ReportPdfDocument: React.FC<ReportPdfDocumentProps> = ({ analysis, 
             </View>
         )}
 
-        {profileData.some(s => s.hasFindings) && (
+        {/* UPDATED: Render the single bubble chart image */}
+        {chartImage && (
             <View break>
                 <Text style={styles.sectionTitle}>{translations.profileTitle}</Text>
-                {profileData.map(section => (
-                    section.hasFindings && chartImages[section.translatedTitle] ? (
-                        <Image key={section.translatedTitle} src={chartImages[section.translatedTitle]} style={styles.chartImage} />
-                    ) : null
-                ))}
+                <Image src={chartImage} style={styles.chartImage} />
             </View>
         )}
 
-        <View break>
-          <Text style={styles.sectionTitle}>{translations.detectedPatternsTitle}</Text>
-          {Object.entries(analysis.findingsByCategory).map(([categoryKey, findings]) => (
-            <View key={categoryKey} style={styles.categoryContainer}>
-              {/* FIX: Use the translations map to look up the category title */}
-              <Text style={styles.categoryTitle}>{translations.categoryNames[categoryKey] || categoryKey}</Text>
-              {findings.map((finding, index) => {
-                const color = patternColorMap[finding.pattern_name] || defaultColor;
+        {Object.keys(analysis.findingsByCategory).length > 0 && (
+          <View break>
+            <Text style={styles.sectionTitle}>{translations.detectedPatternsTitle}</Text>
+            {Object.entries(analysis.findingsByCategory).map(([categoryKey, findings]) => (
+              <View key={categoryKey} style={styles.categoryContainer}>
+                {/* UPDATED: Use the translations map to get the category title */}
+                <Text style={styles.categoryTitle}>{translations.categoryNames[categoryKey] || categoryKey}</Text>
+                {findings.map((finding, index) => {
+                  const color = patternColorMap[finding.pattern_name] || defaultColor;
 
-                return (
-                  <View key={index} style={[styles.findingCard, { border: `1px solid ${color.border}` }]}>
-                    <View style={[styles.findingHeader, { backgroundColor: color.hex, borderBottom: `1px solid ${color.border}` }]}>
-                      <Text style={[styles.findingPatternName, { color: color.text }]}>
-                        {translations.patternNames[finding.pattern_name] || finding.pattern_name}
-                      </Text>
+                  return (
+                    <View key={index} style={[styles.findingCard, { border: `1px solid ${color.border}` }]}>
+                      <View style={[styles.findingHeader, { backgroundColor: color.hex, borderBottom: `1px solid ${color.border}` }]}>
+                        <Text style={[styles.findingPatternName, { color: color.text }]}>
+                          {/* Display the dynamic English name from the LLM */}
+                          {finding.pattern_name}
+                        </Text>
+                      </View>
+                      <View style={styles.findingBody}>
+                        <Text style={styles.findingQuoteLabel}>{translations.quoteLabel}</Text>
+                        <Text style={[styles.findingQuote, { backgroundColor: color.hex, borderLeftColor: color.border, borderLeftWidth: 3 }]}>
+                          <Text style={{ color: color.text }}>"{finding.specific_quote}"</Text>
+                        </Text>
+                        <Text style={styles.findingExplanationLabel}>{translations.explanationLabel}</Text>
+                        <Text>{finding.explanation}</Text>
+                      </View>
                     </View>
-                    <View style={styles.findingBody}>
-                      <Text style={styles.findingQuoteLabel}>{translations.quoteLabel}</Text>
-                      <Text style={[styles.findingQuote, { backgroundColor: color.hex, borderLeftColor: color.border, borderLeftWidth: 3 }]}>
-                        <Text style={{ color: color.text }}>"{finding.specific_quote}"</Text>
-                      </Text>
-                      <Text style={styles.findingExplanationLabel}>{translations.explanationLabel}</Text>
-                      <Text>{finding.explanation}</Text>
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
-          ))}
-        </View>
+                  );
+                })}
+              </View>
+            ))}
+          </View>
+        )}
 
         <Text style={styles.pageNumber} render={({ pageNumber, totalPages }) => translations.pageNumber.replace('{pageNumber}', String(pageNumber)).replace('{totalPages}', String(totalPages))} fixed />
       </Page>

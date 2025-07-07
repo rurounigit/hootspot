@@ -1,23 +1,21 @@
 // src/components/AnalysisReport.tsx
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { GeminiAnalysisResponse, GeminiFinding } from '../types';
 import { InfoIcon } from '../constants';
 import { useTranslation } from '../i18n';
-import ManipulationProfileChart from './ManipulationProfileChart';
 import ShareMenu from './ShareMenu';
-import { LEXICON_SECTIONS_BY_KEY, fullNameToKeyMap, keyToDescKeyMap, patternNameToI18nKeyMap } from '../lexicon-structure';
+import ManipulationBubbleChart from './ManipulationBubbleChart';
 
-// A color palette for pattern identification
 const findingColors = [
-  { hex: '#fef08a', border: 'border-yellow-400', text: 'text-yellow-800' }, // yellow
-  { hex: '#bfdbfe', border: 'border-blue-400', text: 'text-blue-800' },     // blue
-  { hex: '#a7f3d0', border: 'border-green-400', text: 'text-green-800' },    // green
-  { hex: '#e9d5ff', border: 'border-purple-400', text: 'text-purple-800' }, // purple
-  { hex: '#fbcfe8', border: 'border-pink-400', text: 'text-pink-800' },     // pink
-  { hex: '#c7d2fe', border: 'border-indigo-400', text: 'text-indigo-800' }, // indigo
-  { hex: '#cffafe', border: 'border-cyan-400', text: 'text-cyan-800' },     // cyan
-  { hex: '#fed7aa', border: 'border-orange-400', text: 'text-orange-800' }, // orange
+  { hex: '#fef08a', border: 'border-yellow-400', text: 'text-yellow-800' },
+  { hex: '#bfdbfe', border: 'border-blue-400', text: 'text-blue-800' },
+  { hex: '#a7f3d0', border: 'border-green-400', text: 'text-green-800' },
+  { hex: '#e9d5ff', border: 'border-purple-400', text: 'text-purple-800' },
+  { hex: '#fbcfe8', border: 'border-pink-400', text: 'text-pink-800' },
+  { hex: '#c7d2fe', border: 'border-indigo-400', text: 'text-indigo-800' },
+  { hex: '#cffafe', border: 'border-cyan-400', text: 'text-cyan-800' },
+  { hex: '#fed7aa', border: 'border-orange-400', text: 'text-orange-800' },
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -53,14 +51,10 @@ export const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches,
   };
 
   const handlePillMouseOver = (event: React.MouseEvent, finding: GeminiFinding, color: { hex: string, text: string }) => {
-    const i18nKey = patternNameToI18nKeyMap.get(finding.pattern_name) || finding.pattern_name;
-    const simpleKey = fullNameToKeyMap.get(finding.pattern_name);
-    const descI18nKey = simpleKey ? keyToDescKeyMap.get(simpleKey) : '';
-
     setTooltip({
       visible: true,
-      title: t(i18nKey),
-      description: descI18nKey ? t(descI18nKey) : '',
+      title: finding.pattern_name,
+      description: t(finding.category),
       x: event.clientX,
       y: event.clientY,
       color: color.hex,
@@ -102,13 +96,10 @@ export const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches,
   );
 };
 
-
 const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: string | null }> = ({ analysis, sourceText }) => {
   const { t } = useTranslation();
   const { findings } = analysis;
   const hasFindings = findings && findings.length > 0;
-
-  const [activeTab, setActiveTab] = useState<string | null>(null);
 
   const patternColorMap = useMemo(() => {
     const map = new Map<string, typeof findingColors[0]>();
@@ -121,58 +112,25 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
     return map;
   }, [findings, hasFindings]);
 
-  const profileDataBySection = useMemo(() => {
-    const CATEGORY_ICONS: Record<string, string> = {
-      'category_interpersonal_psychological': 'images/category-icons/psychological.png',
-      'category_covert_indirect_control': 'images/category-icons/control.png',
-      'category_sociopolitical_rhetorical': 'images/category-icons/sociopolitical.png',
-    };
+  const bubbleChartData = useMemo(() => {
+    if (!hasFindings) return [];
 
-    const counts = new Map<string, number>();
-    if (hasFindings) {
-      for (const finding of findings) {
-        const simpleKey = fullNameToKeyMap.get(finding.pattern_name);
-        if (simpleKey) {
-          counts.set(simpleKey, (counts.get(simpleKey) || 0) + 1);
-        }
-      }
-    }
+    return findings.map((finding, index) => {
+        const strength = finding.strength;
+        // This scale maps strength (1-10) to a visual radius (e.g., 10px to 45px)
+        const radius = 5 + (strength * 4);
 
-    const sections = Object.entries(LEXICON_SECTIONS_BY_KEY).map(([sectionTitleKey, patterns]) => {
-      let totalFindings = 0;
-      const data = Object.entries(patterns).map(([simpleKey, shortNameKey]) => {
-        const count = counts.get(simpleKey) || 0;
-        totalFindings += count;
         return {
-          tactic: t(shortNameKey), // Translate short name
-          count: 1 + count,
-          simpleKey: simpleKey, // Pass simpleKey for reliable tooltip lookup
+            id: `${finding.pattern_name}-${index}`,
+            name: finding.pattern_name,
+            strength: strength,
+            category: finding.category,
+            color: CATEGORY_COLORS[finding.category] || '#cccccc',
+            // Pass the calculated radius to be used by both D3 and the renderer
+            radius: radius,
         };
-      });
-
-      const translatedTitle = t(sectionTitleKey);
-      return {
-        titleKey: sectionTitleKey,
-        translatedTitle: translatedTitle,
-        icon: CATEGORY_ICONS[sectionTitleKey],
-        data: data,
-        hasFindings: totalFindings > 0,
-        totalFindings: totalFindings,
-        color: CATEGORY_COLORS[sectionTitleKey],
-      };
     });
-
-    sections.sort((a, b) => b.totalFindings - a.totalFindings);
-
-    return sections;
-  }, [findings, hasFindings, t]);
-
-  useEffect(() => {
-    if (profileDataBySection && profileDataBySection.length > 0) {
-      const firstActiveSection = profileDataBySection.find(s => s.hasFindings) || profileDataBySection[0];
-      setActiveTab(firstActiveSection.translatedTitle);
-    }
-  }, [profileDataBySection]);
+  }, [findings, hasFindings]);
 
   const finalHighlights = useMemo(() => {
     const matchesByPosition = new Map<string, { start: number; end: number; findings: GeminiFinding[] }>();
@@ -196,10 +154,7 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
         }
       });
     }
-
     const sortedMatches = Array.from(matchesByPosition.values()).sort((a, b) => a.start - b.start);
-
-    // Create a stable index for each unique finding instance for jump-to-card functionality
     const uniqueFindingsWithIndices = new Map<string, number>();
     let findingCounter = 0;
     findings.forEach(finding => {
@@ -208,7 +163,6 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
             uniqueFindingsWithIndices.set(uniqueId, findingCounter++);
         }
     });
-
     const matchesWithCorrectIndex = sortedMatches.map(match => ({
         ...match,
         findings: match.findings.map(f => {
@@ -219,7 +173,6 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
             };
         })
     }));
-
     const highlights: typeof matchesWithCorrectIndex = [];
     if (matchesWithCorrectIndex.length > 0) {
         let currentHighlight = { ...matchesWithCorrectIndex[0] };
@@ -265,7 +218,6 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
            <ShareMenu
               analysis={analysis}
               sourceText={sourceText}
-              profileData={profileDataBySection}
               highlightData={finalHighlights}
               patternColorMap={patternColorMap}
            />
@@ -280,48 +232,7 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
       {hasFindings && (
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-gray-700 mb-4">{t('report_profile_title')}</h3>
-
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-4" aria-label="Tabs">
-              {profileDataBySection.map(section => (
-                <button
-                  key={section.titleKey}
-                  onClick={() => section.hasFindings && setActiveTab(section.translatedTitle)}
-                  disabled={!section.hasFindings}
-                  title={section.hasFindings ? section.translatedTitle : t('report_profile_no_findings_in_category')}
-                  className={`
-                    whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm
-                    ${activeTab === section.translatedTitle
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
-                    ${!section.hasFindings ? 'text-gray-400 cursor-not-allowed hover:border-transparent' : ''}
-                  `}
-                >
-                  <img
-                    src={chrome.runtime.getURL(section.icon)}
-                    alt={section.translatedTitle}
-                    className="w-12 h-12"
-                  />
-                </button>
-              ))}
-            </nav>
-          </div>
-
-          <div className="mt-4">
-            {profileDataBySection.map(section => (
-              <div
-                key={section.titleKey}
-                id={`chart-container-${section.translatedTitle}`}
-                className={activeTab === section.translatedTitle ? 'block' : 'hidden'}
-              >
-                <ManipulationProfileChart
-                  data={section.data}
-                  color={section.color}
-                  hasFindings={section.hasFindings}
-                />
-              </div>
-            ))}
-          </div>
+          <ManipulationBubbleChart data={bubbleChartData} />
         </div>
       )}
 
@@ -340,11 +251,10 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
           <div className="space-y-4">
             {indexedFindings.map((finding, index) => {
               const color = patternColorMap.get(finding.pattern_name) || { hex: '#e5e7eb', border: 'border-gray-300', text: 'text-gray-800' };
-              const i18nKey = patternNameToI18nKeyMap.get(finding.pattern_name) || finding.pattern_name;
               return (
                 <div key={index} id={`finding-card-${finding.displayIndex}`} className={`bg-gray-50 border ${color.border} rounded-lg shadow-md overflow-hidden`}>
                   <div className={`p-4 border-b ${color.border}`} style={{ backgroundColor: color.hex }}>
-                    <h4 className={`text-l font-bold ${color.text} uppercase`}>{t(i18nKey)}</h4>
+                    <h4 className={`text-l font-bold ${color.text} uppercase`}>{finding.pattern_name}</h4>
                   </div>
                   <div className="p-4 space-y-3">
                     <div><h5 className="font-semibold text-gray-600 mb-1">{t('report_quote_label')}</h5><blockquote className={`italic p-3 rounded-md border-l-4 ${color.border}`} style={{ backgroundColor: color.hex }}><p className={color.text}>"{finding.specific_quote}"</p></blockquote></div>
