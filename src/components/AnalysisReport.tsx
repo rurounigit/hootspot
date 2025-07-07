@@ -7,16 +7,12 @@ import { useTranslation } from '../i18n';
 import ShareMenu from './ShareMenu';
 import ManipulationBubbleChart from './ManipulationBubbleChart';
 
-const findingColors = [
-  { hex: '#fef08a', border: 'border-yellow-400', text: 'text-yellow-800' },
-  { hex: '#bfdbfe', border: 'border-blue-400', text: 'text-blue-800' },
-  { hex: '#a7f3d0', border: 'border-green-400', text: 'text-green-800' },
-  { hex: '#e9d5ff', border: 'border-purple-400', text: 'text-purple-800' },
-  { hex: '#fbcfe8', border: 'border-pink-400', text: 'text-pink-800' },
-  { hex: '#c7d2fe', border: 'border-indigo-400', text: 'text-indigo-800' },
-  { hex: '#cffafe', border: 'border-cyan-400', text: 'text-cyan-800' },
-  { hex: '#fed7aa', border: 'border-orange-400', text: 'text-orange-800' },
-];
+// This function generates visually distinct colors using the golden angle in the HSL color space.
+const generateDistantColor = (index: number, saturation: number = 0.7, lightness: number = 0.6) => {
+    const goldenAngle = 137.5;
+    const hue = (index * goldenAngle) % 360;
+    return `hsl(${hue}, ${saturation * 100}%, ${lightness * 100}%)`;
+};
 
 const CATEGORY_COLORS: Record<string, string> = {
   'category_interpersonal_psychological': '#8884d8',
@@ -31,12 +27,12 @@ function escapeRegex(string: string) { return string.replace(/[.*+?^${}()|[\]\\]
 interface HighlightedTextProps {
   text: string;
   matches: { start: number; end: number; findings: (GeminiFinding & { displayIndex: number })[] }[];
-  patternColorMap: Map<string, { hex: string, border: string, text: string }>;
+  patternColorMap: Map<string, string>; // Map of pattern name to its generated color
 }
 
 export const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches, patternColorMap }) => {
   const { t } = useTranslation();
-  const [tooltip, setTooltip] = useState({ visible: false, title: '', description: '', x: 0, y: 0, color: '', textColor: '' });
+  const [tooltip, setTooltip] = useState({ visible: false, title: '', description: '', x: 0, y: 0, color: '', textColor: '#fff' });
 
   if (!matches || matches.length === 0) return <p className="whitespace-pre-wrap">{text}</p>;
 
@@ -50,15 +46,16 @@ export const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches,
     }
   };
 
-  const handlePillMouseOver = (event: React.MouseEvent, finding: GeminiFinding, color: { hex: string, text: string }) => {
+  const handlePillMouseOver = (event: React.MouseEvent, finding: GeminiFinding) => {
+    const color = patternColorMap.get(finding.pattern_name) || '#ccc';
     setTooltip({
       visible: true,
       title: finding.pattern_name,
       description: t(finding.category),
       x: event.clientX,
       y: event.clientY,
-      color: color.hex,
-      textColor: color.text
+      color: color,
+      textColor: '#fff'
     });
   };
 
@@ -70,9 +67,9 @@ export const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches,
   matches.forEach((match, matchIndex) => {
     if (match.start > lastIndex) { segments.push(text.substring(lastIndex, match.start)); }
     const pills = match.findings.map(finding => {
-      const colorInfo = patternColorMap.get(finding.pattern_name);
-      if (!colorInfo) return null;
-      return (<span key={`${finding.pattern_name}-${match.start}`} className="inline-block w-2.5 h-2.5 rounded-full mr-1 -mb-0.5 border border-gray-500 cursor-pointer" style={{ backgroundColor: colorInfo.hex }} onClick={() => handlePillClick(finding.displayIndex)} onMouseOver={(e) => handlePillMouseOver(e, finding, colorInfo)} onMouseLeave={handlePillMouseLeave} />);
+      const color = patternColorMap.get(finding.pattern_name);
+      if (!color) return null;
+      return (<span key={`${finding.pattern_name}-${match.start}`} className="inline-block w-2.5 h-2.5 rounded-full mr-1 -mb-0.5 border border-gray-500 cursor-pointer" style={{ backgroundColor: color }} onClick={() => handlePillClick(finding.displayIndex)} onMouseOver={(e) => handlePillMouseOver(e, finding)} onMouseLeave={handlePillMouseLeave} />);
     });
     segments.push(<span key={`match-${matchIndex}`} className="inline-block">{pills}<mark className={`${UNIFORM_HIGHLIGHT_COLOR} p-0.5 rounded-sm`}>{text.substring(match.start, match.end)}</mark></span>);
     lastIndex = match.end;
@@ -85,7 +82,7 @@ export const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches,
       {tooltip.visible && (
         <div
           className="fixed max-w-xs px-3 py-2 rounded-lg shadow-xl text-sm pointer-events-none z-50"
-          style={{ top: tooltip.y + 15, left: tooltip.x + 15, backgroundColor: tooltip.color, color: tooltip.textColor, border: `1px solid ${tooltip.textColor}` }}
+          style={{ top: tooltip.y + 15, left: tooltip.x + 15, backgroundColor: tooltip.color, color: tooltip.textColor, border: `1px solid rgba(0,0,0,0.2)` }}
         >
           <strong className="font-bold block">{tooltip.title}</strong>
           {tooltip.description && <p className="mt-1">{tooltip.description}</p>}
@@ -101,12 +98,13 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
   const { findings } = analysis;
   const hasFindings = findings && findings.length > 0;
 
+  // DEFINITIVE FIX: Generate a unique, consistent, and distant color for each tactic name.
   const patternColorMap = useMemo(() => {
-    const map = new Map<string, typeof findingColors[0]>();
+    const map = new Map<string, string>();
     if (hasFindings) {
       const uniquePatternNames = [...new Set(findings.map(f => f.pattern_name))];
       uniquePatternNames.forEach((name, index) => {
-        map.set(name, findingColors[index % findingColors.length]);
+        map.set(name, generateDistantColor(index));
       });
     }
     return map;
@@ -117,20 +115,19 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
 
     return findings.map((finding, index) => {
         const strength = finding.strength;
-        // This scale maps strength (1-10) to a visual radius (e.g., 10px to 45px)
-        const radius = 5 + (strength * 4);
+        const radius = 5 + (strength * 5); // New formula for better size contrast
 
         return {
             id: `${finding.pattern_name}-${index}`,
             name: finding.pattern_name,
             strength: strength,
             category: finding.category,
-            color: CATEGORY_COLORS[finding.category] || '#cccccc',
-            // Pass the calculated radius to be used by both D3 and the renderer
+            // Assign color based on the tactic name from our new map
+            color: patternColorMap.get(finding.pattern_name) || '#cccccc',
             radius: radius,
         };
     });
-  }, [findings, hasFindings]);
+  }, [findings, hasFindings, patternColorMap]);
 
   const finalHighlights = useMemo(() => {
     const matchesByPosition = new Map<string, { start: number; end: number; findings: GeminiFinding[] }>();
@@ -250,14 +247,16 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
           <h3 className="text-lg font-semibold text-gray-700 mb-3">{t('report_detected_patterns_title')}</h3>
           <div className="space-y-4">
             {indexedFindings.map((finding, index) => {
-              const color = patternColorMap.get(finding.pattern_name) || { hex: '#e5e7eb', border: 'border-gray-300', text: 'text-gray-800' };
+              const color = patternColorMap.get(finding.pattern_name) || '#e5e7eb';
+              const borderClass = `border-[${color}]`; // This might not work with Tailwind JIT, use style instead
+
               return (
-                <div key={index} id={`finding-card-${finding.displayIndex}`} className={`bg-gray-50 border ${color.border} rounded-lg shadow-md overflow-hidden`}>
-                  <div className={`p-4 border-b ${color.border}`} style={{ backgroundColor: color.hex }}>
-                    <h4 className={`text-l font-bold ${color.text} uppercase`}>{finding.pattern_name}</h4>
+                <div key={index} id={`finding-card-${finding.displayIndex}`} className={`bg-gray-50 border rounded-lg shadow-md overflow-hidden`} style={{borderColor: color}}>
+                  <div className={`p-4 border-b`} style={{ backgroundColor: color, borderColor: color }}>
+                    <h4 className={`text-l font-bold text-white uppercase`}>{finding.pattern_name}</h4>
                   </div>
                   <div className="p-4 space-y-3">
-                    <div><h5 className="font-semibold text-gray-600 mb-1">{t('report_quote_label')}</h5><blockquote className={`italic p-3 rounded-md border-l-4 ${color.border}`} style={{ backgroundColor: color.hex }}><p className={color.text}>"{finding.specific_quote}"</p></blockquote></div>
+                    <div><h5 className="font-semibold text-gray-600 mb-1">{t('report_quote_label')}</h5><blockquote className={`italic p-3 rounded-md border-l-4`} style={{ backgroundColor: `${color}40`, borderColor: color }}><p className="text-gray-800">"{finding.specific_quote}"</p></blockquote></div>
                     <div><h5 className="font-semibold text-gray-600 mb-1">{t('report_explanation_label')}</h5><p className="text-gray-700">{finding.explanation}</p></div>
                   </div>
                 </div>

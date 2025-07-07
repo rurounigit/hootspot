@@ -11,7 +11,7 @@ interface BubbleData {
   strength: number;
   category: string;
   color: string;
-  radius: number; // The visual radius, calculated in the parent
+  radius: number;
 }
 
 // Data after D3 calculates its position
@@ -21,33 +21,33 @@ interface ManipulationBubbleChartProps {
   data: BubbleData[];
 }
 
-// The custom shape for each bubble, which includes the circle and the text
 const CustomBubble = (props: any) => {
   const { cx, cy, payload } = props;
   const { color, radius, name } = payload as SimulationNode;
 
-  // Style for the text container inside the bubble
+  const padding = radius * 0.15;
+  const textRadius = radius - padding;
+  const fontSize = Math.max(8, textRadius * 0.3); // Scale font size with bubble size
+
   const textContainerStyle: React.CSSProperties = {
     color: 'white',
-    fontSize: '12px',
+    fontSize: `${fontSize}px`,
+    fontWeight: 'bold',
     textAlign: 'center',
     width: '100%',
     height: '100%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '4px',
-    boxSizing: 'border-box',
     overflow: 'hidden',
-    lineHeight: 1.2,
+    lineHeight: 1.1,
+    textShadow: '0px 1px 2px rgba(0,0,0,0.5)',
   };
 
   return (
-    // We use a <g> element to group the circle and its label
     <g transform={`translate(${cx}, ${cy})`}>
-      <circle r={radius} fill={color} style={{ stroke: 'white', strokeWidth: 2, opacity: 0.9 }} />
-      {/* foreignObject allows us to use HTML/CSS for complex text rendering inside SVG */}
-      <foreignObject x={-radius} y={-radius} width={radius * 2} height={radius * 2}>
+      <circle r={radius} fill={color} style={{ stroke: 'white', strokeWidth: 2, opacity: 0.95 }} />
+      <foreignObject x={-textRadius} y={-textRadius} width={textRadius * 2} height={textRadius * 2}>
         <div style={textContainerStyle} xmlns="http://www.w3.org/1999/xhtml">
           {name}
         </div>
@@ -93,11 +93,21 @@ const ManipulationBubbleChart: React.FC<ManipulationBubbleChartProps> = ({ data 
     if (data && data.length > 0 && dimensions.width > 0) {
       const nodes: SimulationNode[] = data.map(d => ({ ...d }));
 
+      // DEFINITIVE FIX: Define multiple "gravity" centers for each category
+      const uniqueCategories = [...new Set(data.map(d => d.category))];
+      const categoryCenters = new Map<string, {x: number, y: number}>();
+      uniqueCategories.forEach((category, i) => {
+        // Distribute clusters horizontally
+        const x = (dimensions.width / (uniqueCategories.length + 1)) * (i + 1);
+        categoryCenters.set(category, { x: x, y: dimensions.height / 2 });
+      });
+
       const simulation = d3.forceSimulation<SimulationNode>(nodes)
-        .force('x', d3.forceX(dimensions.width / 2).strength(0.05))
-        .force('y', d3.forceY(dimensions.height / 2).strength(0.05))
-        // The D3 collision force now uses the exact radius we calculated
-        .force('collide', d3.forceCollide().radius((d: SimulationNode) => d.radius + 2).strength(1)) // +2 for padding
+        // Pull nodes towards their category's designated center
+        .force('x', d3.forceX<SimulationNode>(d => categoryCenters.get(d.category)?.x ?? dimensions.width / 2).strength(0.1))
+        .force('y', d3.forceY<SimulationNode>(d => categoryCenters.get(d.category)?.y ?? dimensions.height / 2).strength(0.1))
+        // The collision force applies to ALL nodes, ensuring no overlap between or within clusters
+        .force('collide', d3.forceCollide<SimulationNode>().radius(d => d.radius + 2).strength(0.8))
         .stop();
 
       simulation.tick(300);
@@ -117,10 +127,7 @@ const ManipulationBubbleChart: React.FC<ManipulationBubbleChartProps> = ({ data 
             <ScatterChart>
               <XAxis type="number" dataKey="x" name="x" hide={true} domain={[0, dimensions.width]} />
               <YAxis type="number" dataKey="y" name="y" hide={true} domain={[0, dimensions.height]} />
-
               <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<CustomTooltip t={t} />} isAnimationActive={false}/>
-
-              {/* We now use the `shape` prop to render our custom bubble */}
               <Scatter data={simulatedData} shape={<CustomBubble />} isAnimationActive={false}/>
             </ScatterChart>
         </ResponsiveContainer>
