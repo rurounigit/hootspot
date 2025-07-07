@@ -11,7 +11,7 @@ interface BubbleData {
   strength: number;
   category: string;
   color: string;
-  radius: number;
+  radius: number; // The visual radius, calculated in the parent
 }
 
 // Data after D3 calculates its position
@@ -21,13 +21,17 @@ interface ManipulationBubbleChartProps {
   data: BubbleData[];
 }
 
+// The custom shape for each bubble, which includes the circle and the text
 const CustomBubble = (props: any) => {
   const { cx, cy, payload } = props;
   const { color, radius, name } = payload as SimulationNode;
 
-  const padding = radius * 0.15;
+  // DEFINITIVE FIX: Create a smaller radius for the text container to ensure padding.
+  const padding = radius * 0.15; // 15% padding from the edge
   const textRadius = radius - padding;
-  const fontSize = Math.max(8, textRadius * 0.3); // Scale font size with bubble size
+
+  // Font size now scales relative to the smaller text area
+  const fontSize = Math.max(8, Math.min(textRadius * 0.4, 16));
 
   const textContainerStyle: React.CSSProperties = {
     color: 'white',
@@ -41,12 +45,14 @@ const CustomBubble = (props: any) => {
     justifyContent: 'center',
     overflow: 'hidden',
     lineHeight: 1.1,
+    wordBreak: 'break-word',
     textShadow: '0px 1px 2px rgba(0,0,0,0.5)',
   };
 
   return (
     <g transform={`translate(${cx}, ${cy})`}>
       <circle r={radius} fill={color} style={{ stroke: 'white', strokeWidth: 2, opacity: 0.95 }} />
+      {/* The foreignObject is now smaller than the circle, creating the padding */}
       <foreignObject x={-textRadius} y={-textRadius} width={textRadius * 2} height={textRadius * 2}>
         <div style={textContainerStyle} xmlns="http://www.w3.org/1999/xhtml">
           {name}
@@ -93,20 +99,27 @@ const ManipulationBubbleChart: React.FC<ManipulationBubbleChartProps> = ({ data 
     if (data && data.length > 0 && dimensions.width > 0) {
       const nodes: SimulationNode[] = data.map(d => ({ ...d }));
 
-      // DEFINITIVE FIX: Define multiple "gravity" centers for each category
       const uniqueCategories = [...new Set(data.map(d => d.category))];
       const categoryCenters = new Map<string, {x: number, y: number}>();
       uniqueCategories.forEach((category, i) => {
-        // Distribute clusters horizontally
         const x = (dimensions.width / (uniqueCategories.length + 1)) * (i + 1);
         categoryCenters.set(category, { x: x, y: dimensions.height / 2 });
       });
 
+      const tacticCenters = new Map<string, {x: number, y: number}>();
+      const uniqueNames = [...new Set(data.map(d => d.name))];
+      uniqueNames.forEach(name => {
+        const category = data.find(d => d.name === name)!.category;
+        const categoryCenter = categoryCenters.get(category)!;
+        tacticCenters.set(name, {
+            x: categoryCenter.x + (Math.random() - 0.5) * 50,
+            y: categoryCenter.y + (Math.random() - 0.5) * 50
+        });
+      });
+
       const simulation = d3.forceSimulation<SimulationNode>(nodes)
-        // Pull nodes towards their category's designated center
-        .force('x', d3.forceX<SimulationNode>(d => categoryCenters.get(d.category)?.x ?? dimensions.width / 2).strength(0.1))
-        .force('y', d3.forceY<SimulationNode>(d => categoryCenters.get(d.category)?.y ?? dimensions.height / 2).strength(0.1))
-        // The collision force applies to ALL nodes, ensuring no overlap between or within clusters
+        .force('x', d3.forceX<SimulationNode>(d => tacticCenters.get(d.name)?.x ?? dimensions.width / 2).strength(0.4))
+        .force('y', d3.forceY<SimulationNode>(d => tacticCenters.get(d.name)?.y ?? dimensions.height / 2).strength(0.4))
         .force('collide', d3.forceCollide<SimulationNode>().radius(d => d.radius + 2).strength(0.8))
         .stop();
 
