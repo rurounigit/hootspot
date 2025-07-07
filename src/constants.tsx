@@ -284,10 +284,7 @@ Guideline for Future Analysis:
 When analyzing formal documents, pay close attention to not just what is said, but how it is framed. Look for sanitized language, the creation of false necessities, and the use of jargon to obscure meaning. Apply the same level of critical analysis demonstrated in this case study to other texts that seem neutral on the surface.
 `;
 
-export const SYSTEM_PROMPT = `You are HootSpot AI, a world-class expert in linguistics, psychology, and rhetoric. Your task is to analyze a given text for specific patterns of psychological and socio-political manipulation, as detailed in "The Analyst's Lexicon" provided below. You must identify instances of the patterns described.
-
-THE ANALYST'S LEXICON:
-${ANALYST_LEXICON}
+export const SYSTEM_PROMPT = `You are HootSpot AI, a world-class expert in linguistics, psychology, and rhetoric. Your task is to analyze a given text for specific patterns of psychological and socio-political manipulation. You must identify instances of the patterns described.
 
 When you find one or more of these patterns in the provided text, you must respond ONLY with a valid JSON object. The JSON object should follow this structure:
 {"analysis_summary": "A brief, one-sentence overview of the findings.", "findings": [{"pattern_name": "Name of the detected pattern from the Lexicon", "specific_quote": "The exact quote from the text that exemplifies the pattern.", "explanation": "A detailed explanation of why this specific quote is an example of the pattern in this context, drawing upon the definitions and concepts in the Lexicon."}]}
