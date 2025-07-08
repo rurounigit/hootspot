@@ -6,18 +6,17 @@ import { testApiKey } from '../services/geminiService';
 import { useTranslation } from '../i18n';
 import LanguageManager from './LanguageManager';
 import { GeminiModel } from '../types';
-import { GroupedModels } from '../hooks/useModels'; // Import the new interface
+import { GroupedModels } from '../hooks/useModels';
 
 interface ApiKeyManagerProps {
   currentApiKey: string | null;
   onApiKeySave: (key: string) => Promise<{success: boolean, error?: string}>;
   currentMaxCharLimit: number;
   onMaxCharLimitSave: (limit: number) => void;
-  models: GroupedModels; // Use the new type for the models prop
+  models: GroupedModels;
   selectedModel: string;
   onModelChange: (model: string) => void;
-  isThinkingEnabled: boolean;
-  onThinkingChange: (enabled: boolean) => void;
+  // Props for 'thinking' are removed
   currentModelDetails: GeminiModel | null;
   areModelsLoading: boolean;
   modelsError: string | null;
@@ -31,8 +30,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
   models,
   selectedModel,
   onModelChange,
-  isThinkingEnabled,
-  onThinkingChange,
+  // Destructured props for 'thinking' are removed
   currentModelDetails,
   areModelsLoading,
   modelsError,
@@ -164,53 +162,40 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
             <label htmlFor="modelSelector" className="block text-sm font-medium text-gray-700 mb-1">
               {t('config_model_label')}
             </label>
-            <div className="flex items-center space-x-2">
-              <select
-                id="modelSelector"
-                value={selectedModel}
-                onChange={(e) => onModelChange(e.target.value)}
-                disabled={areModelsLoading || allModelsEmpty}
-                className="flex-grow w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
-              >
-                {areModelsLoading && <option>{t('config_model_loading')}</option>}
-                {modelsError && <option>{t('config_model_error')}</option>}
-                {!areModelsLoading && !modelsError && (
-                  <>
-                    {models.preview.length > 0 && (
-                      <optgroup label={t('config_model_preview_group')}>
-                        {models.preview.map(model => (
-                          <option key={model.name} value={model.name}>
-                            {model.displayName}
-                          </option>
-                        ))}
-                      </optgroup>
-                    )}
-                    {models.stable.length > 0 && (
-                       <optgroup label={t('config_model_stable_group')}>
-                        {models.stable.map(model => (
-                          <option key={model.name} value={model.name}>
-                            {model.displayName}
-                          </option>
-                        ))}
-                      </optgroup>
-                    )}
-                  </>
-                )}
-              </select>
-              <div className="flex items-center pl-2" title={!currentModelDetails?.thinking ? t('config_thinking_tooltip_disabled') : t('config_thinking_tooltip')}>
-                  <input
-                    type="checkbox"
-                    id="thinkingToggle"
-                    checked={isThinkingEnabled}
-                    onChange={(e) => onThinkingChange(e.target.checked)}
-                    disabled={!currentModelDetails?.thinking}
-                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
-                  />
-                  <label htmlFor="thinkingToggle" className={`ml-2 text-sm font-medium ${!currentModelDetails?.thinking ? 'text-gray-400' : 'text-gray-700'}`}>
-                    {t('config_thinking_label')}
-                  </label>
-              </div>
-            </div>
+            {/* The flex container div is removed, leaving only the select element */}
+            <select
+              id="modelSelector"
+              value={selectedModel}
+              onChange={(e) => onModelChange(e.target.value)}
+              disabled={areModelsLoading || allModelsEmpty}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+            >
+              {areModelsLoading && <option>{t('config_model_loading')}</option>}
+              {modelsError && <option>{t('config_model_error')}</option>}
+              {!areModelsLoading && !modelsError && (
+                <>
+                  {models.preview.length > 0 && (
+                    <optgroup label={t('config_model_preview_group')}>
+                      {models.preview.map(model => (
+                        <option key={model.name} value={model.name}>
+                          {model.displayName}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {models.stable.length > 0 && (
+                     <optgroup label={t('config_model_stable_group')}>
+                      {models.stable.map(model => (
+                        <option key={model.name} value={model.name}>
+                          {model.displayName}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                </>
+              )}
+            </select>
+            {/* The 'Thinking' checkbox and its container div are removed */}
             {modelsError && <p className="text-xs text-red-500 mt-1">{modelsError}</p>}
           </div>
           <button

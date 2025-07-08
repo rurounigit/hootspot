@@ -25,7 +25,6 @@ const App: React.FC = () => {
   const [selectedModel, setSelectedModel] = useState<string>(() => {
     return localStorage.getItem(SELECTED_MODEL_STORAGE_KEY) || GEMINI_MODEL_NAME;
   });
-  const [isThinkingEnabled, setIsThinkingEnabled] = useState<boolean>(false);
   const [currentModelDetails, setCurrentModelDetails] = useState<GeminiModel | null>(null);
   const [maxCharLimit, setMaxCharLimit] = useState<number>(DEFAULT_MAX_CHAR_LIMIT);
   const [isLoading, setIsLoading] = useState(false);
@@ -96,10 +95,6 @@ const App: React.FC = () => {
         setSelectedModel(defaultModel.name);
       }
     }
-
-    if (!details?.thinking) {
-      setIsThinkingEnabled(false);
-    }
   }, [selectedModel, models]);
 
   // Handles model fetching errors by falling back to a default
@@ -112,7 +107,6 @@ const App: React.FC = () => {
         displayName: 'Gemini 2.5 Flash-Lite Preview 06-17',
         supportedGenerationMethods: ['generateContent'],
         version: '2.5-preview-06-17',
-        thinking: true,
       });
     }
   }, [areModelsLoading, modelsError]);
@@ -240,8 +234,6 @@ const App: React.FC = () => {
             models={models}
             selectedModel={selectedModel}
             onModelChange={setSelectedModel}
-            isThinkingEnabled={isThinkingEnabled}
-            onThinkingChange={setIsThinkingEnabled}
             currentModelDetails={currentModelDetails}
             areModelsLoading={areModelsLoading}
             modelsError={modelsError}
