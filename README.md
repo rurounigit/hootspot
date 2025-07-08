@@ -4,11 +4,12 @@
 
 **HootSpot is a Chrome Extension designed to help you identify and explain a wide range of psychological, rhetorical, and political manipulation tactics.**
 
-[![React](https://img.shields.io/badge/React-19-blue?logo=react)](https://react.dev/)
+[![React](https://img.shields.io/badge/React-19.1-blue?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-5.2-purple?logo=vite)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-blue?logo=tailwindcss)](https://tailwindcss.com/)
-[![Recharts](https://img.shields.io/badge/Recharts-3.0-purple)](https://recharts.org/)
+[![Recharts](https://img.shields.io/badge/Recharts-3.0.2-purple)](https://recharts.org/)
+[![D3.js](https://img.shields.io/badge/D3.js-7.9-orange?logo=d3dotjs)](https://d3js.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 This tool acts as a "side panel" in your browser, allowing you to select text from any webpage or paste it directly to receive an instant, in-depth analysis of its underlying messaging and potential manipulative techniques.
@@ -17,8 +18,8 @@ This tool acts as a "side panel" in your browser, allowing you to select text fr
 
 ## ✨ Key Features
 
-*   **Advanced Rhetorical Analysis**: Leverages a comprehensive, built-in **"Analyst's Lexicon"** to detect over 20 distinct patterns of manipulation, from simple guilt-tripping to complex socio-political rhetoric.
-*   **📊 Visual Manipulation Profile**: Instantly understand the nature of the text with a dynamic radar chart that visualizes the frequency and categories of detected manipulative tactics.
+*   **AI-Powered Rhetorical Analysis**: Uses a detailed system prompt to instruct the Gemini API to identify and categorize manipulative patterns.
+*   **📊 Visual Manipulation Profile**: Instantly understand the nature of the text with a dynamic bubble chart that visualizes the strength, frequency, and categories of detected tactics.
 *   **📝 Detailed, Actionable Reports**: Provides a multi-faceted report including an AI-generated summary, color-coded highlights in the source text, and detailed explanations for each detected pattern.
 *   **📥 Export and Share Reports**: Easily share your findings. Download a complete, professionally formatted PDF report, including highlights and visual charts. You can also export the raw analysis as a JSON file or share a brief summary directly to X (Twitter).
 *   **Seamless Context Menu Integration**: Right-click any selected text on a webpage to instantly send it to the HootSpot side panel. Choose to simply copy the text or to trigger an immediate analysis, streamlining your workflow.
@@ -29,15 +30,15 @@ This tool acts as a "side panel" in your browser, allowing you to select text fr
 
 ## 📸 Demo
 
-![HootSpot AI Logo](public/images/screenshot.jpg)
+![HootSpot AI Demo Screenshot](public/images/screenshot.jpg)
 
 ## 🔬 How It Works
 
-The core of HootSpot is the **`ANALYST_LEXICON`**, a detailed, multi-section prompt that provides the AI with a framework for understanding manipulative language. This lexicon is an integral part of the system prompt sent to the Google Gemini API.
+The core of HootSpot is the `SYSTEM_PROMPT`. This prompt instructs the Google Gemini API on its role and the required output format. It does not contain a hardcoded list of tactics.
 
-1.  When you submit a text for analysis (either by right-clicking or pasting), the extension sends it to the Google Gemini API along with the system prompt.
-2.  This instructs the AI to act as an expert in linguistics, psychology, and rhetoric, and to use the lexicon to find matching patterns in your text.
-3.  The Gemini API returns a structured JSON response containing the analysis.
+1.  When you submit a text for analysis, the extension sends it to the Google Gemini API along with the `SYSTEM_PROMPT`.
+2.  This instructs the AI to act as an expert in linguistics, psychology, and rhetoric and to find matching patterns in your text based on its own training.
+3.  The Gemini API is required to return a structured JSON response containing the analysis.
 4.  The extension parses this JSON and renders an interactive, multi-part report in the side panel, including the summary, visual chart, and highlighted text.
 
 ## 🛠️ Installation and Usage
@@ -46,7 +47,7 @@ The core of HootSpot is the **`ANALYST_LEXICON`**, a detailed, multi-section pro
 
 The easiest way to use HootSpot AI is to install it from the Chrome Web Store.
 
-> **[🔗 Install from the Chrome Web Store](https://chrome.google.com/webstore/detail/your-extension-id)** (Link pending publication)
+> **[🔗 Install from the Chrome Web Store](https://chrome.google.com/webstore/category/extensions)** (Link pending publication)
 
 ### For Developers (Running Locally)
 
@@ -93,21 +94,10 @@ If you want to run the project locally for development or testing, follow these 
 3.  **Analyze Text Manually**
     *   Open the side panel by clicking the HootSpot icon.
     *   Paste any text you want to analyze into the text area.
-    *   Click **"Analyze Text"**.
+    *   Click **"Analyze"**.
 
 4.  **Review the Report**
     *   Scroll down to review the generated report, complete with a visual profile, highlights, and explanations.
-
-## 📖 The Analyst's Lexicon
-
-HootSpot identifies patterns based on a detailed lexicon, which is categorized into three main sections. Each pattern is meticulously defined, complete with telltale signs and illustrative examples.
-
-*   **Section 1: Interpersonal & Psychological Manipulation Tactics**
-    *   *(e.g., Gaslighting, Guilt Tripping, Love Bombing, DARVO)*
-*   **Section 2: Covert Aggression & Indirect Control**
-    *   *(e.g., The Backhanded Compliment, Weaponized Incompetence, The Silent Treatment)*
-*   **Section 3: Sociopolitical & Rhetorical Mechanisms of Control**
-    *   *(e.g., The Straw Man Fallacy, The Co-optation of Dissent, Redefining the Terrain, Euphemism & Jargon)*
 
 ## 💻 Tech Stack
 
@@ -115,13 +105,14 @@ HootSpot identifies patterns based on a detailed lexicon, which is categorized i
 *   **Language**: [TypeScript](https://www.typescriptlang.org/)
 *   **Build Tool**: [Vite](https://vitejs.dev/)
 *   **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-*   **Charting**: [Recharts](https://recharts.org/)
+*   **Charting**: [Recharts](https://recharts.org/) & [D3.js](https://d3js.org/)
+*   **PDF Generation**: [@react-pdf/renderer](https://react-pdf.org/) & [html2canvas](https://html2canvas.hertzen.com/)
 *   **AI**: [Google Gemini API](https://ai.google.dev/)
 *   **Platform**: [Chrome Extension (Manifest V3)](https://developer.chrome.com/docs/extensions)
 
 ## 🤝 Contributing
 
-Contributions are welcome! If you have suggestions for improving the lexicon, adding features, or fixing bugs, please feel free to open an issue or submit a pull request.
+Contributions are welcome! If you have suggestions for improving the system prompt, adding features, or fixing bugs, please feel free to open an issue or submit a pull request.
 
 1.  Fork the repository.
 2.  Create your feature branch (`git checkout -b feature/AmazingFeature`).
