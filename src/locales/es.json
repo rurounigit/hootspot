@@ -156,5 +156,7 @@
   "pattern_short_dog-whistling": "Lenguaje codif.",
   "pattern_euphemism_jargon": "Eufemismo y Jerga",
   "pattern_euphemism_jargon_desc": "La sustitución de una expresión suave, indirecta o vaga por una que se considera ofensiva, dura o directa.",
-  "pattern_short_euphemism_jargon": "Eufemismo/Jerga"
+  "pattern_short_euphemism_jargon": "Eufemismo/Jerga",
+  "info_translating_results": "Traduciendo resultados del análisis...",
+  "error_translation_failed": "Fallo al traducir el resultado del análisis: {message}"
 }

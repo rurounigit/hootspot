@@ -6,7 +6,7 @@ import TextAnalyzer from './components/TextAnalyzer';
 import AnalysisReport from './components/AnalysisReport';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import { useTranslation } from './i18n';
-import { analyzeText } from './services/geminiService';
+import { analyzeText, translateAnalysisResult } from './services/geminiService';
 import { useModels } from './hooks/useModels';
 import { GeminiAnalysisResponse, GeminiModel } from './types';
 import {
@@ -30,11 +30,16 @@ const App: React.FC = () => {
   const [maxCharLimit, setMaxCharLimit] = useState<number>(DEFAULT_MAX_CHAR_LIMIT);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // analysisResult is now ALWAYS the English source of truth
   const [analysisResult, setAnalysisResult] = useState<GeminiAnalysisResponse | null>(null);
   const [currentTextAnalyzed, setCurrentTextAnalyzed] = useState<string | null>(null);
   const [isKeyValid, setIsKeyValid] = useState<boolean>(false);
   const [textToAnalyze, setTextToAnalyze] = useState('');
   const [pendingAnalysis, setPendingAnalysis] = useState<{ text: string } | null>(null);
+
+  const [translatedResults, setTranslatedResults] = useState<Record<string, GeminiAnalysisResponse>>({});
+  const [isTranslating, setIsTranslating] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const textWasSetProgrammatically = useRef(false);
@@ -79,7 +84,7 @@ const App: React.FC = () => {
   // Handles the successful loading of the model list
   useEffect(() => {
     const allModels = [...models.preview, ...models.stable];
-    if (allModels.length === 0) return; // Don't run if the model list is empty
+    if (allModels.length === 0) return;
 
     localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel);
     const details = allModels.find(m => m.name === selectedModel) || null;
@@ -101,9 +106,7 @@ const App: React.FC = () => {
   useEffect(() => {
     if (!areModelsLoading && modelsError) {
       console.warn(`Model fetch failed: ${modelsError}. Falling back to default: ${GEMINI_MODEL_NAME}`);
-
       setSelectedModel(GEMINI_MODEL_NAME);
-
       setCurrentModelDetails({
         name: 'models/gemini-2.5-flash-lite-preview-06-17',
         displayName: 'Gemini 2.5 Flash-Lite Preview 06-17',
@@ -131,17 +134,54 @@ const App: React.FC = () => {
     setError(null);
     setAnalysisResult(null);
     setCurrentTextAnalyzed(text);
+    setTranslatedResults({}); // Clear all old translations
 
     try {
-      const result = await analyzeText(apiKey, text, t, language, selectedModel);
-      setAnalysisResult(result);
+      // Step 1: Always get the analysis in English
+      const englishResult = await analyzeText(apiKey, text, selectedModel);
+      setAnalysisResult(englishResult);
+
+      // Step 2: If the current UI language is not English, translate immediately
+      if (language !== 'en' && englishResult.findings.length > 0) {
+        setIsTranslating(true);
+        const translatedResult = await translateAnalysisResult(apiKey, englishResult, language, selectedModel, t);
+        setTranslatedResults({ [language]: translatedResult });
+        setIsTranslating(false);
+      }
     } catch (err: any) {
       setError(err.message || "An unknown error occurred during analysis.");
       setAnalysisResult(null);
     } finally {
       setIsLoading(false);
     }
-  }, [apiKey, t, language, selectedModel]);
+  }, [apiKey, selectedModel, language, t]);
+
+  // Effect to handle translating results when language is switched AFTER analysis
+  useEffect(() => {
+    // Exit if there is no base analysis to translate, or if the language is English
+    if (!analysisResult || language === 'en') {
+      return;
+    }
+
+    // Exit if we already have a translation for the current language
+    if (translatedResults[language]) {
+      return;
+    }
+
+    // Automatically translate to the new language
+    setIsTranslating(true);
+    setError(null);
+    translateAnalysisResult(apiKey!, analysisResult, language, selectedModel, t)
+      .then(translated => {
+        setTranslatedResults(prev => ({ ...prev, [language]: translated }));
+      })
+      .catch(err => {
+        setError(err.message);
+      })
+      .finally(() => {
+        setIsTranslating(false);
+      });
+  }, [language, analysisResult, translatedResults, apiKey, selectedModel, t]);
 
   useEffect(() => {
     if (pendingAnalysis && apiKey) {
@@ -173,6 +213,9 @@ const App: React.FC = () => {
     localStorage.setItem(MAX_CHAR_LIMIT_STORAGE_KEY, newLimit.toString());
     setMaxCharLimit(newLimit);
   }, []);
+
+  // Determine which version of the analysis to display
+  const displayedAnalysis = translatedResults[language] || analysisResult;
 
   return (
     <div className="relative flex flex-col h-screen bg-gradient-to-br from-athena-logo-bg to-athena-logo-bg">
@@ -214,6 +257,13 @@ const App: React.FC = () => {
             hasApiKey={!!apiKey && isKeyValid}
           />
 
+          {(isLoading || isTranslating) && (
+            <div className="my-4 p-3 rounded-md text-sm bg-blue-50 text-blue-700 border border-blue-200 flex items-center justify-center">
+              <div className="spinner w-5 h-5 border-t-blue-600 mr-2"></div>
+              {isLoading ? t('analyzer_button_analyzing') : t('info_translating_results')}
+            </div>
+          )}
+
           {error && (
             <div className="my-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-md shadow-md" role="alert">
               <strong className="font-bold">{t('error_prefix')}</strong>
@@ -222,8 +272,8 @@ const App: React.FC = () => {
           )}
 
           <div ref={analysisReportRef} className="mt-2">
-            {(!isLoading && !error && analysisResult) && (
-               <AnalysisReport analysis={analysisResult} sourceText={currentTextAnalyzed} />
+            {(!isLoading && !isTranslating && !error && displayedAnalysis) && (
+               <AnalysisReport analysis={displayedAnalysis} sourceText={currentTextAnalyzed} />
             )}
           </div>
 

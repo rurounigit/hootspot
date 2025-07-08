@@ -137,7 +137,7 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
 
   const handleTwitterShare = () => {
     const summary = analysis.analysis_summary;
-    const detectedPatterns = [...new Set(analysis.findings.map(f => f.translated_pattern_name))];
+    const detectedPatterns = [...new Set(analysis.findings.map(f => f.display_name))];
     let patternsText = detectedPatterns.slice(0, 2).join(', ');
 
     let tweetText = t('share_twitter_text', { summary: summary, patterns: patternsText });

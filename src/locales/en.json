@@ -46,9 +46,9 @@
   "report_profile_title": "Manipulation Profile",
   "report_profile_no_findings_in_category": "No findings in this category",
   "report_tooltip_detected": "Detected: {count}",
- "report_profile_strength": "Strength",
- "report_profile_times_detected": "Times Detected",
- "report_profile_category": "Category",
+  "report_profile_strength": "Strength",
+  "report_profile_times_detected": "Times Detected",
+  "report_profile_category": "Category",
   "error_api_key_empty": "API Key is empty.",
   "error_api_key_test_failed_generic": "API Key test failed. Check console for details.",
   "error_api_key_test_failed_message": "API Key test failed: {message}",
@@ -156,5 +156,7 @@
   "pattern_short_dog-whistling": "Dog-Whistling",
   "pattern_euphemism_jargon": "Euphemism & Jargon",
   "pattern_euphemism_jargon_desc": "The substitution of a mild, indirect, or vague expression for one thought to be offensive, harsh, or blunt.",
-  "pattern_short_euphemism_jargon": "Euphemism/Jargon"
+  "pattern_short_euphemism_jargon": "Euphemism/Jargon",
+  "info_translating_results": "Translating analysis results...",
+  "error_translation_failed": "Failed to translate analysis result: {message}"
 }

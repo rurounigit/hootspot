@@ -156,5 +156,7 @@
   "pattern_short_dog-whistling": "Langage codé",
   "pattern_euphemism_jargon": "Euphémisme & Jargon",
   "pattern_euphemism_jargon_desc": "La substitution d'une expression douce, indirecte ou vague à une expression jugée offensante, dure ou brutale.",
-  "pattern_short_euphemism_jargon": "Euphémisme/Jargon"
+  "pattern_short_euphemism_jargon": "Euphémisme/Jargon",
+  "info_translating_results": "Traduction des résultats de l'analyse en cours...",
+  "error_translation_failed": "Échec de la traduction du résultat de l'analyse : {message}"
 }

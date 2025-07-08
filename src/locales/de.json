@@ -156,5 +156,7 @@
   "pattern_short_dog-whistling": "Hundepfeife",
   "pattern_euphemism_jargon": "Euphemismus & Jargon",
   "pattern_euphemism_jargon_desc": "Der Ersatz eines milden, indirekten oder vagen Ausdrucks für einen, der als beleidigend, hart oder unverblümt empfunden wird.",
-  "pattern_short_euphemism_jargon": "Euphemismus/Jargon"
+  "pattern_short_euphemism_jargon": "Euphemismus/Jargon",
+  "info_translating_results": "Übersetze Analyseergebnisse...",
+  "error_translation_failed": "Analyseergebnis konnte nicht übersetzt werden: {message}"
 }

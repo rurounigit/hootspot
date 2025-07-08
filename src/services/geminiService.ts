@@ -1,12 +1,35 @@
 // src/services/geminiService.ts
 
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
-import { GEMINI_MODEL_NAME, SYSTEM_PROMPT, TRANSLATION_SYSTEM_PROMPT } from "../constants";
+import { GEMINI_MODEL_NAME, SYSTEM_PROMPT, TRANSLATION_SYSTEM_PROMPT, ANALYSIS_TRANSLATION_PROMPT } from "../constants";
 import { GeminiAnalysisResponse, GeminiModel } from "../types";
 import { LanguageCode } from "../i18n";
 import { GroupedModels } from "../hooks/useModels";
 
 type TFunction = (key: string, replacements?: Record<string, string | number>) => string;
+
+// --- NEW HELPER FUNCTION ---
+// This function aggressively extracts a JSON object from a string.
+function extractJson(str: string): string {
+    // First, try to find JSON within markdown fences.
+    const fenceRegex = /```(?:json)?\s*([\s\S]*?)\s*```/s;
+    const fenceMatch = str.match(fenceRegex);
+    if (fenceMatch && fenceMatch[1]) {
+        return fenceMatch[1].trim();
+    }
+
+    // If no fences, find the first '{' and the last '}'
+    const firstBrace = str.indexOf('{');
+    const lastBrace = str.lastIndexOf('}');
+
+    if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
+        // Return the original string if no valid JSON structure is found
+        return str;
+    }
+
+    return str.substring(firstBrace, lastBrace + 1);
+}
+
 
 export const testApiKey = async (
   apiKey: string,
@@ -52,85 +75,140 @@ export const testApiKey = async (
 export const analyzeText = async (
   apiKey: string,
   textToAnalyze: string,
-  t: TFunction,
-  language: LanguageCode,
   modelName: string,
 ): Promise<GeminiAnalysisResponse> => {
     if (!apiKey) {
+      throw new Error("API Key is not configured.");
+    }
+    if (!textToAnalyze.trim()) {
+      return {
+        analysis_summary: "No text provided for analysis.",
+        findings: [],
+      };
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
+
+    try {
+      const fullResponse = await ai.models.generateContent({
+        model: modelName || GEMINI_MODEL_NAME,
+        contents: [
+          { role: "user", parts: [{ text: `Please analyze the following text: ${textToAnalyze}` }] }
+        ],
+        config: {
+          systemInstruction: SYSTEM_PROMPT,
+          // responseMimeType: "application/json", // Keep this commented out for robustness
+          temperature: 0,
+          topP: 0,
+          topK: 1,
+          maxOutputTokens: 8192,
+        },
+      });
+
+      const rawText = fullResponse.text;
+      const jsonStr = extractJson(rawText);
+
+      try {
+        const parsedData = JSON.parse(jsonStr) as GeminiAnalysisResponse;
+        if (typeof parsedData.analysis_summary === 'string' && Array.isArray(parsedData.findings)) {
+          return parsedData;
+        } else {
+          throw new Error("Received an unexpected JSON structure from the API.");
+        }
+      } catch (e) {
+        console.error("--- HootSpot JSON Parsing Error (Analysis) ---");
+        console.error("Failed to parse the following text as JSON:");
+        console.log(jsonStr);
+        const finishReason = fullResponse.candidates?.[0]?.finishReason;
+        const safetyRatings = fullResponse.candidates?.[0]?.safetyRatings;
+        console.error(`Finish Reason: ${finishReason}`);
+        if (safetyRatings) {
+          console.error("Safety Ratings:", JSON.stringify(safetyRatings, null, 2));
+        }
+        throw new Error(`Failed to parse analysis: ${(e as Error).message}`);
+      }
+    } catch (error: any) {
+        console.error("Error analyzing text with Gemini API:", error);
+        if (error.message && error.message.includes("SAFETY")) {
+            throw new Error("The request was blocked due to safety concerns from the API.");
+        }
+        let apiErrorObject;
+        try {
+          apiErrorObject = JSON.parse(error.message);
+        } catch (parseError) {
+          throw new Error(`Failed to analyze text: ${error.message || "Unknown API error"}`);
+        }
+        if (apiErrorObject && apiErrorObject.error && apiErrorObject.error.message) {
+          const { code, status, message } = apiErrorObject.error;
+          if (status === 'RESOURCE_EXHAUSTED' || code === 429) {
+            throw new Error(`API Quota Error: ${message}`);
+          } else {
+            throw new Error(`API Error: ${message}`);
+          }
+        }
+        throw new Error(`Failed to analyze text: ${error.message || "Unknown API error"}`);
+    }
+};
+
+export const translateAnalysisResult = async (
+  apiKey: string,
+  analysis: GeminiAnalysisResponse,
+  targetLanguage: LanguageCode,
+  modelName: string,
+  t: TFunction
+): Promise<GeminiAnalysisResponse> => {
+  if (!apiKey) {
     throw new Error(t('error_api_key_not_configured'));
-  }
-  if (!textToAnalyze.trim()) {
-    return {
-      analysis_summary: t('error_no_text_for_analysis'),
-      findings: [],
-    };
   }
 
   const ai = new GoogleGenAI({ apiKey });
-
-  const dynamicSystemPrompt = `${SYSTEM_PROMPT}\n\nIMPORTANT: The 'analysis_summary' and all 'explanation' fields in the JSON response must be in the following language: ${language}. The 'pattern_name' value MUST be the exact, untranslated English name from the Lexicon.`;
+  const systemPrompt = ANALYSIS_TRANSLATION_PROMPT.replace('{language}', targetLanguage);
+  const contentToTranslate = JSON.stringify(analysis);
 
   try {
-    const response: GenerateContentResponse = await ai.models.generateContent({
+    const fullResponse = await ai.models.generateContent({
       model: modelName || GEMINI_MODEL_NAME,
-      contents: [
-        { role: "user", parts: [{ text: `Please analyze the following text: ${textToAnalyze}` }] }
-      ],
+      contents: [{ role: "user", parts: [{ text: contentToTranslate }] }],
       config: {
-        systemInstruction: dynamicSystemPrompt,
-        responseMimeType: "application/json",
-        temperature: 0,
-        topP: 0,
-        topK: 1,
+        systemInstruction: systemPrompt,
+        // responseMimeType: "application/json", // Keep this commented out for robustness
+        temperature: 0.2,
+        maxOutputTokens: 8192,
       },
     });
 
-    let jsonStr = response.text.trim();
-    const fenceRegex = /^```(?:json)?\s*\n?(.*?)\n?\s*```$/s;
-    const match = jsonStr.match(fenceRegex);
-    if (match && match[1]) {
-      jsonStr = match[1].trim();
-    }
+    const rawText = fullResponse.text;
+    const jsonStr = extractJson(rawText);
 
     try {
       const parsedData = JSON.parse(jsonStr) as GeminiAnalysisResponse;
       if (typeof parsedData.analysis_summary === 'string' && Array.isArray(parsedData.findings)) {
         return parsedData;
       } else {
-        console.error("Parsed JSON does not match expected structure:", parsedData);
         throw new Error(t('error_unexpected_json_structure'));
       }
     } catch (e) {
-      console.error("Failed to parse JSON response:", e, "Raw response:", jsonStr);
-      throw new Error(t('error_json_parse', { message: (e as Error).message, response: jsonStr.substring(0,100) }));
+      console.error("--- HootSpot JSON Parsing Error (Translation) ---");
+      console.error("Failed to parse the following text as JSON:");
+      console.log(jsonStr);
+      const finishReason = fullResponse.candidates?.[0]?.finishReason;
+      const safetyRatings = fullResponse.candidates?.[0]?.safetyRatings;
+      console.error(`Finish Reason: ${finishReason}`);
+      if (safetyRatings) {
+        console.error("Safety Ratings:", JSON.stringify(safetyRatings, null, 2));
+      }
+      throw new Error(t('error_json_parse', { message: (e as Error).message, response: jsonStr.substring(0, 100) }));
     }
   } catch (error: any) {
-    console.error("Error analyzing text with Gemini API:", error);
-
+    console.error("Error translating analysis result:", error);
     if (error.message && error.message.includes("SAFETY")) {
-        throw new Error(t('error_safety_block'));
+      throw new Error(t('error_safety_block'));
     }
-
-    let apiErrorObject;
-    try {
-      apiErrorObject = JSON.parse(error.message);
-    } catch (parseError) {
-      throw new Error(t('error_analysis_failed', { message: error.message || "Unknown API error" }));
-    }
-
-    if (apiErrorObject && apiErrorObject.error && apiErrorObject.error.message) {
-      const { code, status, message } = apiErrorObject.error;
-      if (status === 'RESOURCE_EXHAUSTED' || code === 429) {
-        throw new Error(t('error_quota_exhausted', { message: message }));
-      } else {
-        throw new Error(t('error_api_generic', { message: message }));
-      }
-    }
-
-    throw new Error(t('error_analysis_failed', { message: error.message || "Unknown API error" }));
+    throw new Error(t('error_translation_failed', { message: error.message || "Unknown API error" }));
   }
 };
 
+// ... fetchModels and translateUI functions remain the same ...
 
 export const fetchModels = async (apiKey: string): Promise<GroupedModels> => {
   try {
@@ -147,7 +225,6 @@ export const fetchModels = async (apiKey: string): Promise<GroupedModels> => {
         return { preview: [], stable: [] };
     }
 
-    // 1. Initial Filtering
     const filteredModels = (data.models as GeminiModel[]).filter(model => {
       const name = model.name.toLowerCase();
       const displayName = model.displayName.toLowerCase();
@@ -161,7 +238,6 @@ export const fetchModels = async (apiKey: string): Promise<GroupedModels> => {
       return true;
     });
 
-    // 2. Deduplication: Keep only the latest version of each model
     const modelMap = new Map<string, GeminiModel>();
 
     filteredModels.forEach(model => {
@@ -173,7 +249,6 @@ export const fetchModels = async (apiKey: string): Promise<GroupedModels> => {
 
       const existingModel = modelMap.get(baseName);
 
-      // This comparison will now work without a TypeScript error
       if (!existingModel || model.version > existingModel.version) {
         modelMap.set(baseName, model);
       }
@@ -181,7 +256,6 @@ export const fetchModels = async (apiKey: string): Promise<GroupedModels> => {
 
     const uniqueModels = Array.from(modelMap.values());
 
-    // 3. Grouping and Sorting
     const sorter = (a: GeminiModel, b: GeminiModel): number => {
         const aIsGemini = a.displayName.toLowerCase().includes('gemini');
         const bIsGemini = b.displayName.toLowerCase().includes('gemini');
@@ -226,30 +300,35 @@ export const translateUI = async (
     const ai = new GoogleGenAI({ apiKey });
 
     try {
-        const response: GenerateContentResponse = await ai.models.generateContent({
+        const fullResponse = await ai.models.generateContent({
             model: GEMINI_MODEL_NAME,
             contents: [
                 { role: "user", parts: [{ text: `Translate the following JSON values to ${targetLanguage}:\n\n${baseTranslationsJSON}` }] }
             ],
             config: {
                 systemInstruction: TRANSLATION_SYSTEM_PROMPT,
-                responseMimeType: "application/json",
+                // responseMimeType: "application/json", // Keep this commented out for robustness
                 temperature: 0.2,
+                maxOutputTokens: 8192,
             },
         });
 
-        let jsonStr = response.text.trim();
-        const fenceRegex = /^```(?:json)?\s*\n?(.*?)\n?\s*```$/s;
-        const match = jsonStr.match(fenceRegex);
-        if (match && match[1]) {
-            jsonStr = match[1].trim();
-        }
+        const rawText = fullResponse.text;
+        const jsonStr = extractJson(rawText);
 
         try {
             const parsedData = JSON.parse(jsonStr) as Record<string, string>;
             return parsedData;
         } catch (e) {
-            console.error("Failed to parse translated JSON response:", e, "Raw response:", jsonStr);
+            console.error("--- HootSpot JSON Parsing Error (UI Translation) ---");
+            console.error("Failed to parse the following text as JSON:");
+            console.log(jsonStr);
+            const finishReason = fullResponse.candidates?.[0]?.finishReason;
+            const safetyRatings = fullResponse.candidates?.[0]?.safetyRatings;
+            console.error(`Finish Reason: ${finishReason}`);
+            if (safetyRatings) {
+              console.error("Safety Ratings:", JSON.stringify(safetyRatings, null, 2));
+            }
             throw new Error(t('lang_manager_error_parse', { message: (e as Error).message }));
         }
     } catch (error: any) {

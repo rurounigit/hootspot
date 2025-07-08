@@ -1,7 +1,7 @@
 
 export interface GeminiFinding {
   pattern_name: string;
-  translated_pattern_name: string; // e.g., "Strohmann-Argument" (for display)
+  display_name: string; // The translated name for UI display
   specific_quote: string;
   explanation: string;
   strength: number; // A score from 1 (subtle) to 10 (overt)

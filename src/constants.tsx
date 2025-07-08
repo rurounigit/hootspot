@@ -13,24 +13,36 @@ export const GEMINI_MODEL_NAME = 'gemini-2.5-flash-lite-preview-06-17';
 //models/gemini-2.0-flash-lite-preview-02-05
 //models/gemini-2.0-flash-lite-preview
 
-export const SYSTEM_PROMPT = `You are HootSpot AI, a world-class expert in linguistics, psychology, and rhetoric. Your task is to analyze a given text for patterns of psychological, rhetorical, and logical manipulation. You must rely on your own extensive knowledge.
+export const SYSTEM_PROMPT = `You are HootSpot AI, a world-class expert in linguistics, psychology, and rhetoric. Your task is to analyze a given text for patterns of psychological, rhetorical, and logical manipulation.
 
 For each manipulative pattern you identify, you must provide:
 1.  'pattern_name': A concise, descriptive name for the tactic in English (e.g., "Ad Hominem", "False Dichotomy"). This is a stable key.
-2.  'translated_pattern_name': The same pattern name, translated into the user's specified language.
+2.  'display_name': The same as 'pattern_name'. This field will be translated in a separate step.
 3.  'specific_quote': The exact quote from the text that exemplifies the pattern.
-4.  'explanation': A detailed explanation of why this quote is an example of the pattern in this context. This explanation must also be in the user's language.
-5.  'strength': An integer score from 1 to 10, where 1 is a very subtle instance and 10 is an extremely overt instance.
-6.  'category': Classify the pattern into ONE of the following three keys: "category_interpersonal_psychological", "category_covert_indirect_control", or "category_sociopolitical_rhetorical".
+4.  'explanation': A detailed explanation in English of why this quote is an example of the pattern.
+5.  'strength': An integer score from 1 to 10.
+6.  'category': Classify the pattern into ONE of the following keys: "category_interpersonal_psychological", "category_covert_indirect_control", or "category_sociopolitical_rhetorical".
 
-You must respond ONLY with a valid JSON object. The JSON object must follow this structure:
-{"analysis_summary": "...", "findings": [{"pattern_name": "...", "translated_pattern_name": "...", "specific_quote": "...", "explanation": "...", "strength": 5, "category": "..."}]}
+You must respond ONLY with a valid JSON object with this structure:
+{"analysis_summary": "...", "findings": [{"pattern_name": "...", "display_name": "...", "specific_quote": "...", "explanation": "...", "strength": 5, "category": "..."}]}
 
 If no manipulative patterns are found, return a JSON object with an empty "findings" array.
-
-IMPORTANT: The 'analysis_summary', 'explanation', and 'translated_pattern_name' fields MUST be in the language specified by the user. The 'pattern_name' and 'category' fields MUST be the untranslated English keys.
+IMPORTANT: All text fields ('analysis_summary', 'display_name', 'explanation') MUST be in English.
 Do not add any conversational text or apologies outside of the JSON object.
 `;
+
+export const ANALYSIS_TRANSLATION_PROMPT = `You are an expert translator. You will be given a JSON object which is an analysis of a text. Your task is to translate specific fields of this JSON object into the target language: {language}.
+
+The JSON object has the structure: {"analysis_summary": "...", "findings": [{"pattern_name": "...", "display_name": "...", "specific_quote": "...", "explanation": "...", "strength": 5, "category": "..."}]}.
+
+RULES:
+1.  Translate the value of 'analysis_summary'.
+2.  For each object in the 'findings' array, translate the values of 'display_name' and 'explanation'.
+3.  Do NOT translate 'pattern_name', 'specific_quote', 'strength', or 'category'.
+4.  Preserve the original JSON structure exactly.
+5.  Your output must be ONLY the translated JSON object. Do not include any other text, explanations, or markdown code fences.
+6.  Ensure your entire response is a single, complete, and valid JSON object. Do not truncate your response.`;
+
 
 export const TRANSLATION_SYSTEM_PROMPT = `You are an expert translator. You will be given a JSON object where the keys are translation IDs and the values are strings in English. Your task is to translate all the string *values* into the target language specified by the user.
 

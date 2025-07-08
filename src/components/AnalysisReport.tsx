@@ -43,7 +43,7 @@ export const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches,
     const color = patternColorMap.get(finding.pattern_name) || '#ccc';
     setTooltip({
       visible: true,
-      title: finding.translated_pattern_name, // Use translated name
+      title: finding.display_name,
       description: t(finding.category),
       x: event.clientX,
       y: event.clientY,
@@ -111,7 +111,7 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
 
         return {
             id: `${finding.pattern_name}-${index}`,
-            name: finding.translated_pattern_name, // Pass translated name to chart
+            name: finding.display_name,
             strength: strength,
             category: finding.category,
             color: patternColorMap.get(finding.pattern_name) || '#cccccc',
@@ -243,7 +243,7 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
               return (
                 <div key={index} id={`finding-card-${finding.displayIndex}`} className={`bg-gray-50 border rounded-lg shadow-md overflow-hidden`} style={{borderColor: color}}>
                   <div className={`p-4 border-b`} style={{ backgroundColor: color, borderColor: color }}>
-                    <h4 className={`text-l font-bold text-white uppercase`}>{finding.translated_pattern_name}</h4>
+                    <h4 className={`text-l font-bold text-white uppercase`}>{finding.display_name}</h4>
                   </div>
                   <div className="p-4 space-y-3">
                     <div><h5 className="font-semibold text-gray-600 mb-1">{t('report_quote_label')}</h5><blockquote className={`italic p-3 rounded-md border-l-4`} style={{ backgroundColor: `${color}40`, borderColor: color }}><p className="text-gray-800">"{finding.specific_quote}"</p></blockquote></div>
