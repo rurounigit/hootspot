@@ -6,14 +6,11 @@ import { GeminiAnalysisResponse, GeminiFinding } from '../types';
 import { ShareIcon } from '../constants';
 import { useTranslation } from '../i18n';
 
-// Define the type for the color info
-type ColorInfo = { hex: string; border: string; text: string };
-
 interface ShareMenuProps {
   analysis: GeminiAnalysisResponse;
   sourceText: string | null;
   highlightData: any[];
-  patternColorMap: Map<string, ColorInfo>;
+  patternColorMap: Map<string, string>;
 }
 
 const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightData, patternColorMap }) => {
@@ -23,7 +20,6 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
   const menuRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
-  // UPDATED: Group findings by the LLM-provided category key
   const findingsByCategory = useMemo(() => {
     return analysis.findings.reduce((acc, finding) => {
       const categoryKey = finding.category || 'Uncategorized';
@@ -72,7 +68,6 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
     setIsMenuOpen(false);
     setIsGenerating(true);
 
-    // UPDATED: Capture the single bubble chart
     let chartImage: string | null = null;
     const chartElement = document.getElementById('bubble-chart-container');
     if (chartElement) {
@@ -84,7 +79,6 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
         }
     }
 
-    // UPDATED: Prepare the new, simpler data structure for the PDF generator
     const dataForPdf = {
       analysis: { ...analysis, findingsByCategory },
       sourceText,
@@ -100,7 +94,6 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
         quoteLabel: t('report_quote_label'),
         explanationLabel: t('report_explanation_label'),
         pageNumber: t('pdf_page_number'),
-        // Pass translated category names for PDF section headers
         categoryNames: {
             'category_interpersonal_psychological': t('category_interpersonal_psychological'),
             'category_covert_indirect_control': t('category_covert_indirect_control'),
@@ -123,7 +116,6 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
   };
 
   const handleJsonDownload = () => {
-    // This logic still works perfectly
     const translatedFindingsByCategory = Object.entries(findingsByCategory).reduce((acc, [categoryKey, findings]) => {
         acc[t(categoryKey) || categoryKey] = findings;
         return acc;
@@ -144,14 +136,13 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
   };
 
   const handleTwitterShare = () => {
-    // UPDATED: Use dynamic English names and a simpler format
     const summary = analysis.analysis_summary;
-    const detectedPatterns = [...new Set(analysis.findings.map(f => f.pattern_name))];
+    const detectedPatterns = [...new Set(analysis.findings.map(f => f.translated_pattern_name))];
     let patternsText = detectedPatterns.slice(0, 2).join(', ');
 
     let tweetText = t('share_twitter_text', { summary: summary, patterns: patternsText });
     if (tweetText.length > 260) {
-      tweetText = `HootSpot: "${summary}" Detected: ${patternsText}...`; // Fallback format
+      tweetText = `HootSpot: "${summary}" Detected: ${patternsText}...`;
     }
 
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&hashtags=HootSpotAI,CriticalThinking`;
@@ -175,7 +166,7 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
       </button>
 
       {isMenuOpen && (
-        <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 border border-gray-200">
+        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 border border-gray-200">
           <ul className="py-1">
             <li><button onClick={handlePdfDownload} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">{t('share_menu_pdf')}</button></li>
             <li><button onClick={handleJsonDownload} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">{t('share_menu_json')}</button></li>

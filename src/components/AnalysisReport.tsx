@@ -7,17 +7,10 @@ import { useTranslation } from '../i18n';
 import ShareMenu from './ShareMenu';
 import ManipulationBubbleChart from './ManipulationBubbleChart';
 
-// This function generates visually distinct colors using the golden angle in the HSL color space.
 const generateDistantColor = (index: number, saturation: number = 0.7, lightness: number = 0.6) => {
     const goldenAngle = 137.5;
     const hue = (index * goldenAngle) % 360;
     return `hsl(${hue}, ${saturation * 100}%, ${lightness * 100}%)`;
-};
-
-const CATEGORY_COLORS: Record<string, string> = {
-  'category_interpersonal_psychological': '#8884d8',
-  'category_covert_indirect_control': '#82ca9d',
-  'category_sociopolitical_rhetorical': '#ffc658',
 };
 
 const UNIFORM_HIGHLIGHT_COLOR = 'bg-red-200';
@@ -27,7 +20,7 @@ function escapeRegex(string: string) { return string.replace(/[.*+?^${}()|[\]\\]
 interface HighlightedTextProps {
   text: string;
   matches: { start: number; end: number; findings: (GeminiFinding & { displayIndex: number })[] }[];
-  patternColorMap: Map<string, string>; // Map of pattern name to its generated color
+  patternColorMap: Map<string, string>;
 }
 
 export const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches, patternColorMap }) => {
@@ -50,7 +43,7 @@ export const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches,
     const color = patternColorMap.get(finding.pattern_name) || '#ccc';
     setTooltip({
       visible: true,
-      title: finding.pattern_name,
+      title: finding.translated_pattern_name, // Use translated name
       description: t(finding.category),
       x: event.clientX,
       y: event.clientY,
@@ -98,7 +91,6 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
   const { findings } = analysis;
   const hasFindings = findings && findings.length > 0;
 
-  // DEFINITIVE FIX: Generate a unique, consistent, and distant color for each tactic name.
   const patternColorMap = useMemo(() => {
     const map = new Map<string, string>();
     if (hasFindings) {
@@ -115,14 +107,13 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
 
     return findings.map((finding, index) => {
         const strength = finding.strength;
-        const radius = 5 + (strength * 5); // New formula for better size contrast
+        const radius = 2 + (strength * 6);
 
         return {
             id: `${finding.pattern_name}-${index}`,
-            name: finding.pattern_name,
+            name: finding.translated_pattern_name, // Pass translated name to chart
             strength: strength,
             category: finding.category,
-            // Assign color based on the tactic name from our new map
             color: patternColorMap.get(finding.pattern_name) || '#cccccc',
             radius: radius,
         };
@@ -248,12 +239,11 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
           <div className="space-y-4">
             {indexedFindings.map((finding, index) => {
               const color = patternColorMap.get(finding.pattern_name) || '#e5e7eb';
-              const borderClass = `border-[${color}]`; // This might not work with Tailwind JIT, use style instead
 
               return (
                 <div key={index} id={`finding-card-${finding.displayIndex}`} className={`bg-gray-50 border rounded-lg shadow-md overflow-hidden`} style={{borderColor: color}}>
                   <div className={`p-4 border-b`} style={{ backgroundColor: color, borderColor: color }}>
-                    <h4 className={`text-l font-bold text-white uppercase`}>{finding.pattern_name}</h4>
+                    <h4 className={`text-l font-bold text-white uppercase`}>{finding.translated_pattern_name}</h4>
                   </div>
                   <div className="p-4 space-y-3">
                     <div><h5 className="font-semibold text-gray-600 mb-1">{t('report_quote_label')}</h5><blockquote className={`italic p-3 rounded-md border-l-4`} style={{ backgroundColor: `${color}40`, borderColor: color }}><p className="text-gray-800">"{finding.specific_quote}"</p></blockquote></div>
