@@ -39,7 +39,7 @@ export const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches,
     }
   };
 
-  const handlePillMouseOver = (event: React.MouseEvent, finding: GeminiFinding) => {
+  const handlePillMouseOver = (event: React.MouseEvent, finding: GeminiFinding & { displayIndex: number }) => {
     const color = patternColorMap.get(finding.pattern_name) || '#ccc';
     setTooltip({
       visible: true,
@@ -88,6 +88,7 @@ export const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches,
 
 const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: string | null }> = ({ analysis, sourceText }) => {
   const [chartDimensions, setChartDimensions] = useState({ width: 0, height: 0 });
+  const [activeFindingId, setActiveFindingId] = useState<string | null>(null);
   const { t } = useTranslation();
   const { findings } = analysis;
   const hasFindings = findings && findings.length > 0;
@@ -103,92 +104,6 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
     return map;
   }, [findings, hasFindings]);
 
-  const bubbleChartData = useMemo(() => {
-    const baseWidth = 500; // The width at which bubbles are full size
-    const scaleFactor = chartDimensions.width > 0
-      ? Math.min(1, chartDimensions.width / baseWidth)
-      : 1;
-
-    if (!hasFindings) return [];
-
-    return findings.map((finding, index) => {
-        const strength = finding.strength;
-        const radius = 2 + (strength * 6 * scaleFactor);
-
-        return {
-            id: `${finding.pattern_name}-${index}`,
-            name: finding.display_name,
-            strength: strength,
-            category: finding.category,
-            color: patternColorMap.get(finding.pattern_name) || '#cccccc',
-            radius: radius,
-        };
-    });
-  }, [findings, hasFindings, patternColorMap, chartDimensions]);
-
-  const finalHighlights = useMemo(() => {
-    const matchesByPosition = new Map<string, { start: number; end: number; findings: GeminiFinding[] }>();
-    if (hasFindings && sourceText) {
-      findings.forEach(finding => {
-        const quote = finding.specific_quote;
-        if (!quote || typeof quote !== 'string' || quote.trim() === '') return;
-        const escapedQuote = escapeRegex(quote);
-        const regex = new RegExp(escapedQuote, 'g');
-        let match;
-        while ((match = regex.exec(sourceText))) {
-          const key = `${match.index}-${match.index + quote.length}`;
-          const existing = matchesByPosition.get(key);
-          if (existing) {
-            if (!existing.findings.some(f => f.pattern_name === finding.pattern_name)) {
-              existing.findings.push(finding);
-            }
-          } else {
-            matchesByPosition.set(key, { start: match.index, end: match.index + quote.length, findings: [finding] });
-          }
-        }
-      });
-    }
-    const sortedMatches = Array.from(matchesByPosition.values()).sort((a, b) => a.start - b.start);
-    const uniqueFindingsWithIndices = new Map<string, number>();
-    let findingCounter = 0;
-    findings.forEach(finding => {
-        const uniqueId = `${finding.pattern_name}::${finding.specific_quote}`;
-        if (!uniqueFindingsWithIndices.has(uniqueId)) {
-            uniqueFindingsWithIndices.set(uniqueId, findingCounter++);
-        }
-    });
-    const matchesWithCorrectIndex = sortedMatches.map(match => ({
-        ...match,
-        findings: match.findings.map(f => {
-            const uniqueId = `${f.pattern_name}::${f.specific_quote}`;
-            return {
-                ...f,
-                displayIndex: uniqueFindingsWithIndices.get(uniqueId) as number
-            };
-        })
-    }));
-    const highlights: typeof matchesWithCorrectIndex = [];
-    if (matchesWithCorrectIndex.length > 0) {
-        let currentHighlight = { ...matchesWithCorrectIndex[0] };
-        for (let i = 1; i < matchesWithCorrectIndex.length; i++) {
-            const nextMatch = matchesWithCorrectIndex[i];
-            if (nextMatch.start < currentHighlight.end) {
-                nextMatch.findings.forEach(findingToAdd => {
-                    if (!currentHighlight.findings.some(existing => existing.pattern_name === findingToAdd.pattern_name)) {
-                        currentHighlight.findings.push(findingToAdd);
-                    }
-                });
-                currentHighlight.end = Math.max(currentHighlight.end, nextMatch.end);
-            } else {
-                highlights.push(currentHighlight);
-                currentHighlight = { ...nextMatch };
-            }
-        }
-        highlights.push(currentHighlight);
-    }
-    return highlights;
-  }, [findings, sourceText, hasFindings]);
-
   const indexedFindings = useMemo(() => {
     const uniqueFindingsWithIndices = new Map<string, number>();
     let findingCounter = 0;
@@ -203,6 +118,108 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
         };
     });
   }, [findings]);
+
+  const bubbleChartData = useMemo(() => {
+    const baseWidth = 500;
+    const scaleFactor = chartDimensions.width > 0
+      ? Math.min(1, chartDimensions.width / baseWidth)
+      : 1;
+
+    if (!hasFindings) return [];
+
+    return indexedFindings.map((finding) => {
+        const strength = finding.strength;
+        const radius = 2 + (strength * 6 * scaleFactor);
+
+        return {
+            id: `${finding.pattern_name}-${finding.displayIndex}`,
+            name: finding.display_name,
+            strength: strength,
+            category: finding.category,
+            color: patternColorMap.get(finding.pattern_name) || '#cccccc',
+            radius: radius,
+        };
+    });
+  }, [indexedFindings, hasFindings, patternColorMap, chartDimensions]);
+
+  const finalHighlights = useMemo(() => {
+    const matchesByPosition = new Map<string, { start: number; end: number; findings: (GeminiFinding & { displayIndex: number })[] }>();
+
+    if (hasFindings && sourceText) {
+      indexedFindings.forEach(finding => {
+        const quote = finding.specific_quote;
+        if (!quote || typeof quote !== 'string' || quote.trim() === '') return;
+
+        const escapedQuote = escapeRegex(quote);
+        const regex = new RegExp(escapedQuote, 'g');
+        let match;
+
+        while ((match = regex.exec(sourceText))) {
+          const key = `${match.index}-${match.index + quote.length}`;
+          const existing = matchesByPosition.get(key);
+
+          if (existing) {
+            if (!existing.findings.some(f => f.pattern_name === finding.pattern_name && f.specific_quote === finding.specific_quote)) {
+              existing.findings.push(finding);
+            }
+          } else {
+            matchesByPosition.set(key, {
+              start: match.index,
+              end: match.index + quote.length,
+              findings: [finding]
+            });
+          }
+        }
+      });
+    }
+
+    const sortedMatches = Array.from(matchesByPosition.values()).sort((a, b) => a.start - b.start);
+
+    const mergedHighlights: typeof sortedMatches = [];
+    if (sortedMatches.length > 0) {
+      let currentHighlight = { ...sortedMatches[0] };
+
+      for (let i = 1; i < sortedMatches.length; i++) {
+        const nextMatch = sortedMatches[i];
+
+        if (nextMatch.start < currentHighlight.end) {
+          nextMatch.findings.forEach(findingToAdd => {
+            if (!currentHighlight.findings.some(existing => existing.pattern_name === findingToAdd.pattern_name && existing.specific_quote === findingToAdd.specific_quote)) {
+              currentHighlight.findings.push(findingToAdd);
+            }
+          });
+          currentHighlight.end = Math.max(currentHighlight.end, nextMatch.end);
+        } else {
+          mergedHighlights.push(currentHighlight);
+          currentHighlight = { ...nextMatch };
+        }
+      }
+      mergedHighlights.push(currentHighlight);
+    }
+
+    return mergedHighlights;
+  }, [indexedFindings, sourceText, hasFindings]);
+
+  const handleBubbleClick = (findingId: string) => {
+  setActiveFindingId(findingId); // Set the active ID on click
+  const finding = indexedFindings.find(f => `${f.pattern_name}-${f.displayIndex}` === findingId);
+  if (finding) {
+    const element = document.getElementById(`finding-card-${finding.displayIndex}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.style.transition = 'background-color 0.1s ease-in-out';
+      element.style.backgroundColor = '#e0e7ff';
+      // Always clear the highlight after the animation is done.
+      setTimeout(() => {
+        element.style.backgroundColor = '';
+        setActiveFindingId(null);
+      }, 800);
+    } else {
+      // If the element isn't found, clear the highlight immediately.
+      setActiveFindingId(null);
+    }
+  }
+};
 
   return (
     <div className="mt-4">
@@ -226,8 +243,12 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
       {hasFindings && (
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-gray-700 mb-4">{t('report_profile_title')}</h3>
-          <ManipulationBubbleChart data={bubbleChartData} onDimensionsChange={setChartDimensions} // Add this prop
-/>
+          <ManipulationBubbleChart
+            data={bubbleChartData}
+            onDimensionsChange={setChartDimensions}
+            onBubbleClick={handleBubbleClick}
+            activeFindingId={activeFindingId}
+          />
         </div>
       )}
 
@@ -244,11 +265,10 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
         <div>
           <h3 className="text-lg font-semibold text-gray-700 mb-3">{t('report_detected_patterns_title')}</h3>
           <div className="space-y-4">
-            {indexedFindings.map((finding, index) => {
+            {indexedFindings.map((finding) => {
               const color = patternColorMap.get(finding.pattern_name) || '#e5e7eb';
-
               return (
-                <div key={index} id={`finding-card-${finding.displayIndex}`} className={`bg-gray-50 border rounded-lg shadow-md overflow-hidden`} style={{borderColor: color}}>
+                <div key={finding.displayIndex} id={`finding-card-${finding.displayIndex}`} className={`bg-gray-50 border rounded-lg shadow-md overflow-hidden`} style={{borderColor: color}}>
                   <div className={`p-4 border-b`} style={{ backgroundColor: color, borderColor: color }}>
                     <h4 className={`text-l font-bold text-white uppercase`}>{finding.display_name}</h4>
                   </div>
