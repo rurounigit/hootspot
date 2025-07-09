@@ -1,6 +1,6 @@
 // src/components/ManipulationBubbleChart.tsx
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { ScatterChart, Scatter, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { ScatterChart, Scatter, XAxis, YAxis, Tooltip, ResponsiveContainer, Customized } from 'recharts';
 import { useTranslation } from '../i18n';
 import * as d3 from 'd3';
 
@@ -21,47 +21,6 @@ interface ManipulationBubbleChartProps {
   data: BubbleData[];
   onDimensionsChange: (dimensions: { width: number; height: number }) => void;
 }
-
-// The custom shape for each bubble, which includes the circle and the text
-const CustomBubble = (props: any) => {
-  const { cx, cy, payload } = props;
-  const { color, radius, name } = payload as SimulationNode;
-
-  // DEFINITIVE FIX: Create a smaller radius for the text container to ensure padding.
-  const padding = radius * 0.30; // 15% padding from the edge
-  const textRadius = radius - padding;
-
-  // Font size now scales relative to the smaller text area
-  const fontSize = Math.max(8, Math.min(textRadius * 0.4, 16));
-
-  const textContainerStyle: React.CSSProperties = {
-    color: 'white',
-    fontSize: `${fontSize}px`,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    width: '100%',
-    height: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-    lineHeight: 1.1,
-    wordBreak: 'break-all',
-    textShadow: '0px 1px 2px rgba(0,0,0,0.5)',
-  };
-
-  return (
-    <g transform={`translate(${cx}, ${cy})`}>
-      <circle r={radius} fill={color} style={{ stroke: 'white', strokeWidth: 0, opacity: 0.95 }} />
-      {/* The foreignObject is now smaller than the circle, creating the padding */}
-      <foreignObject x={-textRadius} y={-textRadius} width={textRadius * 2} height={textRadius * 2}>
-        <div style={textContainerStyle} xmlns="http://www.w3.org/1999/xhtml">
-          {name}
-        </div>
-      </foreignObject>
-    </g>
-  );
-};
 
 const CustomTooltip = ({ active, payload, t }: any) => {
   if (active && payload && payload[0]) {
@@ -152,7 +111,7 @@ const ManipulationBubbleChart: React.FC<ManipulationBubbleChartProps> = ({ data,
       return null;
   }
 
-  return (
+ return (
     <div
       id="bubble-chart-container"
       ref={containerRef}
@@ -161,33 +120,72 @@ const ManipulationBubbleChart: React.FC<ManipulationBubbleChartProps> = ({ data,
     >
       {simulatedData.length > 0 && (
         <ResponsiveContainer>
-            <ScatterChart>
-              {/* The X and Y axes are used by Recharts to set the coordinate system, but we hide them visually. */}
-              <XAxis type="number" dataKey="x" name="x" hide={true} domain={[0, dimensions.width]} />
-              <YAxis type="number" dataKey="y" name="y" hide={true} domain={[0, dimensions.height]} />
+          <ScatterChart>
+            <XAxis type="number" dataKey="x" name="x" hide={true} domain={[0, dimensions.width]} />
+            <YAxis type="number" dataKey="y" name="y" hide={true} domain={[0, dimensions.height]} />
+            <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<CustomTooltip t={t} />} isAnimationActive={false} />
 
-              {/* The tooltip for showing details on hover. */}
-              <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<CustomTooltip t={t} />} isAnimationActive={false}/>
+            {/*
+              This is the key change. We use <Customized /> to render everything ourselves,
+              ensuring perfect synchronization between hulls and bubbles.
+            */}
+            <Customized
+              component={() => {
+                const nodesByCategory = d3.group(simulatedData, d => d.category);
 
-              {
-                // We convert the Map from d3.group into an array to be able to use .map() for rendering.
-                Array.from(d3.group(simulatedData, d => d.category), ([category, nodes]) => {
-                  // The color for the hull is the same as the color of the bubbles in its category.
-                  // We can safely get it from the first node in the group.
-                  const categoryColor = nodes[0].color;
-                  return (
-                    <CategoryHull
-                      key={category} // Using the category name as the key for React
-                      nodes={nodes}
-                      color={categoryColor}
-                    />
-                  );
-                })
-              }
+                return (
+                  <g>
+                    {/* First, render all the hulls in the background */}
+                    {Array.from(nodesByCategory, ([category, nodes]) => (
+                      <CategoryHull
+                        key={`${category}-hull`}
+                        nodes={nodes}
+                        color={nodes[0].color}
+                      />
+                    ))}
 
-              {/* This renders the actual bubbles on top of the hulls. */}
-              <Scatter data={simulatedData} shape={<CustomBubble />} isAnimationActive={false}/>
-            </ScatterChart>
+                    {/* Second, render all the bubbles on top of the hulls */}
+                    {simulatedData.map(node => {
+                      const { x, y, radius, color, name } = node;
+                      const padding = radius * 0.30;
+                      const textRadius = radius - padding;
+                      const fontSize = Math.max(8, Math.min(textRadius * 0.4, 16));
+
+                      const textContainerStyle: React.CSSProperties = {
+                        color: 'white',
+                        fontSize: `${fontSize}px`,
+                        fontWeight: 'bold',
+                        textAlign: 'center',
+                        width: '100%',
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        overflow: 'hidden',
+                        lineHeight: 1.1,
+                        wordBreak: 'break-word',
+                        textShadow: '0px 1px 2px rgba(0,0,0,0.5)',
+                      };
+
+                      return (
+                        <g key={node.id} transform={`translate(${x}, ${y})`}>
+                          <circle r={radius} fill={color} style={{ stroke: 'white', strokeWidth: 0, opacity: 0.95 }} />
+                          <foreignObject x={-textRadius} y={-textRadius} width={textRadius * 2} height={textRadius * 2}>
+                            <div style={textContainerStyle} xmlns="http://www.w3.org/1999/xhtml">
+                              {name}
+                            </div>
+                          </foreignObject>
+                        </g>
+                      );
+                    })}
+                  </g>
+                );
+              }}
+            />
+
+            {/* The original <Scatter> component is now removed, as we are drawing the bubbles ourselves. */}
+
+          </ScatterChart>
         </ResponsiveContainer>
       )}
     </div>
