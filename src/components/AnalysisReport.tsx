@@ -87,6 +87,7 @@ export const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches,
 };
 
 const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: string | null }> = ({ analysis, sourceText }) => {
+  const [chartDimensions, setChartDimensions] = useState({ width: 0, height: 0 });
   const { t } = useTranslation();
   const { findings } = analysis;
   const hasFindings = findings && findings.length > 0;
@@ -103,11 +104,16 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
   }, [findings, hasFindings]);
 
   const bubbleChartData = useMemo(() => {
+    const baseWidth = 500; // The width at which bubbles are full size
+    const scaleFactor = chartDimensions.width > 0
+      ? Math.min(1, chartDimensions.width / baseWidth)
+      : 1;
+
     if (!hasFindings) return [];
 
     return findings.map((finding, index) => {
         const strength = finding.strength;
-        const radius = 2 + (strength * 6);
+        const radius = 2 + (strength * 6 * scaleFactor);
 
         return {
             id: `${finding.pattern_name}-${index}`,
@@ -118,7 +124,7 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
             radius: radius,
         };
     });
-  }, [findings, hasFindings, patternColorMap]);
+  }, [findings, hasFindings, patternColorMap, chartDimensions]);
 
   const finalHighlights = useMemo(() => {
     const matchesByPosition = new Map<string, { start: number; end: number; findings: GeminiFinding[] }>();
@@ -220,7 +226,8 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
       {hasFindings && (
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-gray-700 mb-4">{t('report_profile_title')}</h3>
-          <ManipulationBubbleChart data={bubbleChartData} />
+          <ManipulationBubbleChart data={bubbleChartData} onDimensionsChange={setChartDimensions} // Add this prop
+/>
         </div>
       )}
 
