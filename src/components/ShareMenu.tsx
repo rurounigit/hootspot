@@ -19,8 +19,12 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
   const [isGenerating, setIsGenerating] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const pdfDataRef = useRef<any>(null);
 
+  // This is the data structure that works for the main app and the JSON download.
+  // It is the correct structure.
   const findingsByCategory = useMemo(() => {
+    if (!analysis || !analysis.findings) return {};
     return analysis.findings.reduce((acc, finding) => {
       const categoryKey = finding.category || 'Uncategorized';
       if (!acc[categoryKey]) acc[categoryKey] = [];
@@ -33,8 +37,13 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) setIsMenuOpen(false);
     };
+    window.addEventListener('message', handlePdfMessage);
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      window.removeEventListener('message', handlePdfMessage);
+      document.removeEventListener('mousedown', handleClickOutside);
+      cleanup();
+    };
   }, []);
 
   const cleanup = () => {
@@ -42,26 +51,26 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
       document.body.removeChild(iframeRef.current);
       iframeRef.current = null;
     }
-    window.removeEventListener('message', handlePdfMessage);
+    pdfDataRef.current = null;
     setIsGenerating(false);
   };
 
   const handlePdfMessage = (event: MessageEvent) => {
-    if (event.source !== iframeRef.current?.contentWindow) {
-        return;
-    }
-
+    if (event.source !== iframeRef.current?.contentWindow) return;
     const { type, blob, error } = event.data;
-
-    if (type === 'PDF_GENERATED' && blob) {
+    if (type === 'PDF_SANDBOX_READY') {
+      if (iframeRef.current?.contentWindow && pdfDataRef.current) {
+        iframeRef.current.contentWindow.postMessage({ type: 'GENERATE_PDF', data: pdfDataRef.current }, '*');
+      }
+    } else if (type === 'PDF_GENERATED' && blob) {
       const objectUrl = URL.createObjectURL(blob);
       chrome.runtime.sendMessage({ type: 'DOWNLOAD_PDF', url: objectUrl });
       setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
-    } else if (type === 'PDF_ERROR') {
+      cleanup();
+    } else if (type === 'PDF_ERROR') { // Restore error reporting from the sandbox
       console.error("PDF generation failed in sandbox:", error);
+      cleanup();
     }
-
-    cleanup();
   };
 
   const handlePdfDownload = async () => {
@@ -71,19 +80,20 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
     let chartImage: string | null = null;
     const chartElement = document.getElementById('bubble-chart-container');
     if (chartElement) {
-        try {
-            const canvas = await html2canvas(chartElement, { scale: 2, backgroundColor: '#f9fafb' });
-            chartImage = canvas.toDataURL('image/png');
-        } catch (error) {
-            console.error("Failed to capture chart image:", error);
-        }
+      try {
+        const canvas = await html2canvas(chartElement, { scale: 2, backgroundColor: '#f9fafb' });
+        chartImage = canvas.toDataURL('image/png');
+      } catch (error) {
+        console.error("Failed to capture chart image:", error);
+      }
     }
 
-    const dataForPdf = {
-      analysis: { ...analysis, findingsByCategory },
+    // --- FINAL FIX: Send the data in the same structure as the perfect JSON download ---
+    pdfDataRef.current = {
+      analysis: { ...analysis, findingsByCategory }, // Pass the full, correct analysis object
       sourceText,
       highlightData,
-      chartImage: chartImage,
+      chartImage, // Note: singular
       patternColorMap: Object.fromEntries(patternColorMap.entries()),
       translations: {
         reportTitle: t('pdf_report_title'),
@@ -95,32 +105,26 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
         explanationLabel: t('report_explanation_label'),
         pageNumber: t('pdf_page_number'),
         categoryNames: {
-            'category_interpersonal_psychological': t('category_interpersonal_psychological'),
-            'category_covert_indirect_control': t('category_covert_indirect_control'),
-            'category_sociopolitical_rhetorical': t('category_sociopolitical_rhetorical'),
+          'category_interpersonal_psychological': t('category_interpersonal_psychological'),
+          'category_covert_indirect_control': t('category_covert_indirect_control'),
+          'category_sociopolitical_rhetorical': t('category_sociopolitical_rhetorical'),
         }
       }
     };
-
-    window.addEventListener('message', handlePdfMessage);
+    // --- END FINAL FIX ---
 
     const iframe = document.createElement('iframe');
     iframe.src = chrome.runtime.getURL('pdf-generator.html');
     iframe.style.display = 'none';
     iframeRef.current = iframe;
     document.body.appendChild(iframe);
-
-    iframe.onload = () => {
-      iframe.contentWindow?.postMessage({ type: 'GENERATE_PDF', data: dataForPdf }, '*');
-    };
   };
 
   const handleJsonDownload = () => {
     const translatedFindingsByCategory = Object.entries(findingsByCategory).reduce((acc, [categoryKey, findings]) => {
-        acc[t(categoryKey) || categoryKey] = findings;
-        return acc;
+      acc[t(categoryKey) || categoryKey] = findings;
+      return acc;
     }, {} as Record<string, GeminiFinding[]>);
-
     const structuredData = {
       reportTitle: "HootSpot AI Analysis Report",
       analysisSummary: analysis.analysis_summary,
@@ -139,12 +143,10 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
     const summary = analysis.analysis_summary;
     const detectedPatterns = [...new Set(analysis.findings.map(f => f.display_name))];
     let patternsText = detectedPatterns.slice(0, 2).join(', ');
-
     let tweetText = t('share_twitter_text', { summary: summary, patterns: patternsText });
     if (tweetText.length > 260) {
       tweetText = `HootSpot: "${summary}" Detected: ${patternsText}...`;
     }
-
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&hashtags=HootSpotAI,CriticalThinking`;
     window.open(twitterUrl, '_blank', 'noopener,noreferrer');
     setIsMenuOpen(false);
@@ -152,19 +154,9 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
 
   return (
     <div className="relative share-menu-container" ref={menuRef}>
-      <button
-        onClick={() => setIsMenuOpen(!isMenuOpen)}
-        disabled={isGenerating}
-        className="p-2 text-gray-500 hover:text-blue-600 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-wait"
-        title={t('share_menu_tooltip')}
-      >
-        {isGenerating ? (
-          <div className="spinner w-5 h-5 border-t-blue-600"></div>
-        ) : (
-          <ShareIcon className="w-5 h-5" />
-        )}
+      <button onClick={() => setIsMenuOpen(!isMenuOpen)} disabled={isGenerating} className="p-2 text-gray-500 hover:text-blue-600 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-wait" title={t('share_menu_tooltip')}>
+        {isGenerating ? <div className="spinner w-5 h-5 border-t-blue-600"></div> : <ShareIcon className="w-5 h-5" />}
       </button>
-
       {isMenuOpen && (
         <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 border border-gray-200">
           <ul className="py-1">

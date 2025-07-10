@@ -8,50 +8,52 @@ import { pdf } from '@react-pdf/renderer';
 import { ReportPdfDocument } from './components/ReportPdfDocument';
 
 const generatePdf = async (event: MessageEvent) => {
-  console.log('SANDBOX: Message received from parent window.');
+  // --- FOOLPROOF DEBUGGING ---
+  const logs: any[] = [];
+  const sendDebugMessage = (title: string, data: any) => {
+    try {
+      logs.push(`[${title}]: ${JSON.stringify(data, null, 2)}`);
+    } catch (e) {
+      logs.push(`[${title}]: Could not stringify data.`);
+    }
+  };
+  // --- END DEBUGGING ---
 
-  if (event.origin !== window.location.origin) {
-    console.warn("SANDBOX: Message rejected from unknown origin:", event.origin);
-    return;
-  }
+  if (event.origin !== window.location.origin) return;
 
   const { type, data } = event.data;
   if (type !== 'GENERATE_PDF') return;
 
-  console.log('SANDBOX: Received GENERATE_PDF command with data:', data);
-
-  // CORRECTED: Destructure the 'translations' object from the data prop
-  const {
-    analysis,
-    sourceText,
-    highlightData,
-    chartImages,
-    profileData,
-    patternColorMap,
-    translations, // <<< THIS WAS MISSING
-  } = data;
+  sendDebugMessage("START", "GENERATE_PDF message received.");
+  sendDebugMessage("DATA_PAYLOAD", data);
+  sendDebugMessage("ANALYSIS_OBJECT", data ? data.analysis : "Data or Analysis is NULL");
+  sendDebugMessage("FINDINGS_BY_CATEGORY", data && data.analysis ? data.analysis.findingsByCategory : "Analysis or FindingsByCategory is NULL");
 
   try {
-    console.log('SANDBOX: Starting PDF generation with @react-pdf/renderer...');
     const blob = await pdf(
       <ReportPdfDocument
-        analysis={analysis}
-        sourceText={sourceText}
-        highlightData={highlightData}
-        chartImages={chartImages}
-        profileData={profileData}
-        patternColorMap={patternColorMap}
-        translations={translations} // <<< THIS WAS MISSING
+        analysis={data.analysis}
+        sourceText={data.sourceText}
+        highlightData={data.highlightData}
+        chartImage={data.chartImage}
+        patternColorMap={data.patternColorMap}
+        translations={data.translations}
       />
     ).toBlob();
 
-    console.log('SANDBOX: PDF generation successful. Sending blob back to parent.');
     window.parent.postMessage({ type: 'PDF_GENERATED', blob }, '*');
 
-  } catch (error) {
-    console.error("SANDBOX: PDF Generation Failed! Error:", error);
-    window.parent.postMessage({ type: 'PDF_ERROR', error: error.message }, window.location.origin);
+  } catch (error: any) {
+    // ON CRASH, SEND ALL LOGS BACK
+    window.parent.postMessage({
+      type: 'PDF_CRASH_REPORT',
+      payload: {
+        errorMessage: error.message,
+        logs: logs
+      }
+    }, '*');
   }
 };
 
 window.addEventListener('message', generatePdf);
+window.parent.postMessage({ type: 'PDF_SANDBOX_READY' }, '*');
