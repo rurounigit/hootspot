@@ -2,52 +2,190 @@
 
 import React from 'react';
 import { Page, Text, View, Document, StyleSheet, Image } from '@react-pdf/renderer';
-import { GeminiFinding } from '../types';
+import { GeminiAnalysisResponse, GeminiFinding } from '../types';
 
 type PatternColorMap = Record<string, string>;
 
-const styles = StyleSheet.create({
-  page: { fontFamily: 'Helvetica', fontSize: 10, paddingTop: 40, paddingBottom: 60, paddingHorizontal: 40, lineHeight: 1.5, backgroundColor: '#FFFFFF', color: '#374151' },
-  header: { fontFamily: 'Helvetica-Bold', fontSize: 24, color: '#1f2937', textAlign: 'center', marginBottom: 20 },
-  summaryContainer: { backgroundColor: '#eff6ff', borderLeftWidth: 3, borderLeftColor: '#60a5fa', padding: 12, marginBottom: 24, borderRadius: 4 },
-  summaryTitle: { fontFamily: 'Helvetica-Bold', fontSize: 14, color: '#1d4ed8', marginBottom: 4 },
-  summaryText: { fontSize: 11, color: '#1e40af' },
-  sectionTitle: { fontFamily: 'Helvetica-Bold', fontSize: 16, color: '#111827', borderBottomWidth: 1, borderBottomColor: '#e5e7eb', paddingBottom: 6, marginBottom: 16, marginTop: 12 },
-  sourceTextContainer: { backgroundColor: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 4, padding: 12, marginBottom: 24 },
-  highlightedText: { backgroundColor: '#fecaca', color: '#1f2937' },
-  sourceText: { fontSize: 9, lineHeight: 1.6 },
-  categoryContainer: { marginBottom: 16, breakInside: 'avoid' },
-  categoryTitle: { fontFamily: 'Helvetica-Bold', fontSize: 14, color: '#374151', marginBottom: 12 },
-  findingCard: { borderRadius: 6, marginBottom: 12, breakInside: 'avoid', overflow: 'hidden', borderWidth: 1 },
-  findingHeader: { padding: 10 },
-  findingPatternName: { fontFamily: 'Helvetica-Bold', fontSize: 11, textTransform: 'uppercase', color: '#FFFFFF' },
-  findingBody: { padding: 12, backgroundColor: '#f9fafb' },
-  findingQuoteLabel: { fontFamily: 'Helvetica-Bold', fontSize: 9, marginBottom: 4, color: '#4b5563' },
-  findingQuote: { fontFamily: 'Helvetica-Oblique', padding: 8, borderLeftWidth: 3, marginBottom: 12, borderRadius: 4 },
-  findingExplanationLabel: { fontFamily: 'Helvetica-Bold', fontSize: 9, marginBottom: 4, color: '#4b5563' },
-  chartImage: { width: '100%', height: 'auto', marginBottom: 20, alignSelf: 'center' },
-  pageNumber: { position: 'absolute', fontSize: 9, bottom: 30, left: 0, right: 0, textAlign: 'center', color: '#6b7280' },
-});
-
-const HighlightedSourceTextView = ({ text, highlights }: { text: string; highlights: { start: number; end: number }[] }): JSX.Element => {
-    if (!highlights || highlights.length === 0) return <Text style={styles.sourceText}>{text}</Text>;
-    const segments: JSX.Element[] = [];
-    let lastIndex = 0;
-    const sortedHighlights = [...highlights].sort((a, b) => a.start - b.start);
-    sortedHighlights.forEach((h, i) => {
-      if (h.start > lastIndex) segments.push(<Text key={`text-${i}`}>{text.substring(lastIndex, h.start)}</Text>);
-      segments.push(<Text key={`highlight-${i}`} style={styles.highlightedText}>{text.substring(h.start, h.end)}</Text>);
-      lastIndex = h.end;
-    });
-    if (lastIndex < text.length) segments.push(<Text key="text-end">{text.substring(lastIndex)}</Text>);
-    return <Text style={styles.sourceText}>{segments}</Text>;
+/* ---------- PDF-safe color helper ---------- */
+const getSafeBackgroundColor = (hslColor: string): string => {
+  if (!hslColor || !hslColor.startsWith('hsl')) return '#f3f4f6';
+  try {
+    const parts = hslColor.match(/hsl\((\d+\.?\d*),\s*(\d+)%,\s*(\d+)%\)/);
+    if (!parts) return '#f3f4f6';
+    const [, hue, saturation] = parts;
+    /* 95 % lightness → very light, opaque, PDF-safe */
+    return `hsl(${hue}, ${saturation}%, 95%)`;
+  } catch {
+    return '#f3f4f6';
+  }
 };
 
+/* ---------- grouping helper ---------- */
+const groupByCategory = (findings: GeminiFinding[]): Record<string, GeminiFinding[]> =>
+  findings.reduce<Record<string, GeminiFinding[]>>((acc, f) => {
+    const key = f.category || 'Uncategorized';
+    (acc[key] ||= []).push(f);
+    return acc;
+  }, {});
+
+/* ---------- styles ---------- */
+const styles = StyleSheet.create({
+  page: {
+    fontFamily: 'Helvetica',
+    fontSize: 10,
+    paddingTop: 40,
+    paddingBottom: 60,
+    paddingHorizontal: 40,
+    lineHeight: 1.5,
+    backgroundColor: '#FFFFFF',
+    color: '#374151',
+  },
+  header: {
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 24,
+    color: '#1f2937',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  summaryContainer: {
+    backgroundColor: '#eff6ff',
+    borderLeftWidth: 3,
+    borderLeftColor: '#60a5fa',
+    padding: 12,
+    marginBottom: 24,
+    borderRadius: 4,
+  },
+  summaryTitle: {
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 14,
+    color: '#1d4ed8',
+    marginBottom: 4,
+  },
+  summaryText: {
+    fontSize: 11,
+    color: '#1e40af',
+  },
+  sectionTitle: {
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 16,
+    color: '#111827',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+    paddingBottom: 6,
+    marginBottom: 16,
+    marginTop: 12,
+  },
+  sourceTextContainer: {
+    backgroundColor: '#f9fafb',
+    border: '1px solid #e5e7eb',
+    borderRadius: 4,
+    padding: 12,
+    marginBottom: 24,
+  },
+  highlightedText: {
+    backgroundColor: '#fecaca',
+    color: '#1f2937',
+  },
+  sourceText: {
+    fontSize: 9,
+    lineHeight: 1.6,
+  },
+  categoryContainer: {
+    marginBottom: 16,
+    breakInside: 'avoid',
+  },
+  categoryTitle: {
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 14,
+    color: '#374151',
+    marginBottom: 12,
+  },
+  findingCard: {
+    borderRadius: 6,
+    marginBottom: 12,
+    breakInside: 'avoid',
+    overflow: 'hidden',
+    borderWidth: 1,
+  },
+  findingHeader: {
+    padding: 10,
+  },
+  findingPatternName: {
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 11,
+    textTransform: 'uppercase',
+    color: '#FFFFFF',
+  },
+  findingBody: {
+    padding: 12,
+    backgroundColor: '#f9fafb',
+  },
+  findingQuoteLabel: {
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 9,
+    marginBottom: 4,
+    color: '#4b5563',
+  },
+  findingQuote: {
+    fontFamily: 'Helvetica-Oblique',
+    padding: 8,
+    borderLeftWidth: 3,
+    marginBottom: 12,
+    borderRadius: 4,
+  },
+  findingExplanationLabel: {
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 9,
+    marginBottom: 4,
+    color: '#4b5563',
+  },
+  chartImage: {
+    width: '100%',
+    height: 'auto',
+    marginBottom: 20,
+    alignSelf: 'center',
+  },
+  pageNumber: {
+    position: 'absolute',
+    fontSize: 9,
+    bottom: 30,
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    color: '#6b7280',
+  },
+});
+
+/* ---------- highlighted source text ---------- */
+const HighlightedSourceTextView = ({
+  text,
+  highlights,
+}: {
+  text: string;
+  highlights: { start: number; end: number }[];
+}): JSX.Element => {
+  if (!highlights.length) return <Text style={styles.sourceText}>{text}</Text>;
+
+  const segments: JSX.Element[] = [];
+  let last = 0;
+  [...highlights]
+    .sort((a, b) => a.start - b.start)
+    .forEach((h, i) => {
+      if (h.start > last) segments.push(<Text key={`t-${i}`}>{text.slice(last, h.start)}</Text>);
+      segments.push(
+        <Text key={`h-${i}`} style={styles.highlightedText}>
+          {text.slice(h.start, h.end)}
+        </Text>
+      );
+      last = h.end;
+    });
+  if (last < text.length) segments.push(<Text key="end">{text.slice(last)}</Text>);
+  return <Text style={styles.sourceText}>{segments}</Text>;
+};
+
+/* ---------- main component ---------- */
 interface ReportPdfDocumentProps {
-  analysis: {
-    analysis_summary: string;
-    findingsByCategory: Record<string, GeminiFinding[]>;
-  };
+  analysis: GeminiAnalysisResponse;
   sourceText: string | null;
   highlightData: { start: number; end: number }[];
   chartImage: string | null;
@@ -65,42 +203,30 @@ interface ReportPdfDocumentProps {
   };
 }
 
-// --- FIX START: PDF-SAFE COLOR HELPER ---
-// This function takes an HSL color string and returns a much lighter, non-transparent version
-// that is safe for the PDF renderer's old CSS engine.
-const getSafeBackgroundColor = (hslColor: string): string => {
-  if (!hslColor || !hslColor.startsWith('hsl')) {
-    return '#f3f4f6'; // A light gray fallback
-  }
-  try {
-    const parts = hslColor.match(/hsl\((\d+\.?\d*),\s*(\d+)%,\s*(\d+)%\)/);
-    if (!parts) return '#f3f4f6';
-    const [_, hue, saturation] = parts;
-    // We create a very light background by setting lightness to 95%
-    return `hsl(${hue}, ${saturation}%, 95%)`;
-  } catch (e) {
-    return '#f3f4f6';
-  }
-};
-// --- FIX END ---
-
-export const ReportPdfDocument = ({ analysis, sourceText, highlightData, chartImage, translations, patternColorMap }: ReportPdfDocumentProps): JSX.Element => {
+export const ReportPdfDocument = ({
+  analysis,
+  sourceText,
+  highlightData,
+  chartImage,
+  translations,
+  patternColorMap,
+}: ReportPdfDocumentProps): JSX.Element => {
+  const findingsByCategory = groupByCategory(analysis?.findings || []);
   const defaultColor = '#dddddd';
-  const findingsByCategory = (analysis && analysis.findingsByCategory) ? analysis.findingsByCategory : {};
 
   return (
     <Document title={translations.reportTitle} author="HootSpot AI">
       <Page size="A4" style={styles.page}>
         <Text style={styles.header}>{translations.reportTitle}</Text>
 
-        {analysis && analysis.analysis_summary && (
+        {analysis?.analysis_summary && (
           <View style={styles.summaryContainer}>
             <Text style={styles.summaryTitle}>{translations.summaryTitle}</Text>
             <Text style={styles.summaryText}>{analysis.analysis_summary}</Text>
           </View>
         )}
 
-        {sourceText && highlightData && highlightData.length > 0 && (
+        {sourceText && highlightData?.length && (
           <View>
             <Text style={styles.sectionTitle}>{translations.highlightedTextTitle}</Text>
             <View style={styles.sourceTextContainer}>
@@ -121,25 +247,35 @@ export const ReportPdfDocument = ({ analysis, sourceText, highlightData, chartIm
             <Text style={styles.sectionTitle}>{translations.detectedPatternsTitle}</Text>
             {Object.entries(findingsByCategory).map(([categoryKey, findings]) => (
               <View key={categoryKey} style={styles.categoryContainer}>
-                <Text style={styles.categoryTitle}>{translations.categoryNames[categoryKey] || categoryKey}</Text>
-                {Array.isArray(findings) && findings.map((finding, index) => {
+                <Text style={styles.categoryTitle}>
+                  {translations.categoryNames[categoryKey] || categoryKey}
+                </Text>
+                {(findings as GeminiFinding[]).map((finding, idx) => {
                   const color = patternColorMap[finding.pattern_name] || defaultColor;
-                  // --- FIX START: Use the safe background color ---
-                  const safeBgColor = getSafeBackgroundColor(color);
-                  // --- FIX END ---
+                  const safeBg = getSafeBackgroundColor(color);
                   return (
-                    <View key={index} style={[styles.findingCard, { borderColor: color }]}>
+                    <View
+                      key={idx}
+                      style={[styles.findingCard, { borderColor: color }]}
+                    >
                       <View style={[styles.findingHeader, { backgroundColor: color }]}>
                         <Text style={styles.findingPatternName}>{finding.display_name}</Text>
                       </View>
                       <View style={styles.findingBody}>
-                        <Text style={styles.findingQuoteLabel}>{translations.quoteLabel}</Text>
-                        {/* --- FIX START: Apply the safe color and structure --- */}
-                        <View style={[styles.findingQuote, { backgroundColor: safeBgColor, borderLeftColor: color }]}>
+                        <Text style={styles.findingQuoteLabel}>
+                          {translations.quoteLabel}
+                        </Text>
+                        <View
+                          style={[
+                            styles.findingQuote,
+                            { backgroundColor: safeBg, borderLeftColor: color },
+                          ]}
+                        >
                           <Text>"{finding.specific_quote}"</Text>
                         </View>
-                        {/* --- FIX END --- */}
-                        <Text style={styles.findingExplanationLabel}>{translations.explanationLabel}</Text>
+                        <Text style={styles.findingExplanationLabel}>
+                          {translations.explanationLabel}
+                        </Text>
                         <Text>{finding.explanation}</Text>
                       </View>
                     </View>
@@ -150,7 +286,15 @@ export const ReportPdfDocument = ({ analysis, sourceText, highlightData, chartIm
           </View>
         )}
 
-        <Text style={styles.pageNumber} render={({ pageNumber, totalPages }) => `${translations.pageNumber.replace('{pageNumber}', String(pageNumber)).replace('{totalPages}', String(totalPages))}`} fixed />
+        <Text
+          style={styles.pageNumber}
+          render={({ pageNumber, totalPages }) =>
+            translations.pageNumber
+              .replace('{pageNumber}', String(pageNumber))
+              .replace('{totalPages}', String(totalPages))
+          }
+          fixed
+        />
       </Page>
     </Document>
   );

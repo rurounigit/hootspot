@@ -78,7 +78,7 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
     setIsGenerating(true);
 
     let chartImage: string | null = null;
-    const chartElement = document.getElementById('bubble-chart-container');
+    const chartElement = document.getElementById('png-version-ref') || document.getElementById('bubble-chart-container');
     if (chartElement) {
       try {
         const canvas = await html2canvas(chartElement, { scale: 2, backgroundColor: '#f9fafb' });
@@ -88,9 +88,9 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
       }
     }
 
-    // --- FINAL FIX: Send the data in the same structure as the perfect JSON download ---
+
     pdfDataRef.current = {
-      analysis: { ...analysis, findingsByCategory }, // Pass the full, correct analysis object
+      analysis,
       sourceText,
       highlightData,
       chartImage, // Note: singular
@@ -111,7 +111,7 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
         }
       }
     };
-    // --- END FINAL FIX ---
+
 
     const iframe = document.createElement('iframe');
     iframe.src = chrome.runtime.getURL('pdf-generator.html');
