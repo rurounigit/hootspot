@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useTranslation } from '../i18n';
 import * as d3 from 'd3';
 import { calculateOptimalFontSize } from '../utils/textUtils'; // <-- IMPORT THE NEW FUNCTION
+import { transform } from 'html2canvas/dist/types/css/property-descriptors/transform';
 
 // --- INTERFACES ---
 interface BubbleData {
@@ -126,44 +127,40 @@ const ManipulationBubbleChart: React.FC<ManipulationBubbleChartProps> = ({
     }
   }, [data, dimensions]);
 
-  // This entire hook remains unchanged
-  const transform = useMemo(() => {
-    if (!simulatedData || simulatedData.length === 0 || dimensions.width === 0) {
-      return '';
+  const viewBox = useMemo(() => {
+    if (!simulatedData || simulatedData.length === 0) {
+      return `0 0 ${dimensions.width} ${dimensions.height}`; // Default fallback
     }
-    const PADDING = 20;
+
+    const HULL_PADDING = 15; // Padding used by the CategoryHull component
+    const ZOOM_PADDING = 20; // Extra padding around the entire content
+
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+
     simulatedData.forEach(node => {
-      minX = Math.min(minX, node.x! - node.radius);
-      maxX = Math.max(maxX, node.x! + node.radius);
-      minY = Math.min(minY, node.y! - node.radius);
-      maxY = Math.max(maxY, node.y! + node.radius);
+      minX = Math.min(minX, node.x! - node.radius - HULL_PADDING);
+      maxX = Math.max(maxX, node.x! + node.radius + HULL_PADDING);
+      minY = Math.min(minY, node.y! - node.radius - HULL_PADDING);
+      maxY = Math.max(maxY, node.y! + node.radius + HULL_PADDING);
     });
+
     const dataWidth = maxX - minX;
     const dataHeight = maxY - minY;
-    if (dataWidth === 0 || dataHeight === 0) {
-        const translateX = (dimensions.width / 2) - (simulatedData[0]?.x ?? 0);
-        const translateY = (dimensions.height / 2) - (simulatedData[0]?.y ?? 0);
-        return `translate(${translateX}, ${translateY})`;
-    }
-    const scaleX = (dimensions.width - PADDING * 2) / dataWidth;
-    const scaleY = (dimensions.height - PADDING * 2) / dataHeight;
-    const scale = Math.min(scaleX, scaleY);
-    const dataCenterX = minX + dataWidth / 2;
-    const dataCenterY = minY + dataHeight / 2;
-    const translateX = (dimensions.width / 2) - (dataCenterX * scale);
-    const translateY = (dimensions.height / 2) - (dataCenterY * scale);
-    return `translate(${translateX}, ${translateY})`;
-  }, [simulatedData, dimensions]);
 
-  if (!data || data.length === 0) return null;
+    const finalMinX = minX - ZOOM_PADDING;
+    const finalMinY = minY - ZOOM_PADDING;
+    const finalWidth = dataWidth + (ZOOM_PADDING * 2);
+    const finalHeight = dataHeight + (ZOOM_PADDING * 2);
+
+    return `${finalMinX} ${finalMinY} ${finalWidth} ${finalHeight}`;
+  }, [simulatedData, dimensions.width, dimensions.height]);
 
   const nodesByCategory = d3.group(simulatedData, d => d.category);
 
   return (
     <div id="bubble-chart-container" ref={containerRef} className="bg-gray-50 p-2 rounded-lg shadow-md border border-gray-200 focus:outline-none" style={{ width: '100%', height: `${dynamicHeight}px`, position: 'relative', overflow: 'hidden' }} tabIndex={-1}>
-      <svg width={dimensions.width} height={dimensions.height}>
-        <g transform={transform}>
+      <svg width={dimensions.width} height={dimensions.height} viewBox={viewBox}>
+        <g>
           {/* Hull rendering remains unchanged */}
           {Array.from(nodesByCategory, ([category, nodes]) => (
             <CategoryHull
