@@ -239,7 +239,7 @@ const App: React.FC = () => {
   const displayedAnalysis = translatedResults[language] || analysisResult;
 
   return (
-    <div className="relative flex flex-col h-screen bg-gradient-to-br from-athena-logo-bg to-athena-logo-bg dark:from-gray-900 dark:to-gray-800">
+    <div className="relative flex flex-col h-screen bg-gradient-to-br from-athena-logo-bg to-athena-logo-bg dark:from-gray-600 dark:to-gray-500">
       <div className="absolute top-2 right-4 z-10 flex items-center space-x-2">
         <button
           onClick={() => setIsNightMode(!isNightMode)}
