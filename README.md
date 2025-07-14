@@ -29,7 +29,7 @@ This tool runs as a "side panel" in your browser, allowing you to select text fr
 
 ## 📸 Demo
 
-<img src="public/images/hootspot-gif.gif" alt="HootSpot" width="80%">
+<img src="public/images/hootspot-gif.gif" alt="HootSpot" width="40%">
 
 ## 🔬 How It Works
 
