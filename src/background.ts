@@ -76,13 +76,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ text: null, autoAnalyze: false });
     }
   }
-  // This block is updated to use request.url instead of request.dataUrl
+  // This block is updated to use the filename from the request
   else if (request.type === 'DOWNLOAD_PDF') {
     // Check for the 'url' property sent from ShareMenu.tsx
     if (request.url) {
       chrome.downloads.download({
         url: request.url, // Use the received blob: URL
-        filename: 'HootSpot_Analysis_Report.pdf',
+        filename: request.filename || 'HootSpot_Analysis_Report.pdf', // Use dynamic filename or fallback
         saveAs: true // This is generally better UX for extensions
       });
     }

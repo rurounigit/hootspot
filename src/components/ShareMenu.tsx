@@ -28,6 +28,7 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
   const menuRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const pdfDataRef = useRef<any>(null);
+  const pdfFilenameRef = useRef<string | null>(null); // Ref to hold the dynamic filename
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -42,7 +43,8 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
         }
       } else if (type === 'PDF_GENERATED' && blob) {
         const objectUrl = URL.createObjectURL(blob);
-        chrome.runtime.sendMessage({ type: 'DOWNLOAD_PDF', url: objectUrl });
+        // Use the filename from the ref
+        chrome.runtime.sendMessage({ type: 'DOWNLOAD_PDF', url: objectUrl, filename: pdfFilenameRef.current });
         setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
         cleanup();
       } else if (type === 'PDF_CRASH_REPORT') {
@@ -66,12 +68,19 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
       iframeRef.current = null;
     }
     pdfDataRef.current = null;
+    pdfFilenameRef.current = null; // Clean up the ref
     setIsGenerating(false);
   };
 
   const handlePdfDownload = async () => {
     setIsMenuOpen(false);
     setIsGenerating(true);
+
+    // Generate a unique, timestamp-based ID for the filename
+    const now = new Date();
+    const pad = (num: number) => num.toString().padStart(2, '0');
+    const reportId = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+    pdfFilenameRef.current = `HootSpot_Analysis_Report_${reportId}.pdf`;
 
     let chartImage: string | null = null;
 
