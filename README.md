@@ -4,7 +4,7 @@
 
 **HootSpot is a privacy-focused Chrome Extension that uses the Google Gemini API to help you identify and understand a wide range of psychological, rhetorical, and political manipulation tactics in any text.**
 
-[![React](https://img.shields.io/badge/React-19.1-blue?logo=react)](https://react.dev/)
+[![React](https://img.shields.io/badge/React-19-blue?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-5.2-purple?logo=vite)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-blue?logo=tailwindcss)](https://tailwindcss.com/)
@@ -21,7 +21,7 @@ This tool runs as a "side panel" in your browser, allowing you to select text fr
 *   **📊 Interactive Visualization**: Generates a dynamic bubble chart using **D3.js** to visualize the strength, frequency, and categories of detected tactics, providing an immediate "Manipulation Profile" of the text.
 *   **📝 Comprehensive & Actionable Reports**: Delivers a multi-faceted report including an AI-generated summary, color-coded highlights in the source text, and detailed card-based explanations for each detected pattern.
 *   **📥 Export and Share Findings**: Easily share your analysis. Download a complete, professionally formatted PDF report, including highlights and the visual bubble chart. You can also export the raw analysis as a JSON file (and load it back later) or share a brief summary directly to X (Twitter).
-*   **Seamless Context Menu Integration**: Right-click any selected text on a webpage to instantly send it to the HootSpot side panel. Choose to simply copy the text or to trigger an immediate analysis, streamlining your workflow.
+*   **Seamless Context Menu & Keyboard Integration**: Right-click any selected text to instantly send it to the HootSpot side panel for analysis, replacement, or appending. For even faster workflow, use keyboard shortcuts (`Alt+Shift+A`, `Alt+Shift+S`, `Alt+Shift+D`) to perform these actions without clicking.
 *   **⚙️ Flexible AI Model Selection**: Choose from a list of Google Gemini models that are automatically fetched and updated. Models are conveniently grouped into "Stable" and "Preview" categories, allowing you to balance speed, cost, and analytical power.
 *   **🔐 Privacy-First & Customizable**: Your API key and custom settings are stored securely and locally in your browser's `localStorage`. Configure your experience by setting a custom character limit for analysis to manage API usage and costs.
 *   **🌐 Full Internationalization (i18n)**: The user interface is available in English, German, French, and Spanish out of the box.
@@ -92,12 +92,15 @@ If you want to run the project locally for development or testing, follow these 
     *   Choose **"Analyze selected text with HootSpot"** from the context menu.
     *   The side panel will open and automatically begin the analysis.
 
-3.  **Analyze Text Manually**
+3.  **Send Text to the Panel**
+    *   You can also right-click selected text and choose **"Copy text to HootSpot"** to replace the content in the panel or **"Add selected text to HootSpot"** to append it to the existing text.
+
+4.  **Analyze Text Manually**
     *   Open the side panel by clicking the HootSpot icon.
     *   Paste any text you want to analyze into the text area.
     *   Click **"Analyze"**.
 
-4.  **Review the Report**
+5.  **Review the Report**
     *   Scroll down to review the generated report, complete with a visual profile, highlights, and detailed explanations.
 
 ## 📂 Directory Structure
