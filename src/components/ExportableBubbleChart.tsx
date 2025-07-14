@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import * as d3 from 'd3';
-import { wrapSvgText } from '../utils/textUtils';
+import { calculateOptimalFontSize } from '../utils/textUtils'; // Import the new function
 
 // --- INTERFACES ---
 interface BubbleData {
@@ -108,9 +108,8 @@ const ExportableBubbleChart: React.FC<ExportableBubbleChartProps> = ({ data, wid
         {simulatedData.map((node) => {
           const { x, y, radius, color, name, id } = node;
 
-          // *** THE FIX IS HERE: Restoring your dynamic font size calculation ***
-          const textRadius = radius - (radius * 0.30);
-          const fontSize = Math.max(8, Math.min(textRadius * 0.4, 16));
+          // *** THE FIX IS HERE: Call the new function to get the perfect font size and lines. ***
+          const { fontSize, lines } = calculateOptimalFontSize(name, radius, 6, 24);
 
           return (
             <g key={id} transform={`translate(${x}, ${y})`}>
@@ -122,8 +121,8 @@ const ExportableBubbleChart: React.FC<ExportableBubbleChartProps> = ({ data, wid
                 // Use the dynamically calculated font size
                 style={{ fontSize: `${fontSize}px`, fontWeight: 'bold', pointerEvents: 'none' }}
               >
-                {/* Pass the dynamic font size to the wrapping utility */}
-                {wrapSvgText(name, radius, fontSize).map((line, index, arr) => (
+                {/* Render the pre-calculated lines */}
+                {lines.map((line, index, arr) => (
                   <tspan
                     key={index}
                     x={0}
