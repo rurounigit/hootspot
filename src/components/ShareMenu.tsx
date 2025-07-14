@@ -172,20 +172,6 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
     setIsMenuOpen(false);
   };
 
-  const handleTwitterShare = () => {
-    // This logic remains unchanged from your working version
-    const summary = analysis.analysis_summary;
-    const detectedPatterns = [...new Set(analysis.findings.map(f => f.display_name))];
-    let patternsText = detectedPatterns.slice(0, 2).join(', ');
-    let tweetText = t('share_twitter_text', { summary: summary, patterns: patternsText });
-    if (tweetText.length > 260) {
-      tweetText = `HootSpot: "${summary}" Detected: ${patternsText}...`;
-    }
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&hashtags=HootSpotAI,CriticalThinking`;
-    window.open(twitterUrl, '_blank', 'noopener,noreferrer');
-    setIsMenuOpen(false);
-  };
-
   return (
     <div className="relative share-menu-container ml-3" ref={menuRef}>
       <button onClick={() => setIsMenuOpen(!isMenuOpen)} disabled={isGenerating} className="p-2 text-gray-500 hover:text-blue-600 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-wait" title={t('share_menu_tooltip')}>
@@ -196,7 +182,6 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
           <ul className="py-1">
             <li><button onClick={handlePdfDownload} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">{t('share_menu_pdf')}</button></li>
             <li><button onClick={handleJsonDownload} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">{t('share_menu_json')}</button></li>
-            <li><button onClick={handleTwitterShare} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">{t('share_menu_twitter')}</button></li>
           </ul>
         </div>
       )}

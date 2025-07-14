@@ -83,8 +83,6 @@
   "share_menu_tooltip": "Compartir o Descargar Informe",
   "share_menu_pdf": "Descargar PDF",
   "share_menu_json": "Descargar JSON",
-  "share_menu_twitter": "Compartir en X (Twitter)",
-  "share_twitter_text": "HootSpot: \"{summary}\"",
   "pdf_report_title": "Informe de Análisis IA HootSpot",
   "pdf_page_number": "{pageNumber} / {totalPages}",
   "category_interpersonal_psychological": "Tácticas Interpersonales y Psicológicas",

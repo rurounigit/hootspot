@@ -83,8 +83,6 @@
   "share_menu_tooltip": "Bericht teilen oder herunterladen",
   "share_menu_pdf": "PDF herunterladen",
   "share_menu_json": "JSON herunterladen",
-  "share_menu_twitter": "Auf X (Twitter) teilen",
-  "share_twitter_text": "HootSpot: \"{summary}\"",
   "pdf_report_title": "HootSpot KI Analysebericht",
   "pdf_page_number": "{pageNumber} / {totalPages}",
   "category_interpersonal_psychological": "Interpersonelle & Psychologische Taktiken",
