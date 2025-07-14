@@ -9,40 +9,26 @@ let dataForNewlyOpenedPanel: { text: string, autoAnalyze: boolean } | null = nul
 type OpenPanelAction = 'PUSH' | 'APPEND';
 
 /**
- * A robust function that:
- * 1. Sets the data for the side panel to "pull" when it initializes.
- * 2. Reliably opens the side panel in the correct window.
- * 3. "Pushes" the data for an instant update if the panel is already open.
+ * A helper function that prepares the text data and sends it to the frontend.
+ * This should be called only AFTER the panel has been successfully opened.
  */
-async function processSelection(tab: chrome.tabs.Tab, selectedText: string, autoAnalyze: boolean, action: OpenPanelAction) {
-  // Ensure we have the necessary information.
-  if (!selectedText || !tab.windowId) return;
-
-  // 1. Set the data. This is the reliable "pull" mechanism for a newly opened panel.
+function prepareAndPushData(selectedText: string, autoAnalyze: boolean, action: OpenPanelAction) {
+  // Set the data for the "pull" mechanism.
   dataForNewlyOpenedPanel = { text: selectedText, autoAnalyze: autoAnalyze };
 
-  // 2. Open the side panel for the specific window the user is in.
-  //    This is the key fix. It works whether the panel is closed or already open.
-  try {
-    await chrome.sidePanel.open({ windowId: tab.windowId });
-  } catch (error) {
-    console.error("HootSpot: Error opening side panel.", error);
-    // If this fails, the user can still open it manually and the text will be there.
-  }
-
-  // 3. Send a message. This is the "push" mechanism for an already-open panel.
-  //    Even if this fails on first open (race condition), the pull mechanism will work.
+  // Send the message for the "push" mechanism.
   const message = {
-      type: action === 'APPEND' ? 'APPEND_TEXT_TO_PANEL' : 'PUSH_TEXT_TO_PANEL',
-      text: selectedText,
-      autoAnalyze: autoAnalyze
+    type: action === 'APPEND' ? 'APPEND_TEXT_TO_PANEL' : 'PUSH_TEXT_TO_PANEL',
+    text: selectedText,
+    autoAnalyze: autoAnalyze
   };
   chrome.runtime.sendMessage(message, () => {
-    if (chrome.runtime.lastError) { /* This is expected if the panel was not open */ }
+    // This error is expected if the panel was not already open and listening.
+    if (chrome.runtime.lastError) { /* No-op */ }
   });
 }
 
-// This onInstalled listener remains the same and is correct.
+// This listener sets up the context menus on installation. It is correct.
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.removeAll(async () => {
     const platformInfo = await chrome.runtime.getPlatformInfo();
@@ -70,50 +56,61 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-// This context menu listener remains the same and is correct.
+// Listener for context menu clicks.
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-  if (!tab || !info.selectionText) return;
-  switch (info.menuItemId) {
-    case CONTEXT_MENU_ID_ANALYZE:
-      await processSelection(tab, info.selectionText, true, 'PUSH');
-      break;
-    case CONTEXT_MENU_ID_COPY:
-      await processSelection(tab, info.selectionText, false, 'PUSH');
-      break;
-    case CONTEXT_MENU_ID_ADD:
-      await processSelection(tab, info.selectionText, false, 'APPEND');
-      break;
+  if (!tab || !info.selectionText || !tab.windowId) return;
+
+  // KEY FIX: Open the panel immediately, as this is a valid user gesture.
+  try {
+    await chrome.sidePanel.open({ windowId: tab.windowId });
+  } catch (error) {
+    console.error("HootSpot: Error opening side panel on context menu click.", error);
   }
+
+  // Then, prepare and send the data.
+  const action: OpenPanelAction = info.menuItemId === CONTEXT_MENU_ID_ADD ? 'APPEND' : 'PUSH';
+  const autoAnalyze = info.menuItemId === CONTEXT_MENU_ID_ANALYZE;
+  prepareAndPushData(info.selectionText, autoAnalyze, action);
 });
 
-// This command listener remains the same and is correct.
+// Listener for keyboard shortcuts.
 chrome.commands.onCommand.addListener(async (command, tab) => {
-  if (!tab?.id) return;
+  if (!tab || !tab.id || !tab.windowId) return;
+
+  // KEY FIX: Open the panel immediately, as a command is a valid user gesture.
+  try {
+    await chrome.sidePanel.open({ windowId: tab.windowId });
+  } catch (error) {
+    console.error("HootSpot: Error opening side panel on command.", error);
+  }
+
+  // Then, perform the async operation to get the text and send it.
   try {
     const injectionResults = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       func: () => window.getSelection()?.toString(),
     });
+
     if (injectionResults && injectionResults[0]?.result) {
       const selectedText = injectionResults[0].result;
       switch (command) {
         case 'analyze-with-hootspot':
-          await processSelection(tab, selectedText, true, 'PUSH');
+          prepareAndPushData(selectedText, true, 'PUSH');
           break;
         case 'copy-to-hootspot':
-          await processSelection(tab, selectedText, false, 'PUSH');
+          prepareAndPushData(selectedText, false, 'PUSH');
           break;
         case 'add-to-hootspot':
-          await processSelection(tab, selectedText, false, 'APPEND');
+          prepareAndPushData(selectedText, false, 'APPEND');
           break;
       }
     }
   } catch (e) {
-    console.error(`HootSpot: Could not execute script in tab ${tab.id}. This can happen on protected pages like the Chrome Web Store.`, e);
+    console.error(`HootSpot: Could not execute script in tab ${tab.id}. This can happen on protected pages.`, e);
   }
 });
 
-// The onMessage listener remains the same and is correct.
+// This onMessage listener remains the same and is correct.
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'PULL_INITIAL_TEXT') {
     if (dataForNewlyOpenedPanel) {
@@ -122,7 +119,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     } else {
       sendResponse({ text: null, autoAnalyze: false });
     }
-    return true;
+    return true; // Keep message channel open for async response.
   }
   if (request.type === 'DOWNLOAD_PDF') {
     if (request.url) {
