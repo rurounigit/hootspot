@@ -2,44 +2,45 @@
 
 ![HootSpot AI Logo](public/images/icons/icon128_onwhite.png)
 
-**HootSpot is a Chrome Extension designed to help you identify and explain a wide range of psychological, rhetorical, and political manipulation tactics.**
+**HootSpot is a privacy-focused Chrome Extension that uses the Google Gemini API to help you identify and understand a wide range of psychological, rhetorical, and political manipulation tactics in any text.**
 
 [![React](https://img.shields.io/badge/React-19.1-blue?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-5.2-purple?logo=vite)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-blue?logo=tailwindcss)](https://tailwindcss.com/)
-[![Recharts](https://img.shields.io/badge/Recharts-3.0.2-purple)](https://recharts.org/)
 [![D3.js](https://img.shields.io/badge/D3.js-7.9-orange?logo=d3dotjs)](https://d3js.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-This tool acts as a "side panel" in your browser, allowing you to select text from any webpage or paste it directly to receive an instant, in-depth analysis of its underlying messaging and potential manipulative techniques.
+This tool runs as a "side panel" in your browser, allowing you to select text from any webpage or paste it directly to receive an instant, in-depth analysis of its underlying messaging and potential manipulative techniques. Your API key and data are stored locally, ensuring your privacy.
 
 ---
 
 ## ✨ Key Features
 
-*   **AI-Powered Rhetorical Analysis**: Uses a detailed system prompt to instruct the Gemini API to identify and categorize manipulative patterns.
-*   **📊 Visual Manipulation Profile**: Instantly understand the nature of the text with a dynamic bubble chart that visualizes the strength, frequency, and categories of detected tactics.
-*   **📝 Detailed, Actionable Reports**: Provides a multi-faceted report including an AI-generated summary, color-coded highlights in the source text, and detailed explanations for each detected pattern.
-*   **📥 Export and Share Reports**: Easily share your findings. Download a complete, professionally formatted PDF report, including highlights and visual charts. You can also export the raw analysis as a JSON file or share a brief summary directly to X (Twitter).
+*   **Advanced Rhetorical Analysis**: Leverages a sophisticated system prompt (`src/constants.tsx`) to instruct the Gemini API to identify and categorize manipulative patterns without a hardcoded list of tactics.
+*   **📊 Interactive Visualization**: Generates a dynamic bubble chart using **D3.js** to visualize the strength, frequency, and categories of detected tactics, providing an immediate "Manipulation Profile" of the text.
+*   **📝 Comprehensive & Actionable Reports**: Delivers a multi-faceted report including an AI-generated summary, color-coded highlights in the source text, and detailed card-based explanations for each detected pattern.
+*   **📥 Export and Share Findings**: Easily share your analysis. Download a complete, professionally formatted PDF report, including highlights and the visual bubble chart. You can also export the raw analysis as a JSON file (and load it back later) or share a brief summary directly to X (Twitter).
 *   **Seamless Context Menu Integration**: Right-click any selected text on a webpage to instantly send it to the HootSpot side panel. Choose to simply copy the text or to trigger an immediate analysis, streamlining your workflow.
-*   **⚙️ Flexible AI Model Selection**: Choose from a list of Google Gemini models that are automatically fetched and updated. Models are conveniently grouped into "Stable" and "Preview" categories, allowing you to tailor the analysis to your needs—from fast, lightweight models to more powerful, nuanced ones.
-*   **Privacy-Focused & Customizable**: Your API key and custom settings are stored securely and locally in your browser. Configure your experience by setting a custom character limit for analysis to manage API usage.
-*   **Multi-language Support**: The user interface is available in English, German, French, and Spanish out of the box.
-*   **🤖 AI-Powered Language Management**: A unique feature that allows you to use the AI to translate the extension's entire interface into any language. Simply provide a language code (e.g., "it" for Italian), and the AI handles the rest.
+*   **⚙️ Flexible AI Model Selection**: Choose from a list of Google Gemini models that are automatically fetched and updated. Models are conveniently grouped into "Stable" and "Preview" categories, allowing you to balance speed, cost, and analytical power.
+*   **🔐 Privacy-First & Customizable**: Your API key and custom settings are stored securely and locally in your browser's `localStorage`. Configure your experience by setting a custom character limit for analysis to manage API usage and costs.
+*   **🌐 Full Internationalization (i18n)**: The user interface is available in English, German, French, and Spanish out of the box.
+*   **🤖 AI-Powered Language Management**: A unique feature that allows you to use the Gemini API to translate the extension's entire interface into any language. Simply provide a language code (e.g., "it" for Italian), and the AI generates the necessary translation files.
 
 ## 📸 Demo
 
-![HootSpot AI Demo Screenshot](public/images/screenshot.jpg)
+<img src="public/images/hootspot-gif.gif" alt="HootSpot" width="80%">
 
 ## 🔬 How It Works
 
-The core of HootSpot is the `SYSTEM_PROMPT`. This prompt instructs the Google Gemini API on its role and the required output format. It does not contain a hardcoded list of tactics.
+HootSpot is built as a modern Manifest V3 Chrome Extension, ensuring security and performance.
 
-1.  When you submit a text for analysis, the extension sends it to the Google Gemini API along with the `SYSTEM_PROMPT`.
-2.  This instructs the AI to act as an expert in linguistics, psychology, and rhetoric and to find matching patterns in your text based on its own training.
-3.  The Gemini API is required to return a structured JSON response containing the analysis.
-4.  The extension parses this JSON and renders an interactive, multi-part report in the side panel, including the summary, visual chart, and highlighted text.
+1.  **Input**: A user selects text and uses the context menu or pastes text directly into the side panel.
+2.  **Request**: The `background.ts` service worker or the UI (`App.tsx`) sends the user's text and the core `SYSTEM_PROMPT` to the Google Gemini API via `geminiService.ts`.
+3.  **Analysis**: The Gemini API acts as an expert in linguistics and psychology. It analyzes the text for manipulative patterns and returns a structured JSON response.
+4.  **Response Handling**: The `geminiService.ts` includes robust logic to parse the API's response, including extracting JSON from markdown code blocks to handle various model outputs gracefully.
+5.  **Rendering**: The React frontend (`App.tsx`) processes this JSON and renders an interactive, multi-part report in the side panel, featuring the summary, the D3.js bubble chart (`ManipulationBubbleChart.tsx`), and the highlighted source text.
+6.  **PDF Generation**: For PDF exports, the app uses a sandboxed `iframe` (`pdf-generator.html`) for security. It renders an off-screen, high-resolution version of the bubble chart using `html2canvas` and constructs the PDF with `@react-pdf/renderer` in the sandbox, preventing direct access to sensitive resources.
 
 ## 🛠️ Installation and Usage
 
@@ -75,7 +76,7 @@ If you want to run the project locally for development or testing, follow these 
     *   Enable **"Developer mode"** using the toggle in the top-right corner.
     *   Click the **"Load unpacked"** button.
     *   Select the `dist` directory that was created in the previous step.
-    *   The HootSpot AI Text Analyzer icon should now appear in your Chrome toolbar.
+    *   The HootSpot AI icon should now appear in your Chrome toolbar.
 
 ## 🚀 Getting Started
 
@@ -97,18 +98,45 @@ If you want to run the project locally for development or testing, follow these 
     *   Click **"Analyze"**.
 
 4.  **Review the Report**
-    *   Scroll down to review the generated report, complete with a visual profile, highlights, and explanations.
+    *   Scroll down to review the generated report, complete with a visual profile, highlights, and detailed explanations.
+
+## 📂 Directory Structure
+
+The project is structured to be clean and maintainable:
+
+```
+/
+├── dist/                  # Built extension files (output of `npm run build`)
+├── public/                # Static assets, manifest.json, and locales
+│   ├── _locales/          # i18n message files for different languages
+│   └── manifest.json      # Core Chrome Extension configuration
+├── src/                   # Main application source code
+│   ├── components/        # Reusable React components
+│   ├── hooks/             # Custom React hooks (e.g., `useModels.ts`)
+│   ├── locales/           # English-language JSON strings for i18n
+│   ├── services/          # API communication logic (e.g., `geminiService.ts`)
+│   ├── utils/             # Helper functions (e.g., text manipulation)
+│   ├── App.tsx            # Main React application component
+│   ├── background.ts      # Extension service worker (context menus, etc.)
+│   ├── i18n.tsx           # Internationalization setup
+│   ├── index.tsx          # React entry point
+│   ├── pdf-generator.tsx  # React code for the sandboxed PDF page
+│   └── types.ts           # TypeScript type definitions
+├── package.json           # Project dependencies and scripts
+└── vite.config.ts         # Vite build configuration
+```
 
 ## 💻 Tech Stack
 
-*   **Framework**: [React](https://react.dev/)
+*   **Framework**: [React](https://react.dev/) 19
 *   **Language**: [TypeScript](https://www.typescriptlang.org/)
 *   **Build Tool**: [Vite](https://vitejs.dev/)
-*   **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-*   **Charting**: [Recharts](https://recharts.org/) & [D3.js](https://d3js.org/)
-*   **PDF Generation**: [@react-pdf/renderer](https://react-pdf.org/) & [html2canvas](https://html2canvas.hertzen.com/)
-*   **AI**: [Google Gemini API](https://ai.google.dev/)
 *   **Platform**: [Chrome Extension (Manifest V3)](https://developer.chrome.com/docs/extensions)
+*   **AI**: [Google Gemini API](https://ai.google.dev/) (via `@google/genai`)
+*   **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+*   **Charting**: [D3.js](https://d3js.org/)
+*   **PDF Generation**: [@react-pdf/renderer](https://react-pdf.org/) & [html2canvas](https://html2canvas.hertzen.com/)
+*   **Internationalization**: Custom i18n provider (`src/i18n.tsx`)
 
 ## 🤝 Contributing
 
@@ -126,4 +154,4 @@ This tool is intended for educational and analytical purposes. The analysis is g
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
