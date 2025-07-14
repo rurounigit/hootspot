@@ -1,5 +1,5 @@
 // src/components/TextAnalyzer.tsx
-import React, { forwardRef } from 'react'; // Import forwardRef
+import React, { forwardRef, useRef } from 'react'; // Import forwardRef and useRef
 import { AnalyzeIcon } from '../constants';
 import { useTranslation } from '../i18n';
 
@@ -7,6 +7,7 @@ interface TextAnalyzerProps {
   text: string;
   onTextChange: (text: string) => void;
   onAnalyze: (text: string) => void;
+  onJsonLoad: (file: File) => void; // New prop for the JSON load handler
   isLoading: boolean;
   maxCharLimit: number;
   hasApiKey: boolean;
@@ -14,10 +15,15 @@ interface TextAnalyzerProps {
 
 // Wrap the component with forwardRef to allow the parent to get a ref to the textarea
 const TextAnalyzer = forwardRef<HTMLTextAreaElement, TextAnalyzerProps>(
-  ({ text, onTextChange, onAnalyze, isLoading, maxCharLimit, hasApiKey }, ref) => {
+  ({ text, onTextChange, onAnalyze, onJsonLoad, isLoading, maxCharLimit, hasApiKey }, ref) => {
     const { t } = useTranslation();
     const charCount = text.length;
     const exceedsLimit = charCount > maxCharLimit;
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleUploadClick = () => {
+      fileInputRef.current?.click();
+    };
 
     const handleAnalyze = () => {
       if (!exceedsLimit && hasApiKey && text.trim().length > 0) {
@@ -31,6 +37,15 @@ const TextAnalyzer = forwardRef<HTMLTextAreaElement, TextAnalyzerProps>(
         if (!isLoading && !exceedsLimit) {
           handleAnalyze();
         }
+      }
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        onJsonLoad(file);
+        // Reset the input so the same file can be loaded again if needed
+        e.target.value = '';
       }
     };
 
@@ -56,6 +71,14 @@ const TextAnalyzer = forwardRef<HTMLTextAreaElement, TextAnalyzerProps>(
           maxLength={maxCharLimit + 500}
           disabled={!hasApiKey || isLoading}
         />
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          accept="application/json"
+          style={{ display: 'none' }}
+          disabled={isLoading}
+        />
         <div className="flex justify-between items-center mt-2 text-sm">
           <p className={`
             ${exceedsLimit ? 'text-red-600 font-semibold' : 'text-gray-600'}
@@ -64,7 +87,11 @@ const TextAnalyzer = forwardRef<HTMLTextAreaElement, TextAnalyzerProps>(
             {t('analyzer_chars_count', { count: charCount, limit: maxCharLimit })}
             {exceedsLimit && t('analyzer_chars_over_limit', { over: charCount - maxCharLimit })}
           </p>
-          <button
+          <div className="flex items-center space-x-2">
+            <button onClick={handleUploadClick} disabled={isLoading} className="px-4 py-2 bg-gray-500 text-white font-semibold rounded-md shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 disabled:bg-gray-400">
+              {t('analyzer_button_load_json')}
+            </button>
+            <button
             onClick={handleAnalyze}
             disabled={isLoading || exceedsLimit || !hasApiKey || text.trim().length === 0}
             className="flex items-center px-4 py-2 bg-green-600 text-white font-semibold rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400"
@@ -76,7 +103,8 @@ const TextAnalyzer = forwardRef<HTMLTextAreaElement, TextAnalyzerProps>(
             )}
             {isLoading ? t('analyzer_button_analyzing') : t('analyzer_button_analyze')}
           </button>
-        </div>
+          </div>
+       </div>
       </div>
     );
   }

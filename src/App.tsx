@@ -190,6 +190,30 @@ const App: React.FC = () => {
     }
   }, [analysisResult]);
 
+  const handleJsonLoad = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        const data = JSON.parse(text);
+
+        // Validation for the new format
+        if (data.hootspotAnalysisVersion && data.analysisResult && typeof data.sourceText === 'string') {
+          setAnalysisResult(data.analysisResult);
+          setCurrentTextAnalyzed(data.sourceText);
+          setTextToAnalyze(data.sourceText);
+          setTranslatedResults({}); // Clear old translations
+          setError(null); // Clear any previous errors
+        } else {
+          throw new Error(t('error_invalid_json_file'));
+        }
+      } catch (e: any) {
+        setError(`${t('error_json_load_failed')} ${e.message}`);
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const handleApiKeySave = useCallback(async (newApiKey: string) => {
     try {
       localStorage.setItem(API_KEY_STORAGE_KEY, newApiKey);
@@ -246,6 +270,7 @@ const App: React.FC = () => {
             onAnalyze={handleAnalyzeText}
             isLoading={isLoading}
             maxCharLimit={maxCharLimit}
+            onJsonLoad={handleJsonLoad}
             hasApiKey={!!apiKey && isKeyValid}
           />
 

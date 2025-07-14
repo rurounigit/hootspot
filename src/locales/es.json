@@ -90,5 +90,8 @@
   "category_covert_indirect_control": "Control Encubierto e Indirecto",
   "category_sociopolitical_rhetorical": "Tácticas Sociopolíticas y Retóricas",
   "info_translating_results": "Traduciendo resultados del análisis...",
-  "error_translation_failed": "Fallo al traducir el resultado del análisis: {message}"
+  "error_translation_failed": "Fallo al traducir el resultado del análisis: {message}",
+  "analyzer_button_load_json": "Cargar JSON",
+  "error_invalid_json_file": "Archivo JSON de HootSpot inválido o corrupto.",
+  "error_json_load_failed": "Fallo al cargar el análisis:"
 }

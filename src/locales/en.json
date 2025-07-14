@@ -90,5 +90,8 @@
   "category_covert_indirect_control": "Covert & Indirect Control",
   "category_sociopolitical_rhetorical": "Sociopolitical & Rhetorical",
   "info_translating_results": "Translating analysis results...",
-  "error_translation_failed": "Failed to translate analysis result: {message}"
+  "error_translation_failed": "Failed to translate analysis result: {message}",
+  "analyzer_button_load_json": "Load JSON",
+  "error_invalid_json_file": "Invalid or corrupted HootSpot JSON file.",
+  "error_json_load_failed": "Failed to load analysis:"
 }

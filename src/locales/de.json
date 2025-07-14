@@ -90,5 +90,8 @@
   "category_covert_indirect_control": "Verdeckte & Indirekte Kontrolle",
   "category_sociopolitical_rhetorical": "Soziopolitische & Rhetorische Taktiken",
   "info_translating_results": "Übersetze Analyseergebnisse...",
-  "error_translation_failed": "Analyseergebnis konnte nicht übersetzt werden: {message}"
+  "error_translation_failed": "Analyseergebnis konnte nicht übersetzt werden: {message}",
+  "analyzer_button_load_json": "JSON laden",
+  "error_invalid_json_file": "Ungültige oder beschädigte HootSpot JSON-Datei.",
+  "error_json_load_failed": "Analyse konnte nicht geladen werden:"
 }

@@ -29,17 +29,6 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const pdfDataRef = useRef<any>(null);
 
-  const findingsByCategory = useMemo(() => {
-    // This logic is kept as it's used for the JSON download
-    if (!analysis || !analysis.findings) return {};
-    return analysis.findings.reduce((acc, finding) => {
-      const categoryKey = finding.category || 'Uncategorized';
-      if (!acc[categoryKey]) acc[categoryKey] = [];
-      acc[categoryKey].push(finding);
-      return acc;
-    }, {} as Record<string, GeminiFinding[]>);
-  }, [analysis.findings]);
-
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) setIsMenuOpen(false);
@@ -154,18 +143,12 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
   };
 
   const handleJsonDownload = () => {
-    // This logic remains unchanged from your working version
-    const translatedFindingsByCategory = Object.entries(findingsByCategory).reduce((acc, [categoryKey, findings]) => {
-      acc[t(categoryKey) || categoryKey] = findings;
-      return acc;
-    }, {} as Record<string, GeminiFinding[]>);
-    const structuredData = {
-      reportTitle: "HootSpot AI Analysis Report",
-      analysisSummary: analysis.analysis_summary,
+    const dataToSave = {
+      hootspotAnalysisVersion: '1.1', // Versioning for future compatibility
       sourceText: sourceText,
-      findingsByCategory: translatedFindingsByCategory,
+      analysisResult: analysis // The raw analysis object from the state
     };
-    const jsonString = JSON.stringify(structuredData, null, 2);
+    const jsonString = JSON.stringify(dataToSave, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     chrome.downloads.download({ url: url, filename: 'HootSpot_Analysis_Report.json' });
