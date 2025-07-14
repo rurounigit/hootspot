@@ -1,11 +1,5 @@
 // src/utils/textUtils.ts
 
-import Hypher from 'hypher';
-import germanPatterns from 'hyphenation.de';
-
-// --- Create and configure the hyphenator instance ---
-const hyphenator = new Hypher(germanPatterns);
-
 // --- Create a single, reusable canvas for text measurement ---
 const canvas = document.createElement('canvas');
 const context = canvas.getContext('2d');
@@ -15,8 +9,8 @@ const PADDING_FACTOR = 0.9; // Represents 90% of the diameter, for a 5% padding 
 const LINE_HEIGHT = 1.1;    // Standard line height for multi-line text.
 
 /**
- * Wraps text to fit within a specific width.
- * This is a lower-level utility used by the main calculation function.
+ * Wraps text to fit within a specific width using a language-agnostic,
+ * character-based breaking algorithm for oversized words.
  */
 export const wrapSvgText = (text: string, availableWidth: number, fontSize: number): string[] => {
   if (!text || !context || availableWidth <= 0) return [];
@@ -34,31 +28,48 @@ export const wrapSvgText = (text: string, availableWidth: number, fontSize: numb
     if (testLineWidth <= availableWidth) {
       currentLine = testLine;
     } else {
-      if (currentLine) lines.push(currentLine);
+      // The current line is full, push it to the results.
+      if (currentLine) {
+        lines.push(currentLine);
+      }
 
       const wordWidth = context.measureText(word).width;
+
       if (wordWidth <= availableWidth) {
+        // The new word fits on a line by itself.
         currentLine = word;
       } else {
-        const syllables = hyphenator.hyphenate(word);
-        let tempLine = '';
-        for (const syllable of syllables) {
-          const testSyllableLine = tempLine ? `${tempLine}${syllable}` : syllable;
-          if (context.measureText(testSyllableLine).width <= availableWidth) {
-            tempLine = testSyllableLine;
+        // **THE NEW LOGIC IS HERE:**
+        // The word itself is too long and must be broken at the character level.
+        // This is language-agnostic and does not require a hyphenation library.
+        let tempWord = '';
+        for (let i = 0; i < word.length; i++) {
+          const char = word[i];
+          const nextTempWord = tempWord + char;
+          // Check if the substring plus a hyphen still fits
+          if (context.measureText(nextTempWord + '-').width <= availableWidth) {
+            tempWord = nextTempWord;
           } else {
-            lines.push(tempLine + '-');
-            tempLine = syllable;
+            // The character overflows, so push the previous fitting substring with a hyphen.
+            lines.push(tempWord + '-');
+            // Start the new tempWord with the current character.
+            tempWord = char;
           }
         }
-        currentLine = tempLine;
+        // The remainder of the word becomes the new current line.
+        currentLine = tempWord;
       }
     }
   }
 
-  if (currentLine) lines.push(currentLine);
+  // Add the final line to the array.
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
   return lines;
 };
+
 
 /**
  * Calculates the optimal font size for a text to fit inside a circle using binary search
@@ -86,8 +97,6 @@ export const calculateOptimalFontSize = (
     const mid = Math.floor((low + high) / 2);
     if (mid === 0) { low = 1; continue; }
 
-    // First, wrap text based on the widest available part of the circle (the inscribed square width).
-    // This gives us a candidate set of lines.
     const inscribedWidth = radius * 2 * PADDING_FACTOR;
     const currentLines = wrapSvgText(text, inscribedWidth, mid);
     const lineCount = currentLines.length;
@@ -96,20 +105,12 @@ export const calculateOptimalFontSize = (
 
     let fitsGeometrically = true;
 
-    // The text block must be shorter than the available diameter.
     if (textHeight > inscribedWidth) {
         fitsGeometrically = false;
     } else {
-      // **THE CRITICAL FIX IS HERE:**
-      // Now, check if each wrapped line fits within the circle's chord at its specific height.
       for (let i = 0; i < lineCount; i++) {
         const lineWidth = context.measureText(currentLines[i]).width;
-
-        // Calculate the vertical distance of the line's center from the circle's center.
         const lineCenterY = -textHeight / 2 + (i * singleLineHeight) + singleLineHeight / 2;
-
-        // Calculate the maximum allowed width at this Y position using the circle equation.
-        // We use the raw radius here, because padding is applied to the final result.
         const maxAllowedWidthAtY = 2 * Math.sqrt(radius * radius - lineCenterY * lineCenterY);
 
         if (isNaN(maxAllowedWidthAtY) || lineWidth > maxAllowedWidthAtY * PADDING_FACTOR) {
@@ -120,11 +121,9 @@ export const calculateOptimalFontSize = (
     }
 
     if (fitsGeometrically) {
-      // It fits, so this is a potential candidate. Try for a larger font.
       bestFit = { fontSize: mid, lines: currentLines };
       low = mid + 1;
     } else {
-      // It doesn't fit, so the font is too large. Try for a smaller font.
       high = mid - 1;
     }
   }
