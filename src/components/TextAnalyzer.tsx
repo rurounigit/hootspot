@@ -1,7 +1,8 @@
 // src/components/TextAnalyzer.tsx
 import React, { forwardRef, useRef } from 'react'; // Import forwardRef and useRef
-import { AnalyzeIcon } from '../constants';
+import { AnalyzeIcon, FolderOpenIcon } from '../constants';
 import { useTranslation } from '../i18n';
+
 
 interface TextAnalyzerProps {
   text: string;
@@ -85,25 +86,27 @@ const TextAnalyzer = forwardRef<HTMLTextAreaElement, TextAnalyzerProps>(
             ${charCount > maxCharLimit * 0.9 ? 'font-medium' : ''}
           `}>
             {t('analyzer_chars_count', { count: charCount, limit: maxCharLimit })}
-            {exceedsLimit && t('analyzer_chars_over_limit', { over: charCount - maxCharLimit })}
+            {exceedsLimit && ` ${t('analyzer_chars_over_limit', { over: charCount - maxCharLimit })}`}
           </p>
           <div className="flex items-center space-x-2">
-            <button onClick={handleUploadClick} disabled={isLoading} className="px-4 py-2 bg-gray-500 text-white font-semibold rounded-md shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 disabled:bg-gray-400">
-              {t('analyzer_button_load_json')}
-            </button>
-            <button
-            onClick={handleAnalyze}
-            disabled={isLoading || exceedsLimit || !hasApiKey || text.trim().length === 0}
-            className="flex items-center px-4 py-2 bg-green-600 text-white font-semibold rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400"
-          >
-            {isLoading ? (
-              <div className="spinner w-5 h-5 border-t-white mr-2"></div>
-            ) : (
-              <AnalyzeIcon className="w-5 h-5 mr-2" />
-            )}
-            {isLoading ? t('analyzer_button_analyzing') : t('analyzer_button_analyze')}
-          </button>
-          </div>
+  <button onClick={handleUploadClick} disabled={isLoading} className="px-3 py-2 bg-gray-500 text-white font-semibold rounded-md shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 disabled:bg-gray-400" title={t('analyzer_button_load_json')}>
+    <FolderOpenIcon className="w-5 h-5" />
+  </button>
+  <button
+  onClick={handleAnalyze}
+  disabled={isLoading || exceedsLimit || !hasApiKey || text.trim().length === 0}
+  className="flex items-center justify-center px-4 py-2 bg-green-600 text-white font-semibold rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400"
+>
+  {isLoading ? (
+    <>
+      <div className="spinner w-5 h-5 border-t-white mr-2"></div>
+      {t('analyzer_button_analyzing')}
+    </>
+  ) : (
+    t('analyzer_button_analyze')
+  )}
+</button>
+</div>
        </div>
       </div>
     );
