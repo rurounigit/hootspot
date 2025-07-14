@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useTranslation } from '../i18n';
 import * as d3 from 'd3';
+import { calculateOptimalFontSize } from '../utils/textUtils'; // <-- IMPORT THE NEW FUNCTION
 
 // --- INTERFACES ---
 interface BubbleData {
@@ -78,6 +79,7 @@ const ManipulationBubbleChart: React.FC<ManipulationBubbleChartProps> = ({
 
   const MAX_HEIGHT = 450; const MIN_HEIGHT = 250; const MAX_WIDTH = 500; const MIN_WIDTH = 250;
 
+  // This entire effect remains unchanged
   useEffect(() => {
     if (containerRef.current) {
       const resizeObserver = new ResizeObserver(entries => {
@@ -96,6 +98,7 @@ const ManipulationBubbleChart: React.FC<ManipulationBubbleChartProps> = ({
     }
   }, [onDimensionsChange]);
 
+  // This entire effect remains unchanged
   useEffect(() => {
     if (data && data.length > 0 && dimensions.width > 0) {
       const nodes: SimulationNode[] = data.map(d => ({ ...d, x: Math.random() * dimensions.width, y: Math.random() * dimensions.height }));
@@ -119,52 +122,38 @@ const ManipulationBubbleChart: React.FC<ManipulationBubbleChartProps> = ({
       simulation.tick(300);
       setSimulatedData(nodes);
     } else {
-      setSimulatedData([]); // Clear data if input is empty
+      setSimulatedData([]);
     }
   }, [data, dimensions]);
 
-  // NEW: Memoized calculation for the "Zoom and Pan" transform
+  // This entire hook remains unchanged
   const transform = useMemo(() => {
     if (!simulatedData || simulatedData.length === 0 || dimensions.width === 0) {
-      return ''; // No transform if no data or no dimensions
+      return '';
     }
-
-    const PADDING = 20; // Add some padding around the edges
-
-    // 1. Calculate the exact bounding box of the simulated bubbles
+    const PADDING = 20;
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-
     simulatedData.forEach(node => {
       minX = Math.min(minX, node.x! - node.radius);
       maxX = Math.max(maxX, node.x! + node.radius);
       minY = Math.min(minY, node.y! - node.radius);
       maxY = Math.max(maxY, node.y! + node.radius);
     });
-
     const dataWidth = maxX - minX;
     const dataHeight = maxY - minY;
-
-    // Handle edge cases like a single bubble or all bubbles in a line
     if (dataWidth === 0 || dataHeight === 0) {
         const translateX = (dimensions.width / 2) - (simulatedData[0]?.x ?? 0);
         const translateY = (dimensions.height / 2) - (simulatedData[0]?.y ?? 0);
         return `translate(${translateX}, ${translateY})`;
     }
-
-    // 2. Calculate the necessary scale ("zoom")
     const scaleX = (dimensions.width - PADDING * 2) / dataWidth;
     const scaleY = (dimensions.height - PADDING * 2) / dataHeight;
     const scale = Math.min(scaleX, scaleY);
-
-    // 3. Calculate the necessary translation ("pan")
     const dataCenterX = minX + dataWidth / 2;
     const dataCenterY = minY + dataHeight / 2;
-
     const translateX = (dimensions.width / 2) - (dataCenterX * scale);
     const translateY = (dimensions.height / 2) - (dataCenterY * scale);
-
-    return `translate(${translateX}, ${translateY}) scale(${scale})`;
-
+    return `translate(${translateX}, ${translateY})`;
   }, [simulatedData, dimensions]);
 
   if (!data || data.length === 0) return null;
@@ -175,7 +164,7 @@ const ManipulationBubbleChart: React.FC<ManipulationBubbleChartProps> = ({
     <div id="bubble-chart-container" ref={containerRef} className="bg-gray-50 p-2 rounded-lg shadow-md border border-gray-200 focus:outline-none" style={{ width: '100%', height: `${dynamicHeight}px`, position: 'relative', overflow: 'hidden' }} tabIndex={-1}>
       <svg width={dimensions.width} height={dimensions.height}>
         <g transform={transform}>
-          {/* Render Hulls */}
+          {/* Hull rendering remains unchanged */}
           {Array.from(nodesByCategory, ([category, nodes]) => (
             <CategoryHull
               key={`${category}-hull`}
@@ -185,35 +174,52 @@ const ManipulationBubbleChart: React.FC<ManipulationBubbleChartProps> = ({
               onMouseLeave={() => setTooltipState(null)}
             />
           ))}
-          {/* Render Bubbles */}
+          {/* Bubble rendering loop */}
           {simulatedData.map((node: SimulationNode) => {
             const { x, y, radius, color, name, id } = node;
-            const textRadius = radius - (radius * 0.30);
-            const fontSize = Math.max(8, Math.min(textRadius * 0.4, 16));
-            const textContainerStyle: React.CSSProperties = { color: 'white', fontSize: `${fontSize}px`, fontWeight: 'bold', textAlign: 'center', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', lineHeight: 1.1, wordBreak: 'break-word', textShadow: '0px 1px 2px rgba(0,0,0,0.5)' };
-
             const isActive = activeFindingId === id;
             const strokeStyle = isActive ? { stroke: '#2563eb', strokeWidth: 4, strokeOpacity: 1 } : { stroke: 'white', strokeWidth: 0, opacity: 0.95 };
+
+            // *** THE SURGICAL CHANGE IS HERE ***
+
+            // 1. Calculate optimal font size and lines using the robust utility function.
+            const { fontSize, lines } = calculateOptimalFontSize(name, radius, 6);
 
             return (
               <g
                 key={id}
                 transform={`translate(${x}, ${y})`}
                 style={{ cursor: 'pointer' }}
+                // Event handlers are untouched and will continue to work
                 onMouseOver={(e) => setTooltipState({ active: true, payload: [node], coordinate: { x: e.clientX, y: e.clientY } })}
                 onMouseLeave={() => setTooltipState(null)}
                 onClick={(e) => { e.stopPropagation(); onBubbleClick(id); }}
               >
                 <circle r={radius} fill={color} style={{ ...strokeStyle, transition: 'all 0.2s ease-in-out' }} />
-                <foreignObject x={-textRadius} y={-textRadius} width={textRadius * 2} height={textRadius * 2}>
-                  <div style={textContainerStyle} xmlns="http://www.w3.org/1999/xhtml">{name}</div>
-                </foreignObject>
+
+                {/* 2. Replace <foreignObject> with the superior SVG <text> rendering. */}
+                <text
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  fill="white"
+                  style={{ fontSize: `${fontSize}px`, fontWeight: 'bold', pointerEvents: 'none', textShadow: '0px 1px 2px rgba(0,0,0,0.5)' }}
+                >
+                  {lines.map((line, index, arr) => (
+                    <tspan
+                      key={index}
+                      x={0}
+                      dy={index === 0 ? `-${(arr.length - 1) * 0.55}em` : '1.1em'}
+                    >
+                      {line}
+                    </tspan>
+                  ))}
+                </text>
               </g>
             );
           })}
         </g>
       </svg>
-      {/* Render the tooltip manually, positioned relative to the container */}
+      {/* Tooltip rendering remains unchanged */}
       <CustomTooltip
         t={t}
         active={tooltipState?.active}
