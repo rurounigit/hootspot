@@ -198,7 +198,7 @@ const App: React.FC = () => {
         const data = JSON.parse(text);
 
         // Validation for the new format
-        if (data.hootspotAnalysisVersion && data.analysisResult && typeof data.sourceText === 'string') {
+        if (data.reportId && data.analysisResult && typeof data.sourceText === 'string') {
           setAnalysisResult(data.analysisResult);
           setCurrentTextAnalyzed(data.sourceText);
           setTextToAnalyze(data.sourceText);

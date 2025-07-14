@@ -143,15 +143,22 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
   };
 
   const handleJsonDownload = () => {
+    // Generate a unique, timestamp-based ID
+    const now = new Date();
+    const pad = (num: number) => num.toString().padStart(2, '0');
+    const reportId = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+
+    const filename = `HootSpot_Analysis_Report_${reportId}.json`;
+
     const dataToSave = {
-      hootspotAnalysisVersion: '1.1', // Versioning for future compatibility
+      reportId: reportId,
       sourceText: sourceText,
-      analysisResult: analysis // The raw analysis object from the state
+      analysisResult: analysis
     };
     const jsonString = JSON.stringify(dataToSave, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    chrome.downloads.download({ url: url, filename: 'HootSpot_Analysis_Report.json' });
+    chrome.downloads.download({ url: url, filename: filename });
     setTimeout(() => URL.revokeObjectURL(url), 100);
     setIsMenuOpen(false);
   };
