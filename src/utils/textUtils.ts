@@ -1,16 +1,22 @@
 // src/utils/textUtils.ts
 
+import { PDF_CONFIG } from '../pdf-config'; // <-- IMPORT THE CONFIG
+
 // --- Create a single, reusable canvas for text measurement ---
 const canvas = document.createElement('canvas');
 const context = canvas.getContext('2d');
 
 // --- Constants for layout control ---
-const PADDING_FACTOR = 0.9; // Represents 90% of the diameter, for a 5% padding on each side.
-const LINE_HEIGHT = 1.1;    // Standard line height for multi-line text.
+const LINE_HEIGHT = 1.1; // Standard line height for multi-line text.
 
 /**
  * Wraps text to fit within a specific width using a language-agnostic,
  * character-based breaking algorithm for oversized words.
+ *
+ * @param text The text to wrap.
+ * @param availableWidth The maximum pixel width for any line.
+ * @param fontSize The font size to use for measurement.
+ * @returns An array of strings, where each string is a correctly wrapped line.
  */
 export const wrapSvgText = (text: string, availableWidth: number, fontSize: number): string[] => {
   if (!text || !context || availableWidth <= 0) return [];
@@ -39,9 +45,7 @@ export const wrapSvgText = (text: string, availableWidth: number, fontSize: numb
         // The new word fits on a line by itself.
         currentLine = word;
       } else {
-        // **THE NEW LOGIC IS HERE:**
         // The word itself is too long and must be broken at the character level.
-        // This is language-agnostic and does not require a hyphenation library.
         let tempWord = '';
         for (let i = 0; i < word.length; i++) {
           const char = word[i];
@@ -78,26 +82,27 @@ export const wrapSvgText = (text: string, availableWidth: number, fontSize: numb
  * @param text The text to be fitted.
  * @param radius The radius of the containing circle.
  * @param minFont The minimum allowable font size (e.g., 6).
- * @param maxFont The maximum allowable font size (e.g., 24).
  * @returns An object containing the optimal `fontSize` and the `lines` of wrapped text.
  */
 export const calculateOptimalFontSize = (
   text: string,
   radius: number,
-  minFont: number = 6,
-  maxFont: number = 30
+  minFont: number = 6
 ): { fontSize: number; lines: string[] } => {
   if (!text || radius <= 0) return { fontSize: minFont, lines: [] };
 
+  // Use values from the config file
   let low = minFont;
-  let high = maxFont;
-  let bestFit = { fontSize: minFont, lines: wrapSvgText(text, radius * 2 * PADDING_FACTOR, minFont) };
+  let high = PDF_CONFIG.BUBBLE_MAX_FONT_SIZE;
+  const paddingFactor = PDF_CONFIG.BUBBLE_TEXT_PADDING_FACTOR;
+
+  let bestFit = { fontSize: minFont, lines: wrapSvgText(text, radius * 2 * paddingFactor, minFont) };
 
   while (low <= high) {
     const mid = Math.floor((low + high) / 2);
     if (mid === 0) { low = 1; continue; }
 
-    const inscribedWidth = radius * 2 * PADDING_FACTOR;
+    const inscribedWidth = radius * 2 * paddingFactor;
     const currentLines = wrapSvgText(text, inscribedWidth, mid);
     const lineCount = currentLines.length;
     const singleLineHeight = mid * LINE_HEIGHT;
@@ -113,7 +118,7 @@ export const calculateOptimalFontSize = (
         const lineCenterY = -textHeight / 2 + (i * singleLineHeight) + singleLineHeight / 2;
         const maxAllowedWidthAtY = 2 * Math.sqrt(radius * radius - lineCenterY * lineCenterY);
 
-        if (isNaN(maxAllowedWidthAtY) || lineWidth > maxAllowedWidthAtY * PADDING_FACTOR) {
+        if (isNaN(maxAllowedWidthAtY) || lineWidth > maxAllowedWidthAtY * paddingFactor) {
           fitsGeometrically = false;
           break;
         }
@@ -130,8 +135,8 @@ export const calculateOptimalFontSize = (
 
   // Final check to handle truncation if the smallest font still overflows.
   const finalHeight = bestFit.lines.length * bestFit.fontSize * LINE_HEIGHT;
-  if (finalHeight > radius * 2 * PADDING_FACTOR) {
-      const maxLines = Math.floor((radius * 2 * PADDING_FACTOR) / (bestFit.fontSize * LINE_HEIGHT));
+  if (finalHeight > radius * 2 * paddingFactor) {
+      const maxLines = Math.floor((radius * 2 * paddingFactor) / (bestFit.fontSize * LINE_HEIGHT));
       if (maxLines > 0) {
           const truncatedLines = bestFit.lines.slice(0, maxLines);
           if (truncatedLines.length > 0) {
@@ -142,7 +147,6 @@ export const calculateOptimalFontSize = (
       }
       return { fontSize: bestFit.fontSize, lines: [] };
   }
-
 
   return bestFit;
 };

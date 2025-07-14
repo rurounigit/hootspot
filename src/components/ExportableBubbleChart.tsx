@@ -2,7 +2,8 @@
 
 import React, { useMemo } from 'react';
 import * as d3 from 'd3';
-import { calculateOptimalFontSize } from '../utils/textUtils'; // Import the new function
+import { calculateOptimalFontSize } from '../utils/textUtils';
+import { PDF_CONFIG } from '../pdf-config'; // <-- IMPORT THE CONFIG
 
 // --- INTERFACES ---
 interface BubbleData {
@@ -41,7 +42,9 @@ const CategoryHull: React.FC<CategoryHullProps> = ({ nodes, color }) => {
     return d3.line().x(d => d[0]).y(d => d[1]).curve(d3.curveCatmullRomClosed.alpha(0.7))(hull);
   }, [nodes]);
   if (!pathData) return null;
-  return <path d={pathData} fill={color} fillOpacity={0.15} stroke={color} strokeWidth={2} strokeOpacity={0.4} strokeLinejoin="round" />;
+  return <path d={pathData} fill={color} fillOpacity={0.15} stroke={color}
+    strokeWidth={PDF_CONFIG.HULL_BORDER_SIZE} // <-- USE CONFIG VALUE
+    strokeOpacity={0.4} strokeLinejoin="round" />;
 };
 
 // --- EXPORT-ONLY BUBBLE CHART COMPONENT ---
@@ -74,7 +77,7 @@ const ExportableBubbleChart: React.FC<ExportableBubbleChartProps> = ({ data, wid
   // --- Zoom & Pan Transform ---
   const transform = useMemo(() => {
     if (simulatedData.length === 0) return '';
-    const PADDING = 20;
+    const PADDING = PDF_CONFIG.CHART_ZOOM_PADDING; // <-- USE CONFIG VALUE
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     simulatedData.forEach(node => {
       minX = Math.min(minX, node.x! - node.radius);
@@ -108,8 +111,8 @@ const ExportableBubbleChart: React.FC<ExportableBubbleChartProps> = ({ data, wid
         {simulatedData.map((node) => {
           const { x, y, radius, color, name, id } = node;
 
-          // *** THE FIX IS HERE: Call the new function to get the perfect font size and lines. ***
-          const { fontSize, lines } = calculateOptimalFontSize(name, radius, 6, 24);
+          // Call the function to get the perfect font size and lines.
+          const { fontSize, lines } = calculateOptimalFontSize(name, radius, 6);
 
           return (
             <g key={id} transform={`translate(${x}, ${y})`}>
@@ -118,7 +121,6 @@ const ExportableBubbleChart: React.FC<ExportableBubbleChartProps> = ({ data, wid
                 textAnchor="middle"
                 dominantBaseline="central"
                 fill="white"
-                // Use the dynamically calculated font size
                 style={{ fontSize: `${fontSize}px`, fontWeight: 'bold', pointerEvents: 'none' }}
               >
                 {/* Render the pre-calculated lines */}

@@ -6,7 +6,8 @@ import html2canvas from 'html2canvas';
 import { GeminiAnalysisResponse, GeminiFinding } from '../types';
 import { ShareIcon } from '../constants';
 import { useTranslation } from '../i18n';
-import ExportableBubbleChart from './ExportableBubbleChart'; // Import the new component
+import ExportableBubbleChart from './ExportableBubbleChart';
+import { PDF_CONFIG } from '../pdf-config';
 
 // Define the interfaces for props
 interface BubbleData {
@@ -91,7 +92,7 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
     hiddenContainer.style.left = '-9999px';
     hiddenContainer.style.width = '600px';
     hiddenContainer.style.height = '450px';
-    hiddenContainer.style.backgroundColor = '#f9fafb';
+    hiddenContainer.style.backgroundColor = PDF_CONFIG.CHART_BACKGROUND_COLOR;
     document.body.appendChild(hiddenContainer);
 
     const root = createRoot(hiddenContainer);
@@ -109,7 +110,10 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
     await new Promise(resolve => setTimeout(resolve, 200));
 
     try {
-      const canvas = await html2canvas(hiddenContainer, { scale: 2 });
+      const canvas = await html2canvas(hiddenContainer, {
+        scale: PDF_CONFIG.CHART_IMAGE_SCALE, // <-- USE CONFIG VALUE
+        backgroundColor: null // Let the container's color be used
+      });
       chartImage = canvas.toDataURL('image/png');
     } catch (error) {
       console.error("Failed to capture chart image:", error);
