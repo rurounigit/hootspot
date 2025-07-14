@@ -1,19 +1,26 @@
 // src/components/ShareMenu.tsx
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { createRoot } from 'react-dom/client';
 import html2canvas from 'html2canvas';
 import { GeminiAnalysisResponse, GeminiFinding } from '../types';
 import { ShareIcon } from '../constants';
 import { useTranslation } from '../i18n';
+import ExportableBubbleChart from './ExportableBubbleChart'; // Import the new component
 
+// Define the interfaces for props
+interface BubbleData {
+  id: string; name: string; strength: number; category: string; color: string; radius: number;
+}
 interface ShareMenuProps {
   analysis: GeminiAnalysisResponse;
   sourceText: string | null;
   highlightData: any[];
   patternColorMap: Map<string, string>;
+  bubbleChartData: BubbleData[]; // This prop is now required
 }
 
-const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightData, patternColorMap }) => {
+const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightData, patternColorMap, bubbleChartData }) => {
   const { t } = useTranslation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -21,9 +28,8 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const pdfDataRef = useRef<any>(null);
 
-  // This is the data structure that works for the main app and the JSON download.
-  // It is the correct structure.
   const findingsByCategory = useMemo(() => {
+    // This logic is kept as it's used for the JSON download
     if (!analysis || !analysis.findings) return {};
     return analysis.findings.reduce((acc, finding) => {
       const categoryKey = finding.category || 'Uncategorized';
@@ -37,6 +43,24 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) setIsMenuOpen(false);
     };
+    const handlePdfMessage = (event: MessageEvent) => {
+      if (event.source !== iframeRef.current?.contentWindow) return;
+      const { type, blob } = event.data;
+      if (type === 'PDF_SANDBOX_READY') {
+        if (iframeRef.current?.contentWindow && pdfDataRef.current) {
+          iframeRef.current.contentWindow.postMessage({ type: 'GENERATE_PDF', data: pdfDataRef.current }, '*');
+        }
+      } else if (type === 'PDF_GENERATED' && blob) {
+        const objectUrl = URL.createObjectURL(blob);
+        chrome.runtime.sendMessage({ type: 'DOWNLOAD_PDF', url: objectUrl });
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+        cleanup();
+      } else if (type === 'PDF_CRASH_REPORT') {
+        console.error("PDF generation failed in sandbox:", event.data.payload);
+        cleanup();
+      }
+    };
+
     window.addEventListener('message', handlePdfMessage);
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
@@ -55,45 +79,51 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
     setIsGenerating(false);
   };
 
-  const handlePdfMessage = (event: MessageEvent) => {
-    if (event.source !== iframeRef.current?.contentWindow) return;
-    const { type, blob, error } = event.data;
-    if (type === 'PDF_SANDBOX_READY') {
-      if (iframeRef.current?.contentWindow && pdfDataRef.current) {
-        iframeRef.current.contentWindow.postMessage({ type: 'GENERATE_PDF', data: pdfDataRef.current }, '*');
-      }
-    } else if (type === 'PDF_GENERATED' && blob) {
-      const objectUrl = URL.createObjectURL(blob);
-      chrome.runtime.sendMessage({ type: 'DOWNLOAD_PDF', url: objectUrl });
-      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
-      cleanup();
-    } else if (type === 'PDF_ERROR') { // Restore error reporting from the sandbox
-      console.error("PDF generation failed in sandbox:", error);
-      cleanup();
-    }
-  };
-
   const handlePdfDownload = async () => {
     setIsMenuOpen(false);
     setIsGenerating(true);
 
     let chartImage: string | null = null;
-    const chartElement = document.getElementById('png-version-ref') || document.getElementById('bubble-chart-container');
-    if (chartElement) {
-      try {
-        const canvas = await html2canvas(chartElement, { scale: 2, backgroundColor: '#f9fafb' });
-        chartImage = canvas.toDataURL('image/png');
-      } catch (error) {
-        console.error("Failed to capture chart image:", error);
-      }
-    }
 
+    // Create a hidden container for the off-screen rendering
+    const hiddenContainer = document.createElement('div');
+    hiddenContainer.style.position = 'absolute';
+    hiddenContainer.style.left = '-9999px';
+    hiddenContainer.style.width = '600px';
+    hiddenContainer.style.height = '450px';
+    hiddenContainer.style.backgroundColor = '#f9fafb';
+    document.body.appendChild(hiddenContainer);
+
+    const root = createRoot(hiddenContainer);
+
+    // Render the export-only chart into the hidden div
+    root.render(
+      <ExportableBubbleChart
+        data={bubbleChartData}
+        width={600}
+        height={450}
+      />
+    );
+
+    // Wait for rendering to complete
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    try {
+      const canvas = await html2canvas(hiddenContainer, { scale: 2 });
+      chartImage = canvas.toDataURL('image/png');
+    } catch (error) {
+      console.error("Failed to capture chart image:", error);
+    } finally {
+      // Clean up gracefully
+      root.unmount();
+      document.body.removeChild(hiddenContainer);
+    }
 
     pdfDataRef.current = {
       analysis,
       sourceText,
       highlightData,
-      chartImage, // Note: singular
+      chartImage,
       patternColorMap: Object.fromEntries(patternColorMap.entries()),
       translations: {
         reportTitle: t('pdf_report_title'),
@@ -112,7 +142,6 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
       }
     };
 
-
     const iframe = document.createElement('iframe');
     iframe.src = chrome.runtime.getURL('pdf-generator.html');
     iframe.style.display = 'none';
@@ -121,6 +150,7 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
   };
 
   const handleJsonDownload = () => {
+    // This logic remains unchanged from your working version
     const translatedFindingsByCategory = Object.entries(findingsByCategory).reduce((acc, [categoryKey, findings]) => {
       acc[t(categoryKey) || categoryKey] = findings;
       return acc;
@@ -140,6 +170,7 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
   };
 
   const handleTwitterShare = () => {
+    // This logic remains unchanged from your working version
     const summary = analysis.analysis_summary;
     const detectedPatterns = [...new Set(analysis.findings.map(f => f.display_name))];
     let patternsText = detectedPatterns.slice(0, 2).join(', ');

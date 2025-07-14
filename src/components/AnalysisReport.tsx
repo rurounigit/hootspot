@@ -231,6 +231,7 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
               sourceText={sourceText}
               highlightData={finalHighlights}
               patternColorMap={patternColorMap}
+              bubbleChartData={bubbleChartData}
            />
         )}
       </div>
