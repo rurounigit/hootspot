@@ -25,7 +25,7 @@ export const PDF_CONFIG = {
 
   // 5. Background color for the generated chart image.
   //    Use any valid CSS color string (e.g., '#FFFFFF', 'transparent').
-  CHART_BACKGROUND_COLOR: '#f9fafb',
+  CHART_BACKGROUND_COLOR: '#FFFFF',
 
   // 6. & 7. Resolution/Scaling factor for the chart image.
   //    This is passed to html2canvas as the 'scale' option. A higher value creates a

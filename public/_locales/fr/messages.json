@@ -5,6 +5,9 @@
   "contextMenuAnalyze": {
     "message": "Analyser le texte sélectionné avec HootSpot"
   },
+  "contextMenuAdd": {
+    "message": "Ajouter le texte sélectionné à HootSpot"
+  },
   "extName": {
     "message": "Extension Analyseur de Texte IA HootSpot"
   },

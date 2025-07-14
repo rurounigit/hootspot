@@ -50,12 +50,12 @@ const TextAnalyzer = forwardRef<HTMLTextAreaElement, TextAnalyzerProps>(
     };
 
     return (
-      <div className="bg-white shadow-md  border border-gray-200 rounded-lg p-4 mb-4">
-        <h2 className="text-lg font-semibold text-gray-700 mb-1">{t('analyzer_title')}</h2>
-        <p className="text-sm text-gray-500 mb-4">{t('analyzer_instruction')}</p>
+      <div className="bg-white dark:bg-gray-800 shadow-md border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4">
+        <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-1">{t('analyzer_title')}</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{t('analyzer_instruction')}</p>
 
         {!hasApiKey && (
-          <div className="mb-4 p-3 rounded-md text-sm bg-yellow-50 text-yellow-700 border border-yellow-200">
+          <div className="mb-4 p-3 rounded-md text-sm bg-yellow-50 text-yellow-700 border border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-200 dark:border-yellow-700">
             {t('analyzer_no_api_key_warning')}
           </div>
         )}
@@ -67,7 +67,7 @@ const TextAnalyzer = forwardRef<HTMLTextAreaElement, TextAnalyzerProps>(
           onKeyDown={handleKeyDown}
           placeholder={t('analyzer_placeholder')}
           rows={8}
-          className="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
+          className="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 dark:border-gray-600 disabled:dark:bg-gray-700"
           maxLength={maxCharLimit + 500}
           disabled={!hasApiKey || isLoading}
         />
@@ -81,7 +81,7 @@ const TextAnalyzer = forwardRef<HTMLTextAreaElement, TextAnalyzerProps>(
         />
         <div className="flex justify-between items-center mt-2 text-sm">
           <p className={`
-            ${exceedsLimit ? 'text-red-600 font-semibold' : 'text-gray-600'}
+            ${exceedsLimit ? 'text-red-600 font-semibold' : 'text-gray-600 dark:text-gray-400'}
             ${charCount > maxCharLimit * 0.9 ? 'font-medium' : ''}
           `}>
             {t('analyzer_chars_count', { count: charCount, limit: maxCharLimit })}

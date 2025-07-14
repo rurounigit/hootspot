@@ -13,7 +13,8 @@ const generateDistantColor = (index: number, saturation: number = 0.7, lightness
     return `hsl(${hue}, ${saturation * 100}%, ${lightness * 100}%)`;
 };
 
-const UNIFORM_HIGHLIGHT_COLOR = 'bg-red-200';
+// UPDATED: Highlight color now has a dark variant
+const UNIFORM_HIGHLIGHT_COLOR = 'bg-red-200 dark:bg-red-500/60';
 
 function escapeRegex(string: string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 
@@ -224,7 +225,7 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
   return (
     <div className="mt-4">
       <div className="flex items-center mb-4">
-        <h2 className="text-lg font-semibold text-gray-800 pb-0">{t('report_title')}</h2>
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 pb-0">{t('report_title')}</h2>
         {hasFindings && (
            <ShareMenu
               analysis={analysis}
@@ -236,14 +237,14 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
         )}
       </div>
 
-      <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-md shadow-sm mb-6">
-        <h3 className="text-lg font-semibold text-blue-800 mb-1">{t('report_summary_title')}</h3>
-        <p className="text-blue-700">{analysis.analysis_summary}</p>
+      <div className="bg-blue-50 dark:bg-blue-900/50 border-l-4 border-blue-400 dark:border-blue-500 p-4 rounded-md shadow-sm mb-6">
+        <h3 className="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-1">{t('report_summary_title')}</h3>
+        <p className="text-blue-700 dark:text-blue-300">{analysis.analysis_summary}</p>
       </div>
 
       {hasFindings && (
         <div className="mb-6">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">{t('report_profile_title')}</h3>
+          <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">{t('report_profile_title')}</h3>
           <ManipulationBubbleChart
             data={bubbleChartData}
             onDimensionsChange={setChartDimensions}
@@ -255,8 +256,8 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
 
       {sourceText && hasFindings && (
         <div className="mb-6">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">{t('report_highlighted_text_title')}</h3>
-          <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-sm max-h-96 overflow-y-auto">
+          <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">{t('report_highlighted_text_title')}</h3>
+          <div className="bg-white dark:bg-gray-800/50 p-4 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm max-h-96 overflow-y-auto">
             <HighlightedText text={sourceText} matches={finalHighlights} patternColorMap={patternColorMap} />
           </div>
         </div>
@@ -264,25 +265,25 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
 
       {hasFindings ? (
         <div>
-          <h3 className="text-lg font-semibold text-gray-700 mb-3">{t('report_detected_patterns_title')}</h3>
+          <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-3">{t('report_detected_patterns_title')}</h3>
           <div className="space-y-4">
             {indexedFindings.map((finding) => {
               const color = patternColorMap.get(finding.pattern_name) || '#e5e7eb';
               return (
-                <div key={finding.displayIndex} id={`finding-card-${finding.displayIndex}`} className={`bg-gray-50 border rounded-lg shadow-md overflow-hidden`} style={{borderColor: color}}>
+                <div key={finding.displayIndex} id={`finding-card-${finding.displayIndex}`} className={`bg-gray-50 dark:bg-gray-800 border rounded-lg shadow-md overflow-hidden`} style={{borderColor: color}}>
                   <div className={`p-4 border-b`} style={{ backgroundColor: color, borderColor: color }}>
                     <h4 className={`text-l font-bold text-white uppercase`}>{finding.display_name}</h4>
                   </div>
                   <div className="p-4 space-y-3">
-                    <div><h5 className="font-semibold text-gray-600 mb-1">{t('report_quote_label')}</h5><blockquote className={`italic p-3 rounded-md border-l-4`} style={{ backgroundColor: `${color}40`, borderColor: color }}><p className="text-gray-800">"{finding.specific_quote}"</p></blockquote></div>
-                    <div><h5 className="font-semibold text-gray-600 mb-1">{t('report_explanation_label')}</h5><p className="text-gray-700">{finding.explanation}</p></div>
+                    <div><h5 className="font-semibold text-gray-600 dark:text-gray-400 mb-1">{t('report_quote_label')}</h5><blockquote className={`italic p-3 rounded-md border-l-4`} style={{ backgroundColor: `${color}40`, borderColor: color }}><p className="text-gray-800 dark:text-gray-200">"{finding.specific_quote}"</p></blockquote></div>
+                    <div><h5 className="font-semibold text-gray-600 dark:text-gray-400 mb-1">{t('report_explanation_label')}</h5><p className="text-gray-700 dark:text-gray-300">{finding.explanation}</p></div>
                   </div>
                 </div>
               );
             })}
           </div>
         </div>
-      ) : (<div className="text-center py-8 px-4 bg-green-50 border border-green-200 rounded-lg"><InfoIcon className="mx-auto h-12 w-12 text-green-600 mb-2"/><p className="text-lg font-medium text-green-700">{t('report_no_patterns_detected')}</p></div>)}
+      ) : (<div className="text-center py-8 px-4 bg-green-50 dark:bg-green-900/50 border border-green-200 dark:border-green-700 rounded-lg"><InfoIcon className="mx-auto h-12 w-12 text-green-600 dark:text-green-400 mb-2"/><p className="text-lg font-medium text-green-700 dark:text-green-200">{t('report_no_patterns_detected')}</p></div>)}
     </div>
   );
 };

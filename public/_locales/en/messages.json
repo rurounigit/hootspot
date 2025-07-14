@@ -7,6 +7,10 @@
     "message": "Analyze selected text with HootSpot",
     "description": "Context menu item to copy and analyze selected text."
   },
+  "contextMenuAdd": {
+    "message": "Add selected text to HootSpot",
+    "description": "Context menu item to append selected text to the side panel."
+  },
   "extName": {
     "message": "HootSpot AI Text Analyzer Extension",
     "description": "The name of the extension."

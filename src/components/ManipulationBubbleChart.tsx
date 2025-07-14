@@ -18,25 +18,25 @@ interface ManipulationBubbleChartProps {
   activeFindingId: string | null;
 }
 
-// --- CUSTOM TOOLTIP (No changes needed here) ---
+// --- CUSTOM TOOLTIP ---
 const CustomTooltip = ({ active, payload, t, coordinate }: any) => {
   if (active && payload && payload[0] && coordinate) {
     const data = payload[0];
     return (
       <div
-        className="p-3 bg-white border border-gray-300 rounded-lg shadow-xl text-sm pointer-events-none"
+        className="p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl text-sm pointer-events-none"
         style={{ position: 'fixed', top: coordinate.y, left: coordinate.x, zIndex: 1000, transform: 'translate(10px, 10px)' }}
       >
-        <p className="font-bold text-gray-800">{data.name}</p>
+        <p className="font-bold text-gray-800 dark:text-gray-100">{data.name}</p>
         <p style={{ color: data.color }}>{t('report_profile_strength')}: {data.strength}</p>
-        <p className="text-gray-600">{t('report_profile_category')}: {t(data.category)}</p>
+        <p className="text-gray-600 dark:text-gray-400">{t('report_profile_category')}: {t(data.category)}</p>
       </div>
     );
   }
   return null;
 };
 
-// --- CUSTOM HULL (No changes needed here) ---
+// --- CUSTOM HULL ---
 interface CategoryHullProps {
   nodes: SimulationNode[]; color: string; onMouseOver: (e: React.MouseEvent) => void; onMouseLeave: () => void;
 }
@@ -80,7 +80,6 @@ const ManipulationBubbleChart: React.FC<ManipulationBubbleChartProps> = ({
 
   const MAX_HEIGHT = 450; const MIN_HEIGHT = 250; const MAX_WIDTH = 500; const MIN_WIDTH = 250;
 
-  // This entire effect remains unchanged
   useEffect(() => {
     if (containerRef.current) {
       const resizeObserver = new ResizeObserver(entries => {
@@ -99,7 +98,6 @@ const ManipulationBubbleChart: React.FC<ManipulationBubbleChartProps> = ({
     }
   }, [onDimensionsChange]);
 
-  // This entire effect remains unchanged
   useEffect(() => {
     if (data && data.length > 0 && dimensions.width > 0) {
       const nodes: SimulationNode[] = data.map(d => ({ ...d, x: Math.random() * dimensions.width, y: Math.random() * dimensions.height }));
@@ -158,10 +156,9 @@ const ManipulationBubbleChart: React.FC<ManipulationBubbleChartProps> = ({
   const nodesByCategory = d3.group(simulatedData, d => d.category);
 
   return (
-    <div id="bubble-chart-container" ref={containerRef} className="bg-gray-50 p-2 rounded-lg shadow-md border border-gray-200 focus:outline-none" style={{ width: '100%', height: `${dynamicHeight}px`, position: 'relative', overflow: 'hidden' }} tabIndex={-1}>
+    <div id="bubble-chart-container" ref={containerRef} className="bg-gray-50 dark:bg-gray-800/50 p-2 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 focus:outline-none" style={{ width: '100%', height: `${dynamicHeight}px`, position: 'relative', overflow: 'hidden' }} tabIndex={-1}>
       <svg width={dimensions.width} height={dimensions.height} viewBox={viewBox}>
         <g>
-          {/* Hull rendering remains unchanged */}
           {Array.from(nodesByCategory, ([category, nodes]) => (
             <CategoryHull
               key={`${category}-hull`}
@@ -171,15 +168,11 @@ const ManipulationBubbleChart: React.FC<ManipulationBubbleChartProps> = ({
               onMouseLeave={() => setTooltipState(null)}
             />
           ))}
-          {/* Bubble rendering loop */}
           {simulatedData.map((node: SimulationNode) => {
             const { x, y, radius, color, name, id } = node;
             const isActive = activeFindingId === id;
             const strokeStyle = isActive ? { stroke: '#2563eb', strokeWidth: 4, strokeOpacity: 1 } : { stroke: 'white', strokeWidth: 0, opacity: 0.95 };
 
-            // *** THE SURGICAL CHANGE IS HERE ***
-
-            // 1. Calculate optimal font size and lines using the robust utility function.
             const { fontSize, lines } = calculateOptimalFontSize(name, radius, 6);
 
             return (
@@ -187,14 +180,12 @@ const ManipulationBubbleChart: React.FC<ManipulationBubbleChartProps> = ({
                 key={id}
                 transform={`translate(${x}, ${y})`}
                 style={{ cursor: 'pointer' }}
-                // Event handlers are untouched and will continue to work
                 onMouseOver={(e) => setTooltipState({ active: true, payload: [node], coordinate: { x: e.clientX, y: e.clientY } })}
                 onMouseLeave={() => setTooltipState(null)}
                 onClick={(e) => { e.stopPropagation(); onBubbleClick(id); }}
               >
                 <circle r={radius} fill={color} style={{ ...strokeStyle, transition: 'all 0.2s ease-in-out' }} />
 
-                {/* 2. Replace <foreignObject> with the superior SVG <text> rendering. */}
                 <text
                   textAnchor="middle"
                   dominantBaseline="central"
@@ -216,7 +207,6 @@ const ManipulationBubbleChart: React.FC<ManipulationBubbleChartProps> = ({
           })}
         </g>
       </svg>
-      {/* Tooltip rendering remains unchanged */}
       <CustomTooltip
         t={t}
         active={tooltipState?.active}

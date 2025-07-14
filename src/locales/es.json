@@ -22,6 +22,7 @@
   "config_model_stable_group": "Modelos Estables",
   "config_model_preview_group": "Modelos de Vista Previa",
   "config_button_save_test": "Guardar y Probar Configuración",
+  "config_night_mode": "Modo Nocturno",
   "config_button_saving": "Probando y Guardando...",
   "config_api_key_configured": "La clave de API está configurada. Expanda para cambiar la configuración.",
   "config_api_key_not_configured": "Clave de API no configurada. Por favor, expanda e introduzca su clave.",
@@ -93,5 +94,6 @@
   "error_translation_failed": "Fallo al traducir el resultado del análisis: {message}",
   "analyzer_button_load_json": "Cargar JSON",
   "error_invalid_json_file": "Archivo JSON de HootSpot inválido o corrupto.",
-  "error_json_load_failed": "Fallo al cargar el análisis:"
+  "error_json_load_failed": "Fallo al cargar el análisis:",
+  "night_mode_toggle_tooltip": "Alternar Modo Nocturno"
 }

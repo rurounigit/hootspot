@@ -22,6 +22,7 @@
   "config_model_stable_group": "Stable Models",
   "config_model_preview_group": "Preview Models",
   "config_button_save_test": "Save & Test Configuration",
+  "config_night_mode": "Night Mode",
   "config_button_saving": "Testing & Saving...",
   "config_api_key_configured": "API Key is configured. Expand to change settings.",
   "config_api_key_not_configured": "API Key not configured. Please expand and enter your key.",
@@ -93,5 +94,6 @@
   "error_translation_failed": "Failed to translate analysis result: {message}",
   "analyzer_button_load_json": "Load JSON",
   "error_invalid_json_file": "Invalid or corrupted HootSpot JSON file.",
-  "error_json_load_failed": "Failed to load analysis:"
+  "error_json_load_failed": "Failed to load analysis:",
+  "night_mode_toggle_tooltip": "Toggle Night Mode"
 }

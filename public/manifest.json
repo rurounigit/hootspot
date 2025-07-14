@@ -8,7 +8,11 @@
     "storage",
     "contextMenus",
     "sidePanel",
-    "downloads"
+    "downloads",
+    "scripting"
+  ],
+  "host_permissions": [
+    "<all_urls>"
   ],
   "action": {
     "default_icon": {
@@ -50,5 +54,25 @@
     "pages": [
       "pdf-generator.html"
     ]
+  },
+  "commands": {
+    "analyze-with-hootspot": {
+      "suggested_key": {
+        "default": "Alt+Shift+A"
+      },
+      "description": "Analyze selected text with HootSpot"
+    },
+    "copy-to-hootspot": {
+      "suggested_key": {
+        "default": "Alt+Shift+S"
+      },
+      "description": "Copy selected text to HootSpot"
+    },
+    "add-to-hootspot": {
+      "suggested_key": {
+        "default": "Alt+Shift+D"
+      },
+      "description": "Add selected text to HootSpot"
+    }
   }
 }
