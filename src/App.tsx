@@ -23,6 +23,7 @@ import {
 const NIGHT_MODE_STORAGE_KEY = 'hootspot-night-mode';
 
 const App: React.FC = () => {
+  // NO CHANGE IN THIS SECTION (State and Hooks)
   const { t, language } = useTranslation();
   const [apiKey, setApiKey] = useState<string | null>(null);
   const { models, isLoading: areModelsLoading, error: modelsError } = useModels(apiKey);
@@ -33,16 +34,13 @@ const App: React.FC = () => {
   const [maxCharLimit, setMaxCharLimit] = useState<number>(DEFAULT_MAX_CHAR_LIMIT);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const [analysisResult, setAnalysisResult] = useState<GeminiAnalysisResponse | null>(null);
   const [currentTextAnalyzed, setCurrentTextAnalyzed] = useState<string | null>(null);
   const [isKeyValid, setIsKeyValid] = useState<boolean>(false);
   const [textToAnalyze, setTextToAnalyze] = useState('');
   const [pendingAnalysis, setPendingAnalysis] = useState<{ text: string } | null>(null);
-
   const [translatedResults, setTranslatedResults] = useState<Record<string, GeminiAnalysisResponse>>({});
   const [isTranslating, setIsTranslating] = useState(false);
-
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isNightMode, setIsNightMode] = useState<boolean>(() => {
     const storedValue = localStorage.getItem(NIGHT_MODE_STORAGE_KEY);
@@ -52,20 +50,18 @@ const App: React.FC = () => {
   const lastAction = useRef<'PUSH' | 'APPEND'>('PUSH');
   const analysisReportRef = useRef<HTMLDivElement>(null);
 
+  // NO CHANGE IN THIS SECTION (useEffect blocks and handlers)
   useEffect(() => {
     const storedApiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
     if (storedApiKey) { setApiKey(storedApiKey); setIsKeyValid(true); }
     const storedMaxCharLimit = localStorage.getItem(MAX_CHAR_LIMIT_STORAGE_KEY);
     if (storedMaxCharLimit) { setMaxCharLimit(parseInt(storedMaxCharLimit, 10) || DEFAULT_MAX_CHAR_LIMIT); }
-
     const messageListener = (request: any) => {
       textWasSetProgrammatically.current = true;
       if (request.type === 'PUSH_TEXT_TO_PANEL' && request.text) {
         lastAction.current = 'PUSH';
         setTextToAnalyze(request.text);
-        if (request.autoAnalyze) {
-          setPendingAnalysis({ text: request.text });
-        }
+        if (request.autoAnalyze) { setPendingAnalysis({ text: request.text }); }
       } else if (request.type === 'APPEND_TEXT_TO_PANEL' && request.text) {
         lastAction.current = 'APPEND';
         setTextToAnalyze(prevText => {
@@ -75,24 +71,17 @@ const App: React.FC = () => {
       }
     };
     chrome.runtime.onMessage.addListener(messageListener);
-
     chrome.runtime.sendMessage({ type: 'PULL_INITIAL_TEXT' }, (response) => {
       if (chrome.runtime.lastError) { return; }
       if (response && response.text) {
         textWasSetProgrammatically.current = true;
         lastAction.current = 'PUSH';
         setTextToAnalyze(response.text);
-        if (response.autoAnalyze) {
-          setPendingAnalysis({ text: response.text });
-        }
+        if (response.autoAnalyze) { setPendingAnalysis({ text: response.text }); }
       }
     });
-
-    return () => {
-      chrome.runtime.onMessage.removeListener(messageListener);
-    };
+    return () => { chrome.runtime.onMessage.removeListener(messageListener); };
   }, []);
-
   useEffect(() => {
     const allModels = [...models.preview, ...models.stable];
     if (allModels.length === 0) return;
@@ -101,12 +90,9 @@ const App: React.FC = () => {
     setCurrentModelDetails(details);
     if (!details) {
       const defaultModel = allModels.find(m => m.name === GEMINI_MODEL_NAME) || allModels[0];
-      if (defaultModel) {
-        setSelectedModel(defaultModel.name);
-      }
+      if (defaultModel) { setSelectedModel(defaultModel.name); }
     }
   }, [selectedModel, models]);
-
   useEffect(() => {
     if (!areModelsLoading && modelsError) {
       console.warn(`Model fetch failed: ${modelsError}. Falling back to default: ${GEMINI_MODEL_NAME}`);
@@ -119,7 +105,6 @@ const App: React.FC = () => {
       });
     }
   }, [areModelsLoading, modelsError]);
-
   useEffect(() => {
     if (textWasSetProgrammatically.current) {
       textareaRef.current?.focus();
@@ -132,7 +117,6 @@ const App: React.FC = () => {
       textWasSetProgrammatically.current = false;
     }
   }, [textToAnalyze]);
-
   useEffect(() => {
     localStorage.setItem(NIGHT_MODE_STORAGE_KEY, String(isNightMode));
     if (isNightMode) {
@@ -141,7 +125,6 @@ const App: React.FC = () => {
       document.documentElement.classList.remove('dark');
     }
   }, [isNightMode]);
-
   const handleAnalyzeText = useCallback(async (text: string) => {
     if (!apiKey) {
       setError(t('error_api_key_not_configured'));
@@ -152,7 +135,6 @@ const App: React.FC = () => {
     setAnalysisResult(null);
     setCurrentTextAnalyzed(text);
     setTranslatedResults({});
-
     try {
       const englishResult = await analyzeText(apiKey, text, selectedModel);
       setAnalysisResult(englishResult);
@@ -169,7 +151,6 @@ const App: React.FC = () => {
       setIsLoading(false);
     }
   }, [apiKey, selectedModel, language, t]);
-
   useEffect(() => {
     if (!analysisResult || language === 'en') return;
     if (translatedResults[language]) return;
@@ -182,20 +163,17 @@ const App: React.FC = () => {
       .catch(err => setError(err.message))
       .finally(() => setIsTranslating(false));
   }, [language, analysisResult, translatedResults, apiKey, selectedModel, t]);
-
   useEffect(() => {
     if (pendingAnalysis && apiKey) {
       handleAnalyzeText(pendingAnalysis.text);
       setPendingAnalysis(null);
     }
   }, [pendingAnalysis, apiKey, handleAnalyzeText]);
-
   useEffect(() => {
     if (analysisResult && analysisReportRef.current) {
       analysisReportRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, [analysisResult]);
-
   const handleJsonLoad = (file: File) => {
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -217,7 +195,6 @@ const App: React.FC = () => {
     };
     reader.readAsText(file);
   };
-
   const handleApiKeySave = useCallback(async (newApiKey: string) => {
     try {
       localStorage.setItem(API_KEY_STORAGE_KEY, newApiKey);
@@ -230,37 +207,36 @@ const App: React.FC = () => {
       return {success: false, error: t('error_save_api_key_storage')};
     }
   }, [t]);
-
   const handleMaxCharLimitSave = useCallback((newLimit: number) => {
     localStorage.setItem(MAX_CHAR_LIMIT_STORAGE_KEY, newLimit.toString());
     setMaxCharLimit(newLimit);
   }, []);
-
   const displayedAnalysis = translatedResults[language] || analysisResult;
 
+  // UPDATED SECTION: The entire JSX return block is updated to use semantic theme classes.
   return (
-    <div className="relative flex flex-col h-screen bg-gradient-to-br from-athena-logo-bg to-athena-logo-bg dark:from-gray-600 dark:to-gray-500">
+    <div className="relative flex flex-col h-screen bg-app-bg-light dark:bg-app-bg-dark">
       <div className="absolute top-2 right-4 z-10 flex items-center space-x-2">
         <button
           onClick={() => setIsNightMode(!isNightMode)}
-          className="p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full focus:outline-none"
+          className="p-1.5 text-text-subtle-light dark:text-text-subtle-dark hover:bg-container-border-light dark:hover:bg-container-border-dark rounded-full focus:outline-none"
           title={t('night_mode_toggle_tooltip')}
         >
           {isNightMode ? (
-            <SunIcon className="w-5 h-5 text-yellow-400" />
+            <SunIcon className="w-5 h-5 text-sun-icon-light" />
           ) : (
-            <MoonIcon className="w-5 h-5 text-gray-600" />
+            <MoonIcon className="w-5 h-5 text-moon-icon-light" />
           )}
         </button>
         <LanguageSwitcher />
       </div>
-      <div className="flex flex-col flex-1 w-full p-2 md:p-4 overflow-y-auto text-gray-800 dark:text-gray-200">
+      <div className="flex flex-col flex-1 w-full p-2 md:p-4 overflow-y-auto text-text-main-light dark:text-text-main-dark">
         <header className="mb-1 text-left">
           <div className="inline-flex items-center justify-center">
-             <HootSpotLogoIcon className="w-9 h-9 md:w-13 md:h-13 text-blue-600 mr-2 md:mr-3 ml-2.5" />
+             <HootSpotLogoIcon className="w-9 h-9 md:w-13 md:h-13 text-logo-icon-light dark:text-logo-icon-dark mr-2 md:mr-3 ml-2.5" />
             <div>
-                <h1 className="text-lg md:text-3xl font-semibold text-gray-800 dark:text-gray-100">{t('app_title')}</h1>
-                <p className="text-md md:text-lg text-gray-600 dark:text-gray-400"></p>
+                <h1 className="text-lg md:text-3xl font-semibold text-text-main-light dark:text-text-main-dark">{t('app_title')}</h1>
+                <p className="text-md md:text-lg text-text-subtle-light dark:text-text-subtle-dark"></p>
             </div>
           </div>
         </header>
@@ -291,13 +267,13 @@ const App: React.FC = () => {
             hasApiKey={!!apiKey && isKeyValid}
           />
           {(isLoading || isTranslating) && (
-            <div className="my-4 p-3 rounded-md text-sm bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/50 dark:text-blue-200 dark:border-blue-700 flex items-center justify-center">
-              <div className="spinner w-5 h-5 border-t-blue-600 mr-2"></div>
+            <div className="my-4 p-3 rounded-md text-sm bg-info-bg-light text-info-text-light border border-info-border-light dark:bg-info-bg-dark dark:text-info-text-dark dark:border-info-border-dark flex items-center justify-center">
+              <div className="spinner w-5 h-5 border-t-link-light mr-2"></div>
               {isLoading ? t('analyzer_button_analyzing') : t('info_translating_results')}
             </div>
           )}
           {error && (
-            <div className="my-6 p-4 bg-red-100 border border-red-400 text-red-700 dark:bg-red-900/50 dark:text-red-200 dark:border-red-700 rounded-md shadow-md" role="alert">
+            <div className="my-6 p-4 bg-error-bg-light border border-error-border-light text-error-text-light dark:bg-error-bg-dark dark:text-error-text-dark dark:border-error-border-dark rounded-md shadow-md" role="alert">
               <strong className="font-bold">{t('error_prefix')}</strong>
               <span>{error}</span>
             </div>
@@ -308,18 +284,18 @@ const App: React.FC = () => {
             )}
           </div>
           {(!isLoading && !error && !analysisResult && currentTextAnalyzed && !apiKey) && (
-            <div className="mt-4 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-200 dark:border-yellow-700 rounded-md shadow-md">
+            <div className="mt-4 p-4 bg-warning-bg-light border border-warning-border-light text-warning-text-light dark:bg-warning-bg-dark dark:text-warning-text-dark dark:border-warning-border-dark rounded-md shadow-md">
                 {t('error_no_api_key_for_results')}
             </div>
           )}
           {(!isLoading && !error && !analysisResult && !currentTextAnalyzed && apiKey) && (
-            <div className="mt-4 p-6 bg-white border border-gray-200 text-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 rounded-lg shadow-md text-center">
+            <div className="mt-4 p-6 bg-panel-bg-light border border-panel-border-light text-text-subtle-light dark:bg-panel-bg-dark dark:border-panel-border-dark dark:text-text-subtle-dark rounded-lg shadow-md text-center">
                 <p className="text-lg">{t('info_enter_text_to_analyze')}</p>
                 <p className="text-sm mt-2">{t('info_uncover_patterns')}</p>
             </div>
           )}
         </main>
-        <footer className="mt-auto pt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+        <footer className="mt-auto pt-6 text-center text-sm text-text-subtle-light dark:text-text-subtle-dark">
           <p>{t('app_footer_copyright', { year: new Date().getFullYear() })}</p>
           <p>{t('app_footer_responsibility')}</p>
         </footer>

@@ -13,8 +13,7 @@ const generateDistantColor = (index: number, saturation: number = 0.7, lightness
     return `hsl(${hue}, ${saturation * 100}%, ${lightness * 100}%)`;
 };
 
-// UPDATED: Highlight color now has a dark variant
-const UNIFORM_HIGHLIGHT_COLOR = 'bg-red-200 dark:bg-red-500/60';
+const UNIFORM_HIGHLIGHT_COLOR = 'bg-text-highlight-bg-light dark:bg-text-highlight-bg-dark';
 
 function escapeRegex(string: string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 
@@ -34,23 +33,16 @@ export const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches,
     const element = document.getElementById(`finding-card-${displayIndex}`);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      element.style.transition = 'background-color 0.1s ease-in-out';
-      element.style.backgroundColor = '#e0e7ff';
-      setTimeout(() => { element.style.backgroundColor = ''; }, 800);
+      element.classList.add('bg-card-highlight-light', 'dark:bg-card-highlight-dark', 'transition-colors', 'duration-200');
+      setTimeout(() => {
+        element.classList.remove('bg-card-highlight-light', 'dark:bg-card-highlight-dark');
+      }, 800);
     }
   };
 
   const handlePillMouseOver = (event: React.MouseEvent, finding: GeminiFinding & { displayIndex: number }) => {
     const color = patternColorMap.get(finding.pattern_name) || '#ccc';
-    setTooltip({
-      visible: true,
-      title: finding.display_name,
-      description: t(finding.category),
-      x: event.clientX,
-      y: event.clientY,
-      color: color,
-      textColor: '#fff'
-    });
+    setTooltip({ visible: true, title: finding.display_name, description: t(finding.category), x: event.clientX, y: event.clientY, color: color, textColor: '#fff' });
   };
 
   const handlePillMouseLeave = () => { setTooltip({ ...tooltip, visible: false }); };
@@ -65,7 +57,7 @@ export const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches,
       if (!color) return null;
       return (<span key={`${finding.pattern_name}-${match.start}`} className="inline-block w-2.5 h-2.5 rounded-full mr-1 -mb-0.5 border border-gray-500 cursor-pointer" style={{ backgroundColor: color }} onClick={() => handlePillClick(finding.displayIndex)} onMouseOver={(e) => handlePillMouseOver(e, finding)} onMouseLeave={handlePillMouseLeave} />);
     });
-    segments.push(<span key={`match-${matchIndex}`} className="inline-block">{pills}<mark className={`${UNIFORM_HIGHLIGHT_COLOR} p-0.5 rounded-sm`}>{text.substring(match.start, match.end)}</mark></span>);
+    segments.push(<span key={`match-${matchIndex}`} className="inline-block">{pills}<mark className={`${UNIFORM_HIGHLIGHT_COLOR} p-0.5 rounded-sm text-text-main-light dark:text-text-main-dark`}>{text.substring(match.start, match.end)}</mark></span>);
     lastIndex = match.end;
   });
 
@@ -74,10 +66,7 @@ export const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches,
   return (
     <>
       {tooltip.visible && (
-        <div
-          className="fixed max-w-xs px-3 py-2 rounded-lg shadow-xl text-sm pointer-events-none z-50"
-          style={{ top: tooltip.y + 15, left: tooltip.x + 15, backgroundColor: tooltip.color, color: tooltip.textColor, border: `1px solid rgba(0,0,0,0.2)` }}
-        >
+        <div className="fixed max-w-xs px-3 py-2 rounded-lg shadow-xl text-sm pointer-events-none z-50" style={{ top: tooltip.y + 15, left: tooltip.x + 15, backgroundColor: tooltip.color, color: tooltip.textColor, border: `1px solid rgba(0,0,0,0.2)` }}>
           <strong className="font-bold block">{tooltip.title}</strong>
           {tooltip.description && <p className="mt-1">{tooltip.description}</p>}
         </div>
@@ -202,30 +191,27 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
   }, [indexedFindings, sourceText, hasFindings]);
 
   const handleBubbleClick = (findingId: string) => {
-  setActiveFindingId(findingId); // Set the active ID on click
-  const finding = indexedFindings.find(f => `${f.pattern_name}-${f.displayIndex}` === findingId);
-  if (finding) {
-    const element = document.getElementById(`finding-card-${finding.displayIndex}`);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      element.style.transition = 'background-color 0.1s ease-in-out';
-      element.style.backgroundColor = '#e0e7ff';
-      // Always clear the highlight after the animation is done.
-      setTimeout(() => {
-        element.style.backgroundColor = '';
+    setActiveFindingId(findingId);
+    const finding = indexedFindings.find(f => `${f.pattern_name}-${f.displayIndex}` === findingId);
+    if (finding) {
+      const element = document.getElementById(`finding-card-${finding.displayIndex}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        element.classList.add('bg-card-highlight-light', 'dark:bg-card-highlight-dark', 'transition-colors', 'duration-200');
+        setTimeout(() => {
+          element.classList.remove('bg-card-highlight-light', 'dark:bg-card-highlight-dark');
+          setActiveFindingId(null);
+        }, 800);
+      } else {
         setActiveFindingId(null);
-      }, 800);
-    } else {
-      // If the element isn't found, clear the highlight immediately.
-      setActiveFindingId(null);
+      }
     }
-  }
-};
+  };
 
   return (
     <div className="mt-4">
       <div className="flex items-center mb-4">
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 pb-0">{t('report_title')}</h2>
+        <h2 className="text-lg font-semibold text-text-main-light dark:text-text-main-dark pb-0">{t('report_title')}</h2>
         {hasFindings && (
            <ShareMenu
               analysis={analysis}
@@ -237,14 +223,16 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
         )}
       </div>
 
-      <div className="bg-blue-50 dark:bg-blue-900/50 border-l-4 border-blue-400 dark:border-blue-500 p-4 rounded-md shadow-sm mb-6">
-        <h3 className="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-1">{t('report_summary_title')}</h3>
-        <p className="text-blue-700 dark:text-blue-300">{analysis.analysis_summary}</p>
+      {/* --- THIS IS THE CORRECTED CODE BLOCK --- */}
+      <div className="bg-info-bg-light dark:bg-info-bg-dark border border-info-border-light dark:border-info-border-dark p-4 rounded-md shadow-sm mb-6">
+        <h3 className="text-lg font-semibold text-info-text-light dark:text-info-text-dark mb-1">{t('report_summary_title')}</h3>
+        <p className="text-info-text-light dark:text-info-text-dark">{analysis.analysis_summary}</p>
       </div>
+      {/* --- END OF CORRECTION --- */}
 
       {hasFindings && (
         <div className="mb-6">
-          <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">{t('report_profile_title')}</h3>
+          <h3 className="text-lg font-semibold text-text-label-light dark:text-text-label-dark mb-4">{t('report_profile_title')}</h3>
           <ManipulationBubbleChart
             data={bubbleChartData}
             onDimensionsChange={setChartDimensions}
@@ -256,8 +244,8 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
 
       {sourceText && hasFindings && (
         <div className="mb-6">
-          <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">{t('report_highlighted_text_title')}</h3>
-          <div className="bg-white dark:bg-gray-800/50 p-4 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm max-h-96 overflow-y-auto">
+          <h3 className="text-lg font-semibold text-text-label-light dark:text-text-label-dark mb-4">{t('report_highlighted_text_title')}</h3>
+          <div className="bg-container-bg-light dark:bg-container-bg-dark p-4 border border-container-border-light dark:border-container-border-dark rounded-lg shadow-sm max-h-96 overflow-y-auto">
             <HighlightedText text={sourceText} matches={finalHighlights} patternColorMap={patternColorMap} />
           </div>
         </div>
@@ -265,25 +253,25 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
 
       {hasFindings ? (
         <div>
-          <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-3">{t('report_detected_patterns_title')}</h3>
+          <h3 className="text-lg font-semibold text-text-label-light dark:text-text-label-dark mb-3">{t('report_detected_patterns_title')}</h3>
           <div className="space-y-4">
             {indexedFindings.map((finding) => {
               const color = patternColorMap.get(finding.pattern_name) || '#e5e7eb';
               return (
-                <div key={finding.displayIndex} id={`finding-card-${finding.displayIndex}`} className={`bg-gray-50 dark:bg-gray-800 border rounded-lg shadow-md overflow-hidden`} style={{borderColor: color}}>
+                <div key={finding.displayIndex} id={`finding-card-${finding.displayIndex}`} className={`bg-panel-bg-light dark:bg-panel-bg-dark border rounded-lg shadow-md overflow-hidden`} style={{borderColor: color}}>
                   <div className={`p-4 border-b`} style={{ backgroundColor: color, borderColor: color }}>
-                    <h4 className={`text-l font-bold text-white uppercase`}>{finding.display_name}</h4>
+                    <h4 className={`text-l font-bold text-button-text-light uppercase`}>{finding.display_name}</h4>
                   </div>
                   <div className="p-4 space-y-3">
-                    <div><h5 className="font-semibold text-gray-600 dark:text-gray-400 mb-1">{t('report_quote_label')}</h5><blockquote className={`italic p-3 rounded-md border-l-4`} style={{ backgroundColor: `${color}40`, borderColor: color }}><p className="text-gray-800 dark:text-gray-200">"{finding.specific_quote}"</p></blockquote></div>
-                    <div><h5 className="font-semibold text-gray-600 dark:text-gray-400 mb-1">{t('report_explanation_label')}</h5><p className="text-gray-700 dark:text-gray-300">{finding.explanation}</p></div>
+                    <div><h5 className="font-semibold text-text-subtle-light dark:text-text-subtle-dark mb-1">{t('report_quote_label')}</h5><blockquote className={`italic p-3 rounded-md border-l-4`} style={{ backgroundColor: `${color}40`, borderColor: color }}><p className="text-text-main-light dark:text-text-main-dark">"{finding.specific_quote}"</p></blockquote></div>
+                    <div><h5 className="font-semibold text-text-subtle-light dark:text-text-subtle-dark mb-1">{t('report_explanation_label')}</h5><p className="text-text-label-light dark:text-text-main-dark">{finding.explanation}</p></div>
                   </div>
                 </div>
               );
             })}
           </div>
         </div>
-      ) : (<div className="text-center py-8 px-4 bg-green-50 dark:bg-green-900/50 border border-green-200 dark:border-green-700 rounded-lg"><InfoIcon className="mx-auto h-12 w-12 text-green-600 dark:text-green-400 mb-2"/><p className="text-lg font-medium text-green-700 dark:text-green-200">{t('report_no_patterns_detected')}</p></div>)}
+      ) : (<div className="text-center py-8 px-4 bg-success-bg-light dark:bg-success-bg-dark border border-success-border-light dark:border-success-border-dark rounded-lg"><InfoIcon className="mx-auto h-12 w-12 text-success-text-light dark:text-success-text-dark mb-2"/><p className="text-lg font-medium text-success-text-light dark:text-success-text-dark">{t('report_no_patterns_detected')}</p></div>)}
     </div>
   );
 };
