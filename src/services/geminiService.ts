@@ -111,7 +111,17 @@ export const analyzeText = async (
       try {
         const parsedData = JSON.parse(jsonStr) as GeminiAnalysisResponse;
         if (typeof parsedData.analysis_summary === 'string' && Array.isArray(parsedData.findings)) {
-          return parsedData;
+          // THIS IS THE NEW LOGIC
+          // Sort findings by their first appearance in the source text.
+          parsedData.findings.sort((a, b) => {
+            const indexA = textToAnalyze.indexOf(a.specific_quote);
+            const indexB = textToAnalyze.indexOf(b.specific_quote);
+            // If a quote isn't found, it should be sorted to the end.
+            if (indexA === -1) return 1;
+            if (indexB === -1) return -1;
+            return indexA - indexB;
+          });
+          return parsedData; // Return the correctly sorted data
         } else {
           throw new Error("Received an unexpected JSON structure from the API.");
         }
