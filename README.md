@@ -31,26 +31,30 @@ HootSpot runs as a "side panel" in your browser, allowing you to select text fro
 *   **Full Internationalization (i18n)**: The user interface is available in English, German, French, and Spanish out of the box.
 *   **AI-Powered Language Management**: A unique feature that allows you to use the Gemini API to translate the extension's entire interface into any language. Simply provide a language code (e.g., "it" for Italian), and the AI generates the necessary translation files.
 
-## Demo / Examples
+## Demo
 
 <img src="public/images/hootspot-gif.gif" alt="HootSpot" width="40%">
+
+## Examples
 
 **Their Finest Hour by Winston Churchill**
 
 “What General Weygand called the Battle of France is over. I expect that the Battle of Britain is about to begin. Upon this battle depends the survival of Christian civilization. Upon it depends our own British life, and the long continuity of our institutions and our Empire. The whole fury and might of the enemy must very soon be turned on us. Hitler knows that he will have to break us in this Island or lose the war. If we can stand up to him, all Europe may be free and the life of the world may move forward into broad, sunlit uplands. But if we fail, then the whole world, including the United States, including all that we have known and cared for, will sink into the abyss of a new Dark Age made more sinister, and perhaps more protracted, by the lights of perverted science. Let us therefore brace ourselves to our duties, and so bear ourselves that, if the British Empire and its Commonwealth last for a thousand years, men will still say, “This was their finest hour.””
 
 <details>
-  <summary>Click to see details</summary>
+  <summary>Click to see the results</summary>
   <br>
 
   *Analysis and Visualization*
 
   <img src="public/images/examples/churchill-report.jpg" alt="Analysis of Churchill's speech" width="40%">
   <img src="public/images/examples/churchill-chart.jpg" alt="Analysis of Churchill's speech" width="40%">
+  <br>
 
   *Highlighted Text*
 
   <img src="public/images/examples/churchill-highlighted-text.jpg" alt="Highlighted text of Churchill's speech" width="40%">
+  <br>
 
   *Found Patterns*
 
@@ -64,18 +68,29 @@ HootSpot runs as a "side panel" in your browser, allowing you to select text fro
   ---
 
 **I Am Prepared to Die by Nelson Mandela**
+
+“Above all, My Lord, we want equal political rights, because without them our disabilities will be permanent. I know this sounds revolutionary to the whites in this country, because the majority of voters will be Africans. This makes the white man fear democracy.
+
+But this fear cannot be allowed to stand in the way of the only solution which will guarantee racial harmony and freedom for all. It is not true that the enfranchisement of all will result in racial domination. Political division, based on colour, is entirely artificial and, when it disappears, so will the domination of one colour group by another. The ANC has spent half a century fighting against racialism. When it triumphs as it certainly must, it will not change that policy.
+
+This then is what the ANC is fighting. Our struggle is a truly national one. It is a struggle of the African people, inspired by our own suffering and our own experience. It is a struggle for the right to live.
+
+During my lifetime I have dedicated my life to this struggle of the African people. I have fought against white domination, and I have fought against black domination. I have cherished the ideal of a democratic and free society in which all persons will live together in harmony and with equal opportunities. It is an ideal for which I hope to live for and to see realised. But, My Lord, if it needs be, it is an ideal for which I am prepared to die.”
+
 <details>
-  <summary>Click to see details</summary>
+  <summary>Click to see the results</summary>
   <br>
 
   *Analysis and Visualization*
 
   <img src="public/images/examples/mandela-report.jpg" alt="Analysis of Churchill's speech" width="40%">
   <img src="public/images/examples/mandela-chart.jpg" alt="Analysis of Churchill's speech" width="40%">
+  <br>
 
   *Highlighted Text*
 
   <img src="public/images/examples/mandela-highlighted-text.jpg" alt="Highlighted text of Churchill's speech" width="40%">
+  <br>
 
   *Found Patterns*
 
@@ -90,17 +105,19 @@ HootSpot runs as a "side panel" in your browser, allowing you to select text fro
 
 **Donald Trump’s address to nation after attack on Iran**
 <details>
-  <summary>Click to see details</summary>
+  <summary>Click to see the results</summary>
   <br>
 
   *Analysis and Visualization*
 
   <img src="public/images/examples/trump-report.jpg" alt="Analysis of Churchill's speech" width="40%">
   <img src="public/images/examples/trump-chart.jpg" alt="Analysis of Churchill's speech" width="40%">
+  <br>
 
   *Highlighted Text*
 
   <img src="public/images/examples/trump-highlighted-text.jpg" alt="Highlighted text of Churchill's speech" width="40%">
+  <br>
 
   *Found Patterns*
 
