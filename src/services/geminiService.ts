@@ -1,15 +1,14 @@
 // src/services/geminiService.ts
 
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
-import { GEMINI_MODEL_NAME, SYSTEM_PROMPT, TRANSLATION_SYSTEM_PROMPT, ANALYSIS_TRANSLATION_PROMPT, REBUTTAL_SYSTEM_PROMPT } from "../constants";
+import { GEMINI_MODEL_NAME, SYSTEM_PROMPT, TRANSLATION_SYSTEM_PROMPT, ANALYSIS_TRANSLATION_PROMPT, REBUTTAL_SYSTEM_PROMPT, JSON_REPAIR_SYSTEM_PROMPT } from "../constants";
 import { GeminiAnalysisResponse, GeminiModel } from "../types";
 import { LanguageCode } from "../i18n";
 import { GroupedModels } from "../hooks/useModels";
 
 type TFunction = (key: string, replacements?: Record<string, string | number>) => string;
 
-// --- NEW HELPER FUNCTION ---
-// This function aggressively extracts a JSON object from a string.
+// This helper function aggressively extracts a JSON object from a string.
 function extractJson(str: string): string {
     // First, try to find JSON within markdown fences.
     const fenceRegex = /```(?:json)?\s*([\s\S]*?)\s*```/s;
@@ -28,6 +27,32 @@ function extractJson(str: string): string {
     }
 
     return str.substring(firstBrace, lastBrace + 1);
+}
+
+// Self-healing JSON repair function
+async function repairAndParseJson(
+    apiKey: string,
+    brokenJson: string,
+    modelName: string
+): Promise<any> {
+    console.warn("Attempting to repair malformed JSON...");
+    const ai = new GoogleGenAI({ apiKey });
+    try {
+        const repairResponse = await ai.models.generateContent({
+            model: modelName,
+            contents: [{ role: "user", parts: [{ text: brokenJson }] }],
+            config: {
+                systemInstruction: JSON_REPAIR_SYSTEM_PROMPT,
+                temperature: 0,
+            },
+        });
+        const repairedJson = extractJson(repairResponse.text);
+        return JSON.parse(repairedJson); // Attempt to parse the repaired JSON
+    } catch (e) {
+        console.error("--- HootSpot JSON REPAIR FAILED ---");
+        console.error("Original broken JSON:", brokenJson);
+        throw new Error(`Failed to parse analysis even after attempting a repair: ${(e as Error).message}`);
+    }
 }
 
 
@@ -97,7 +122,6 @@ export const analyzeText = async (
         ],
         config: {
           systemInstruction: SYSTEM_PROMPT,
-          // responseMimeType: "application/json", // Keep this commented out for robustness
           temperature: 0,
           topP: 0,
           topK: 1,
@@ -107,35 +131,26 @@ export const analyzeText = async (
 
       const rawText = fullResponse.text;
       const jsonStr = extractJson(rawText);
+      let parsedData;
 
       try {
-        const parsedData = JSON.parse(jsonStr) as GeminiAnalysisResponse;
-        if (typeof parsedData.analysis_summary === 'string' && Array.isArray(parsedData.findings)) {
-          // THIS IS THE NEW LOGIC
-          // Sort findings by their first appearance in the source text.
+        parsedData = JSON.parse(jsonStr);
+      } catch (e) {
+        // If parsing fails, attempt to repair the JSON
+        parsedData = await repairAndParseJson(apiKey, jsonStr, modelName);
+      }
+
+      if (typeof parsedData.analysis_summary === 'string' && Array.isArray(parsedData.findings)) {
           parsedData.findings.sort((a, b) => {
             const indexA = textToAnalyze.indexOf(a.specific_quote);
             const indexB = textToAnalyze.indexOf(b.specific_quote);
-            // If a quote isn't found, it should be sorted to the end.
             if (indexA === -1) return 1;
             if (indexB === -1) return -1;
             return indexA - indexB;
           });
-          return parsedData; // Return the correctly sorted data
-        } else {
-          throw new Error("Received an unexpected JSON structure from the API.");
-        }
-      } catch (e) {
-        console.error("--- HootSpot JSON Parsing Error (Analysis) ---");
-        console.error("Failed to parse the following text as JSON:");
-        console.log(jsonStr);
-        const finishReason = fullResponse.candidates?.[0]?.finishReason;
-        const safetyRatings = fullResponse.candidates?.[0]?.safetyRatings;
-        console.error(`Finish Reason: ${finishReason}`);
-        if (safetyRatings) {
-          console.error("Safety Ratings:", JSON.stringify(safetyRatings, null, 2));
-        }
-        throw new Error(`Failed to parse analysis: ${(e as Error).message}`);
+          return parsedData;
+      } else {
+        throw new Error("Received an unexpected JSON structure from the API.");
       }
     } catch (error: any) {
         console.error("Error analyzing text with Gemini API:", error);
@@ -181,7 +196,6 @@ export const translateAnalysisResult = async (
       contents: [{ role: "user", parts: [{ text: contentToTranslate }] }],
       config: {
         systemInstruction: systemPrompt,
-        // responseMimeType: "application/json", // Keep this commented out for robustness
         temperature: 0.2,
         maxOutputTokens: 8192,
       },
@@ -189,26 +203,20 @@ export const translateAnalysisResult = async (
 
     const rawText = fullResponse.text;
     const jsonStr = extractJson(rawText);
+    let parsedData;
 
     try {
-      const parsedData = JSON.parse(jsonStr) as GeminiAnalysisResponse;
-      if (typeof parsedData.analysis_summary === 'string' && Array.isArray(parsedData.findings)) {
-        return parsedData;
-      } else {
-        throw new Error(t('error_unexpected_json_structure'));
-      }
+        parsedData = JSON.parse(jsonStr);
     } catch (e) {
-      console.error("--- HootSpot JSON Parsing Error (Translation) ---");
-      console.error("Failed to parse the following text as JSON:");
-      console.log(jsonStr);
-      const finishReason = fullResponse.candidates?.[0]?.finishReason;
-      const safetyRatings = fullResponse.candidates?.[0]?.safetyRatings;
-      console.error(`Finish Reason: ${finishReason}`);
-      if (safetyRatings) {
-        console.error("Safety Ratings:", JSON.stringify(safetyRatings, null, 2));
-      }
-      throw new Error(t('error_json_parse', { message: (e as Error).message, response: jsonStr.substring(0, 100) }));
+        parsedData = await repairAndParseJson(apiKey, jsonStr, modelName);
     }
+
+    if (typeof parsedData.analysis_summary === 'string' && Array.isArray(parsedData.findings)) {
+        return parsedData;
+    } else {
+        throw new Error(t('error_unexpected_json_structure'));
+    }
+
   } catch (error: any) {
     console.error("Error translating analysis result:", error);
     if (error.message && error.message.includes("SAFETY")) {
@@ -358,7 +366,6 @@ export const translateUI = async (
             ],
             config: {
                 systemInstruction: TRANSLATION_SYSTEM_PROMPT,
-                // responseMimeType: "application/json", // Keep this commented out for robustness
                 temperature: 0.2,
                 maxOutputTokens: 8192,
             },
@@ -366,22 +373,13 @@ export const translateUI = async (
 
         const rawText = fullResponse.text;
         const jsonStr = extractJson(rawText);
-
+        let parsedData;
         try {
-            const parsedData = JSON.parse(jsonStr) as Record<string, string>;
-            return parsedData;
-        } catch (e) {
-            console.error("--- HootSpot JSON Parsing Error (UI Translation) ---");
-            console.error("Failed to parse the following text as JSON:");
-            console.log(jsonStr);
-            const finishReason = fullResponse.candidates?.[0]?.finishReason;
-            const safetyRatings = fullResponse.candidates?.[0]?.safetyRatings;
-            console.error(`Finish Reason: ${finishReason}`);
-            if (safetyRatings) {
-              console.error("Safety Ratings:", JSON.stringify(safetyRatings, null, 2));
-            }
-            throw new Error(t('lang_manager_error_parse', { message: (e as Error).message }));
+            parsedData = JSON.parse(jsonStr);
+        } catch(e) {
+            parsedData = await repairAndParseJson(apiKey, jsonStr, GEMINI_MODEL_NAME);
         }
+        return parsedData;
     } catch (error: any) {
         console.error("Error translating UI with Gemini API:", error);
         if (error.message && error.message.includes("SAFETY")) {

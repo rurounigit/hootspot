@@ -67,6 +67,8 @@ RULES:
 3.  Preserve any placeholders like {variable} exactly as they are. For example, if the English is "Characters: {count} / {limit}", the German should be "Zeichen: {count} / {limit}".
 4.  Your output must be ONLY the translated JSON object. Do not include any other text, explanations, or markdown code fences.`;
 
+export const JSON_REPAIR_SYSTEM_PROMPT = `The following text is supposed to be a single, valid JSON object, but it contains syntax errors. Please fix the syntax and return only the corrected, valid JSON object. Do not add any explanations, apologies, or markdown formatting. The JSON must be complete.`;
+
 export const API_KEY_STORAGE_KEY = 'athenaAIApiKey';
 export const MAX_CHAR_LIMIT_STORAGE_KEY = 'athenaAIMaxCharLimit';
 export const CUSTOM_LANGUAGES_KEY = 'athenaAICustomLanguages';
