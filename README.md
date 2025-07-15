@@ -45,21 +45,21 @@ HootSpot runs as a "side panel" in your browser, allowing you to select text fro
 
   *Analysis and Visualization*
 
-  <img src="public/images/examples/churchill-report.png" alt="Analysis of Churchill's speech" width="100%">
-  <img src="public/images/examples/churchill-chart.png" alt="Analysis of Churchill's speech" width="100%">
+  <img src="public/images/examples/churchill-report.jpg" alt="Analysis of Churchill's speech" width="100%">
+  <img src="public/images/examples/churchill-chart.jpg" alt="Analysis of Churchill's speech" width="100%">
 
   *Highlighted Text*
 
-  <img src="public/images/examples/churchill-highlighted-text.png" alt="Highlighted text of Churchill's speech" width="100%">
+  <img src="public/images/examples/churchill-highlighted-text.jpg" alt="Highlighted text of Churchill's speech" width="100%">
 
   *Found Patterns*
 
-  <img src="public/images/examples/churchill-pattern-01.png" alt="Highlighted text of Churchill's speech" width="100%">
-  <img src="public/images/examples/churchill-pattern-02.png" alt="Highlighted text of Churchill's speech" width="100%">
-  <img src="public/images/examples/churchill-pattern-03.png" alt="Highlighted text of Churchill's speech" width="100%">
-  <img src="public/images/examples/churchill-pattern-04.png" alt="Highlighted text of Churchill's speech" width="100%">
-  <img src="public/images/examples/churchill-pattern-05.png" alt="Highlighted text of Churchill's speech" width="100%">
-  <img src="public/images/examples/churchill-pattern-06.png" alt="Highlighted text of Churchill's speech" width="100%">
+  <img src="public/images/examples/churchill-pattern-01.jpg" alt="Highlighted text of Churchill's speech" width="100%">
+  <img src="public/images/examples/churchill-pattern-02.jpg" alt="Highlighted text of Churchill's speech" width="100%">
+  <img src="public/images/examples/churchill-pattern-03.jpg" alt="Highlighted text of Churchill's speech" width="100%">
+  <img src="public/images/examples/churchill-pattern-04.jpg" alt="Highlighted text of Churchill's speech" width="100%">
+  <img src="public/images/examples/churchill-pattern-05.jpg" alt="Highlighted text of Churchill's speech" width="100%">
+  <img src="public/images/examples/churchill-pattern-06.jpg" alt="Highlighted text of Churchill's speech" width="100%">
 </details>
 
   ---
