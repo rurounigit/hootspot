@@ -93,5 +93,9 @@
   "analyzer_button_load_json": "Load JSON",
   "error_invalid_json_file": "Invalid or corrupted HootSpot JSON file.",
   "error_json_load_failed": "Failed to load analysis:",
-  "night_mode_toggle_tooltip": "Toggle Night Mode"
-}
+  "night_mode_toggle_tooltip": "Toggle Night Mode",
+  "rebuttal_title": "Roast the text",
+  "rebuttal_description": "Use the analysis to generate a direct rebuttal (experimental)",
+  "rebuttal_button_generate": "Generate",
+  "rebuttal_button_generating": "Generating..."
+  }

@@ -93,5 +93,9 @@
   "analyzer_button_load_json": "Cargar JSON",
   "error_invalid_json_file": "Archivo JSON de HootSpot inválido o corrupto.",
   "error_json_load_failed": "Fallo al cargar el análisis:",
-  "night_mode_toggle_tooltip": "Alternar Modo Nocturno"
+  "night_mode_toggle_tooltip": "Alternar Modo Nocturno",
+  "rebuttal_title": "Hazle un 'roast' al texto",
+  "rebuttal_description": "Usa el análisis para generar una refutación directa (experimental)",
+  "rebuttal_button_generate": "Generar",
+  "rebuttal_button_generating": "Generando..."
 }

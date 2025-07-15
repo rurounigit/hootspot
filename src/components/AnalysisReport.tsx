@@ -6,6 +6,7 @@ import { InfoIcon } from '../constants';
 import { useTranslation } from '../i18n';
 import ShareMenu from './ShareMenu';
 import ManipulationBubbleChart from './ManipulationBubbleChart';
+import RebuttalGenerator from './RebuttalGenerator';
 
 const generateDistantColor = (index: number, saturation: number = 0.7, lightness: number = 0.6) => {
     const goldenAngle = 137.5;
@@ -76,7 +77,14 @@ export const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches,
   );
 };
 
-const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: string | null }> = ({ analysis, sourceText }) => {
+interface AnalysisReportProps {
+  analysis: GeminiAnalysisResponse;
+  sourceText: string | null;
+  apiKey: string | null;
+  selectedModel: string;
+}
+
+const AnalysisReport: React.FC<AnalysisReportProps> = ({ analysis, sourceText, apiKey, selectedModel }) => {
   const [chartDimensions, setChartDimensions] = useState({ width: 0, height: 0 });
   const [activeFindingId, setActiveFindingId] = useState<string | null>(null);
   const { t } = useTranslation();
@@ -223,12 +231,10 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
         )}
       </div>
 
-      {/* --- THIS IS THE CORRECTED CODE BLOCK --- */}
       <div className="bg-info-bg-light dark:bg-info-bg-dark border border-info-border-light dark:border-info-border-dark p-4 rounded-md shadow-sm mb-6">
         <h3 className="text-lg font-semibold text-info-text-light dark:text-info-text-dark mb-1">{t('report_summary_title')}</h3>
         <p className="text-info-text-light dark:text-info-text-dark">{analysis.analysis_summary}</p>
       </div>
-      {/* --- END OF CORRECTION --- */}
 
       {hasFindings && (
         <div className="mb-6">
@@ -272,6 +278,15 @@ const AnalysisReport: React.FC<{ analysis: GeminiAnalysisResponse; sourceText: s
           </div>
         </div>
       ) : (<div className="text-center py-8 px-4 bg-success-bg-light dark:bg-success-bg-dark border border-success-border-light dark:border-success-border-dark rounded-lg"><InfoIcon className="mx-auto h-12 w-12 text-success-text-light dark:text-success-text-dark mb-2"/><p className="text-lg font-medium text-success-text-light dark:text-success-text-dark">{t('report_no_patterns_detected')}</p></div>)}
+
+      {hasFindings && sourceText && (
+        <RebuttalGenerator
+          analysis={analysis}
+          sourceText={sourceText}
+          apiKey={apiKey}
+          selectedModel={selectedModel}
+        />
+      )}
     </div>
   );
 };

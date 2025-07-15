@@ -1,7 +1,7 @@
 // src/services/geminiService.ts
 
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
-import { GEMINI_MODEL_NAME, SYSTEM_PROMPT, TRANSLATION_SYSTEM_PROMPT, ANALYSIS_TRANSLATION_PROMPT } from "../constants";
+import { GEMINI_MODEL_NAME, SYSTEM_PROMPT, TRANSLATION_SYSTEM_PROMPT, ANALYSIS_TRANSLATION_PROMPT, REBUTTAL_SYSTEM_PROMPT } from "../constants";
 import { GeminiAnalysisResponse, GeminiModel } from "../types";
 import { LanguageCode } from "../i18n";
 import { GroupedModels } from "../hooks/useModels";
@@ -218,7 +218,48 @@ export const translateAnalysisResult = async (
   }
 };
 
-// ... fetchModels and translateUI functions remain the same ...
+export const generateRebuttal = async (
+  apiKey: string,
+  sourceText: string,
+  analysis: GeminiAnalysisResponse,
+  modelName: string,
+  languageCode: string
+): Promise<string> => {
+  if (!apiKey) {
+    throw new Error("API Key is not configured.");
+  }
+  if (!sourceText || !analysis) {
+    throw new Error("Source text and analysis are required to generate a rebuttal.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
+
+  // Construct the prompt with the source text, its analysis, and the desired language
+  const prompt = REBUTTAL_SYSTEM_PROMPT
+    .replace('{analysisJson}', JSON.stringify(analysis, null, 2))
+    .replace('{sourceText}', sourceText)
+    .replace('{languageCode}', languageCode);
+
+  try {
+    const response = await ai.models.generateContent({
+      model: modelName,
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      config: {
+        temperature: 0.7,
+        maxOutputTokens: 8192,
+      },
+    });
+
+    return response.text;
+  } catch (error: any) {
+    console.error("Error generating rebuttal:", error);
+    if (error.message && error.message.includes("SAFETY")) {
+        throw new Error("The rebuttal generation was blocked due to safety concerns from the API.");
+    }
+    throw new Error(`Failed to generate rebuttal: ${error.message || "Unknown API error"}`);
+  }
+};
+
 
 export const fetchModels = async (apiKey: string): Promise<GroupedModels> => {
   try {

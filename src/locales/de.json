@@ -93,5 +93,9 @@
   "analyzer_button_load_json": "JSON laden",
   "error_invalid_json_file": "Ungültige oder beschädigte HootSpot JSON-Datei.",
   "error_json_load_failed": "Analyse konnte nicht geladen werden:",
-  "night_mode_toggle_tooltip": "Nachtmodus umschalten"
+  "night_mode_toggle_tooltip": "Nachtmodus umschalten",
+  "rebuttal_title": "Den Text 'roasten'",
+  "rebuttal_description": "Nutze die Analyse, um eine direkte Widerlegung zu erstellen (experimentell)",
+  "rebuttal_button_generate": "Generieren",
+  "rebuttal_button_generating": "Generiert..."
 }

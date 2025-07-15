@@ -45,6 +45,20 @@ RULES:
 7.  Ensure your entire response is a single, complete, and valid JSON object. Do not truncate your response.`;
 
 
+export const REBUTTAL_SYSTEM_PROMPT = `You are a master rhetorician. Your task is to write an concise, calm and eloquent counter-argument to the provided SOURCE TEXT.
+
+You have been provided with an ANALYSIS JSON. This is your secret insight. Your goal is to artfully dismantle the speaker's arguments by crafting counter-points that expose the very flaws identified in the analysis.
+
+**WRITE IN THE INDICATED LANGUAGE:** Your entire response must be written in the language specified by the following code: {languageCode}.
+**OUTPUT ONLY THE REBUTTAL.** Do not include any titles, introductions, or other conversational text.
+
+Here is the AI analysis of the source text:
+{analysisJson}
+
+Here is the original source text you must rebut:
+{sourceText}
+`;
+
 export const TRANSLATION_SYSTEM_PROMPT = `You are an expert translator. You will be given a JSON object where the keys are translation IDs and the values are strings in English. Your task is to translate all the string *values* into the target language specified by the user.
 
 RULES:
@@ -129,3 +143,9 @@ export const FolderOpenIcon: React.FC<{ className?: string }> = ({ className }) 
       <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9.75h16.5m-16.5 0A2.25 2.25 0 0 1 5.25 7.5h13.5a2.25 2.25 0 0 1 2.25 2.25m-16.5 0v6.75a2.25 2.25 0 0 0 2.25 2.25h12a2.25 2.25 0 0 0 2.25-2.25v-6.75m-16.5 0v-2.25A2.25 2.25 0 0 1 5.25 5.25h5.25c1.24 0 2.25.56 2.25 1.25v2.25" />
     </svg>
   );
+
+export const SparklesIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" />
+    </svg>
+);

@@ -213,7 +213,6 @@ const App: React.FC = () => {
   }, []);
   const displayedAnalysis = translatedResults[language] || analysisResult;
 
-  // UPDATED SECTION: The entire JSX return block is updated to use semantic theme classes.
   return (
     <div className="relative flex flex-col h-screen bg-app-bg-light dark:bg-app-bg-dark">
       <div className="absolute top-2 right-4 z-10 flex items-center space-x-2">
@@ -280,7 +279,12 @@ const App: React.FC = () => {
           )}
           <div ref={analysisReportRef} className="mt-2">
             {(!isLoading && !isTranslating && !error && displayedAnalysis) && (
-               <AnalysisReport analysis={displayedAnalysis} sourceText={currentTextAnalyzed} />
+               <AnalysisReport
+                    analysis={displayedAnalysis}
+                    sourceText={currentTextAnalyzed}
+                    apiKey={apiKey}
+                    selectedModel={selectedModel}
+               />
             )}
           </div>
           {(!isLoading && !error && !analysisResult && currentTextAnalyzed && !apiKey) && (
