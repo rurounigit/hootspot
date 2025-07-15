@@ -2,9 +2,11 @@
 
 ![HootSpot AI Logo](public/images/icons/icon128_onwhite.png)
 
-**I started building this extension frustrated by the level of information manipulation in news articles and political statements.**
+**HootSpot is a Chrome Extension that uses the Google Gemini API to help you identify and understand a wide range of psychological, rhetorical, and political manipulation tactics in any text.**
 
-**Initially, I was relying on a 'Dictionary of Rhetorical Manipulation' that I had assembled myself. But it turned out, a more non-deterministic system gave much richer results with more convincing reasoning. HootSpot is a Chrome Extension that uses the Google Gemini API to help you identify and understand a wide range of psychological, rhetorical, and political manipulation tactics in any text.**
+I started building this extension frustrated by the level of information manipulation in news articles and political statements.
+
+Initially, I was relying on a 'Dictionary of Rhetorical Manipulation' that I had assembled myself. But it turned out, a more non-deterministic system gave much richer results with more convincing reasoning. Rhetorical tactics can be found in about any text intended to convince or sway a reader, regardless of the topic.
 
 [![React](https://img.shields.io/badge/React-19-blue?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue?logo=typescript)](https://www.typescriptlang.org/)
@@ -29,9 +31,63 @@ HootSpot runs as a "side panel" in your browser, allowing you to select text fro
 *   **Full Internationalization (i18n)**: The user interface is available in English, German, French, and Spanish out of the box.
 *   **AI-Powered Language Management**: A unique feature that allows you to use the Gemini API to translate the extension's entire interface into any language. Simply provide a language code (e.g., "it" for Italian), and the AI generates the necessary translation files.
 
-## Demo
+## Demo / Examples
 
 <img src="public/images/hootspot-gif.gif" alt="HootSpot" width="40%">
+
+**Their Finest Hour by Winston Churchill**
+**I Am Prepared to Die by Nelson Mandela**
+**Donald Trump’s address to nation after attack on Iran**
+
+<details>
+  <summary>**Their Finest Hour by Winston Churchill**</summary>
+  <br>
+
+  *Analysis and Visualization*
+
+  <img src="public/images/examples/churchill-report.png" alt="Analysis of Churchill's speech" width="100%">
+  <img src="public/images/examples/churchill-chart.png" alt="Analysis of Churchill's speech" width="100%">
+
+  *Highlighted Text*
+
+  <img src="public/images/examples/churchill-highlighted-text.png" alt="Highlighted text of Churchill's speech" width="100%">
+
+  *Found Patterns*
+
+  <img src="public/images/examples/churchill-pattern-01.png" alt="Highlighted text of Churchill's speech" width="100%">
+  <img src="public/images/examples/churchill-pattern-02.png" alt="Highlighted text of Churchill's speech" width="100%">
+  <img src="public/images/examples/churchill-pattern-03.png" alt="Highlighted text of Churchill's speech" width="100%">
+  <img src="public/images/examples/churchill-pattern-04.png" alt="Highlighted text of Churchill's speech" width="100%">
+  <img src="public/images/examples/churchill-pattern-05.png" alt="Highlighted text of Churchill's speech" width="100%">
+  <img src="public/images/examples/churchill-pattern-06.png" alt="Highlighted text of Churchill's speech" width="100%">
+</details>
+
+  ---
+
+  **I Am Prepared to Die by Nelson Mandela**
+
+  *Analysis and Visualization*
+
+  <img src="public/images/screenshot_mandela_analysis.png" alt="Analysis of Mandela's speech" width="100%">
+
+  *Highlighted Text*
+
+  <img src="public/images/screenshot_mandela_text.png" alt="Highlighted text of Mandela's speech" width="100%">
+
+  ---
+
+  **Donald Trump’s address to nation after attack on Iran**
+
+  *Analysis and Visualization*
+
+  <img src="public/images/screenshot_trump_analysis.png" alt="Analysis of Trump's address" width="100%">
+
+  *Highlighted Text*
+
+  <img src="public/images/screenshot_trump_text.png" alt="Highlighted text of Trump's address" width="100%">
+
+</details>
+
 
 ## How It Works
 
