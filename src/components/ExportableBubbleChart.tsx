@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import * as d3 from 'd3';
 import { calculateOptimalFontSize } from '../utils/textUtils';
-import { PDF_CONFIG } from '../pdf-config'; // <-- IMPORT THE CONFIG
+import { PDF_CONFIG } from '../pdf-config';
 
 // --- INTERFACES ---
 interface BubbleData {
@@ -43,13 +43,12 @@ const CategoryHull: React.FC<CategoryHullProps> = ({ nodes, color }) => {
   }, [nodes]);
   if (!pathData) return null;
   return <path d={pathData} fill={color} fillOpacity={0.15} stroke={color}
-    strokeWidth={PDF_CONFIG.HULL_BORDER_SIZE} // <-- USE CONFIG VALUE
+    strokeWidth={PDF_CONFIG.HULL_BORDER_SIZE}
     strokeOpacity={0.4} strokeLinejoin="round" />;
 };
 
 // --- EXPORT-ONLY BUBBLE CHART COMPONENT ---
 const ExportableBubbleChart: React.FC<ExportableBubbleChartProps> = ({ data, width, height }) => {
-  // --- D3 Simulation ---
   const simulatedData = useMemo<SimulationNode[]>(() => {
     if (!data || data.length === 0 || width === 0) return [];
     const nodes: SimulationNode[] = data.map(d => ({ ...d, x: Math.random() * width, y: Math.random() * height }));
@@ -74,10 +73,9 @@ const ExportableBubbleChart: React.FC<ExportableBubbleChartProps> = ({ data, wid
     return nodes;
   }, [data, width, height]);
 
-  // --- Zoom & Pan Transform ---
   const transform = useMemo(() => {
     if (simulatedData.length === 0) return '';
-    const PADDING = PDF_CONFIG.CHART_ZOOM_PADDING; // <-- USE CONFIG VALUE
+    const PADDING = PDF_CONFIG.CHART_ZOOM_PADDING;
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     simulatedData.forEach(node => {
       minX = Math.min(minX, node.x! - node.radius);
@@ -111,8 +109,11 @@ const ExportableBubbleChart: React.FC<ExportableBubbleChartProps> = ({ data, wid
         {simulatedData.map((node) => {
           const { x, y, radius, color, name, id } = node;
 
-          // Call the function to get the perfect font size and lines.
-          const { fontSize, lines } = calculateOptimalFontSize(name, radius, 6);
+          const { fontSize, lines } = calculateOptimalFontSize(name, radius, {
+            minFont: PDF_CONFIG.BUBBLE_MIN_FONT_SIZE,
+            maxFontSize: PDF_CONFIG.BUBBLE_MAX_FONT_SIZE,
+            paddingFactor: PDF_CONFIG.BUBBLE_TEXT_PADDING_FACTOR,
+          });
 
           return (
             <g key={id} transform={`translate(${x}, ${y})`}>
@@ -123,12 +124,10 @@ const ExportableBubbleChart: React.FC<ExportableBubbleChartProps> = ({ data, wid
                 fill="white"
                 style={{ fontSize: `${fontSize}px`, fontWeight: 'bold', pointerEvents: 'none' }}
               >
-                {/* Render the pre-calculated lines */}
                 {lines.map((line, index, arr) => (
                   <tspan
                     key={index}
                     x={0}
-                    // This dy calculation correctly centers multi-line text
                     dy={index === 0 ? `-${(arr.length - 1) * 0.55}em` : '1.1em'}
                   >
                     {line}

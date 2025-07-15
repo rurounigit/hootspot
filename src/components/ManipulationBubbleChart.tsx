@@ -3,8 +3,8 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useTranslation } from '../i18n';
 import * as d3 from 'd3';
-import { calculateOptimalFontSize } from '../utils/textUtils'; // <-- IMPORT THE NEW FUNCTION
-import { transform } from 'html2canvas/dist/types/css/property-descriptors/transform';
+import { calculateOptimalFontSize } from '../utils/textUtils';
+import { UI_CHART_CONFIG } from '../ui-chart-config';
 
 // --- INTERFACES ---
 interface BubbleData {
@@ -27,8 +27,8 @@ const CustomTooltip = ({ active, payload, t, coordinate }: any) => {
         className="p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl text-sm pointer-events-none"
         style={{ position: 'fixed', top: coordinate.y, left: coordinate.x, zIndex: 1000, transform: 'translate(10px, 10px)' }}
       >
-        <p className="font-bold text-gray-800 dark:text-gray-100">{data.name}</p>
-        <p style={{ color: data.color }}>{t('report_profile_strength')}: {data.strength}</p>
+        <p className="font-bold text-gray-800 dark:text-gray-100" style={{ color: data.color }}>{data.name}</p>
+        <p className="text-gray-600 dark:text-gray-400">{t('report_profile_strength')}: {data.strength}</p>
         <p className="text-gray-600 dark:text-gray-400">{t('report_profile_category')}: {t(data.category)}</p>
       </div>
     );
@@ -61,7 +61,7 @@ const CategoryHull: React.FC<CategoryHullProps> = ({ nodes, color, onMouseOver, 
     return d3.line().x(d => d[0]).y(d => d[1]).curve(d3.curveCatmullRomClosed.alpha(0.7))(hull);
   }, [nodes]);
   if (!pathData) return null;
-  return <path d={pathData} fill={color} fillOpacity={0.15} stroke={color} strokeWidth={2} strokeOpacity={0.4} strokeLinejoin="round" onMouseOver={onMouseOver} onMouseLeave={onMouseLeave} style={{ cursor: 'pointer' }} />;
+  return <path d={pathData} fill={color} fillOpacity={0.15} stroke={color} strokeWidth={UI_CHART_CONFIG.HULL_BORDER_SIZE} strokeOpacity={0.4} strokeLinejoin="round" onMouseOver={onMouseOver} onMouseLeave={onMouseLeave} style={{ cursor: 'pointer' }} />;
 };
 
 
@@ -127,11 +127,11 @@ const ManipulationBubbleChart: React.FC<ManipulationBubbleChartProps> = ({
 
   const viewBox = useMemo(() => {
     if (!simulatedData || simulatedData.length === 0) {
-      return `0 0 ${dimensions.width} ${dimensions.height}`; // Default fallback
+      return `0 0 ${dimensions.width} ${dimensions.height}`;
     }
 
-    const HULL_PADDING = 15; // Padding used by the CategoryHull component
-    const ZOOM_PADDING = 20; // Extra padding around the entire content
+    const HULL_PADDING = 15;
+    const ZOOM_PADDING = UI_CHART_CONFIG.VIEWBOX_ZOOM_PADDING;
 
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
 
@@ -171,9 +171,13 @@ const ManipulationBubbleChart: React.FC<ManipulationBubbleChartProps> = ({
           {simulatedData.map((node: SimulationNode) => {
             const { x, y, radius, color, name, id } = node;
             const isActive = activeFindingId === id;
-            const strokeStyle = isActive ? { stroke: '#2563eb', strokeWidth: 4, strokeOpacity: 1 } : { stroke: 'white', strokeWidth: 0, opacity: 0.95 };
+            const strokeStyle = isActive ? { stroke: '#2563eb', strokeWidth: UI_CHART_CONFIG.ACTIVE_BUBBLE_STROKE_WIDTH, strokeOpacity: 1 } : { stroke: 'white', strokeWidth: 0, opacity: 0.95 };
 
-            const { fontSize, lines } = calculateOptimalFontSize(name, radius, 6);
+            const { fontSize, lines } = calculateOptimalFontSize(name, radius, {
+              minFont: UI_CHART_CONFIG.BUBBLE_MIN_FONT_SIZE,
+              maxFontSize: UI_CHART_CONFIG.BUBBLE_MAX_FONT_SIZE,
+              paddingFactor: UI_CHART_CONFIG.BUBBLE_TEXT_PADDING_FACTOR,
+            });
 
             return (
               <g
@@ -190,7 +194,7 @@ const ManipulationBubbleChart: React.FC<ManipulationBubbleChartProps> = ({
                   textAnchor="middle"
                   dominantBaseline="central"
                   fill="white"
-                  style={{ fontSize: `${fontSize}px`, fontWeight: 'bold', pointerEvents: 'none', textShadow: '0px 1px 2px rgba(0,0,0,0.5)' }}
+                  style={{ fontSize: `${fontSize}px`, fontWeight: 'bold', pointerEvents: 'none', textShadow: UI_CHART_CONFIG.BUBBLE_TEXT_SHADOW }}
                 >
                   {lines.map((line, index, arr) => (
                     <tspan

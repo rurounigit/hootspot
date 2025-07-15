@@ -1,7 +1,5 @@
 // src/utils/textUtils.ts
 
-import { PDF_CONFIG } from '../pdf-config'; // <-- IMPORT THE CONFIG
-
 // --- Create a single, reusable canvas for text measurement ---
 const canvas = document.createElement('canvas');
 const context = canvas.getContext('2d');
@@ -34,7 +32,6 @@ export const wrapSvgText = (text: string, availableWidth: number, fontSize: numb
     if (testLineWidth <= availableWidth) {
       currentLine = testLine;
     } else {
-      // The current line is full, push it to the results.
       if (currentLine) {
         lines.push(currentLine);
       }
@@ -42,31 +39,24 @@ export const wrapSvgText = (text: string, availableWidth: number, fontSize: numb
       const wordWidth = context.measureText(word).width;
 
       if (wordWidth <= availableWidth) {
-        // The new word fits on a line by itself.
         currentLine = word;
       } else {
-        // The word itself is too long and must be broken at the character level.
         let tempWord = '';
         for (let i = 0; i < word.length; i++) {
           const char = word[i];
           const nextTempWord = tempWord + char;
-          // Check if the substring plus a hyphen still fits
           if (context.measureText(nextTempWord + '-').width <= availableWidth) {
             tempWord = nextTempWord;
           } else {
-            // The character overflows, so push the previous fitting substring with a hyphen.
             lines.push(tempWord + '-');
-            // Start the new tempWord with the current character.
             tempWord = char;
           }
         }
-        // The remainder of the word becomes the new current line.
         currentLine = tempWord;
       }
     }
   }
 
-  // Add the final line to the array.
   if (currentLine) {
     lines.push(currentLine);
   }
@@ -81,20 +71,23 @@ export const wrapSvgText = (text: string, availableWidth: number, fontSize: numb
  *
  * @param text The text to be fitted.
  * @param radius The radius of the containing circle.
- * @param minFont The minimum allowable font size (e.g., 6).
+ * @param options An object containing padding and font size constraints.
  * @returns An object containing the optimal `fontSize` and the `lines` of wrapped text.
  */
 export const calculateOptimalFontSize = (
   text: string,
   radius: number,
-  minFont: number = 6
+  options: {
+    minFont: number;
+    maxFontSize: number;
+    paddingFactor: number;
+  }
 ): { fontSize: number; lines: string[] } => {
+  const { minFont, maxFontSize, paddingFactor } = options;
   if (!text || radius <= 0) return { fontSize: minFont, lines: [] };
 
-  // Use values from the config file
   let low = minFont;
-  let high = PDF_CONFIG.BUBBLE_MAX_FONT_SIZE;
-  const paddingFactor = PDF_CONFIG.BUBBLE_TEXT_PADDING_FACTOR;
+  let high = maxFontSize;
 
   let bestFit = { fontSize: minFont, lines: wrapSvgText(text, radius * 2 * paddingFactor, minFont) };
 
@@ -133,7 +126,6 @@ export const calculateOptimalFontSize = (
     }
   }
 
-  // Final check to handle truncation if the smallest font still overflows.
   const finalHeight = bestFit.lines.length * bestFit.fontSize * LINE_HEIGHT;
   if (finalHeight > radius * 2 * paddingFactor) {
       const maxLines = Math.floor((radius * 2 * paddingFactor) / (bestFit.fontSize * LINE_HEIGHT));

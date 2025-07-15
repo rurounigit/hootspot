@@ -18,7 +18,7 @@ interface ShareMenuProps {
   sourceText: string | null;
   highlightData: any[];
   patternColorMap: Map<string, string>;
-  bubbleChartData: BubbleData[]; // This prop is now required
+  bubbleChartData: BubbleData[];
 }
 
 const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightData, patternColorMap, bubbleChartData }) => {
@@ -28,7 +28,7 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
   const menuRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const pdfDataRef = useRef<any>(null);
-  const pdfFilenameRef = useRef<string | null>(null); // Ref to hold the dynamic filename
+  const pdfFilenameRef = useRef<string | null>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -43,7 +43,6 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
         }
       } else if (type === 'PDF_GENERATED' && blob) {
         const objectUrl = URL.createObjectURL(blob);
-        // Use the filename from the ref
         chrome.runtime.sendMessage({ type: 'DOWNLOAD_PDF', url: objectUrl, filename: pdfFilenameRef.current });
         setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
         cleanup();
@@ -68,7 +67,7 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
       iframeRef.current = null;
     }
     pdfDataRef.current = null;
-    pdfFilenameRef.current = null; // Clean up the ref
+    pdfFilenameRef.current = null;
     setIsGenerating(false);
   };
 
@@ -76,15 +75,12 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
     setIsMenuOpen(false);
     setIsGenerating(true);
 
-    // Generate a unique, timestamp-based ID for the filename
     const now = new Date();
     const pad = (num: number) => num.toString().padStart(2, '0');
     const reportId = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
     pdfFilenameRef.current = `HootSpot_Analysis_Report_${reportId}.pdf`;
 
     let chartImage: string | null = null;
-
-    // Create a hidden container for the off-screen rendering
     const hiddenContainer = document.createElement('div');
     hiddenContainer.style.position = 'absolute';
     hiddenContainer.style.left = '-9999px';
@@ -94,8 +90,6 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
     document.body.appendChild(hiddenContainer);
 
     const root = createRoot(hiddenContainer);
-
-    // Render the export-only chart into the hidden div
     root.render(
       <ExportableBubbleChart
         data={bubbleChartData}
@@ -104,19 +98,17 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
       />
     );
 
-    // Wait for rendering to complete
     await new Promise(resolve => setTimeout(resolve, 200));
 
     try {
       const canvas = await html2canvas(hiddenContainer, {
-        scale: PDF_CONFIG.CHART_IMAGE_SCALE, // <-- USE CONFIG VALUE
-        backgroundColor: null // Let the container's color be used
+        scale: PDF_CONFIG.CHART_IMAGE_SCALE,
+        backgroundColor: null
       });
       chartImage = canvas.toDataURL('image/png');
     } catch (error) {
       console.error("Failed to capture chart image:", error);
     } finally {
-      // Clean up gracefully
       root.unmount();
       document.body.removeChild(hiddenContainer);
     }
@@ -152,11 +144,9 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
   };
 
   const handleJsonDownload = () => {
-    // Generate a unique, timestamp-based ID
     const now = new Date();
     const pad = (num: number) => num.toString().padStart(2, '0');
     const reportId = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-
     const filename = `HootSpot_Analysis_Report_${reportId}.json`;
 
     const dataToSave = {
@@ -174,14 +164,41 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
 
   return (
     <div className="relative share-menu-container ml-3" ref={menuRef}>
-      <button onClick={() => setIsMenuOpen(!isMenuOpen)} disabled={isGenerating} className="p-2 text-gray-500 hover:text-blue-600 rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-wait" title={t('share_menu_tooltip')}>
-        {isGenerating ? <div className="spinner w-5 h-5 border-t-blue-600"></div> : <ShareIcon className="w-5 h-5 pr-[3px]" />}
+      {/* --- THIS IS THE CORRECTED BUTTON --- */}
+      <button
+        onClick={() => setIsMenuOpen(!isMenuOpen)}
+        disabled={isGenerating}
+        className="p-2 rounded-full disabled:opacity-50 disabled:cursor-wait
+                   bg-gray-100 text-gray-600
+                   dark:bg-input-bg-dark dark:text-text-subtle-dark
+                   hover:text-link-light dark:hover:text-link-dark
+                   transition-colors duration-150"
+        title={t('share_menu_tooltip')}
+      >
+        {isGenerating
+          ? <div className="spinner w-5 h-5 border-t-link-light"></div>
+          : <ShareIcon className="w-5 h-5 pr-[3px]" />
+        }
       </button>
+
+      {/* The menu dropdown has also been updated to use theme-consistent colors */}
       {isMenuOpen && (
-        <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 border border-gray-200">
+        <div className="absolute left-0 mt-2 w-48 bg-panel-bg-light dark:bg-panel-bg-dark rounded-md shadow-lg z-20 border border-panel-border-light dark:border-panel-border-dark">
           <ul className="py-1">
-            <li><button onClick={handlePdfDownload} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">{t('share_menu_pdf')}</button></li>
-            <li><button onClick={handleJsonDownload} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">{t('share_menu_json')}</button></li>
+            <li>
+              <button
+                onClick={handlePdfDownload}
+                className="w-full text-left px-4 py-2 text-sm text-text-main-light dark:text-text-main-dark hover:bg-container-bg-light dark:hover:bg-container-bg-dark">
+                  {t('share_menu_pdf')}
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={handleJsonDownload}
+                className="w-full text-left px-4 py-2 text-sm text-text-main-light dark:text-text-main-dark hover:bg-container-bg-light dark:hover:bg-container-bg-dark">
+                  {t('share_menu_json')}
+              </button>
+            </li>
           </ul>
         </div>
       )}
