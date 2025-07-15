@@ -36,6 +36,9 @@ HootSpot runs as a "side panel" in your browser, allowing you to select text fro
 <img src="public/images/hootspot-gif.gif" alt="HootSpot" width="40%">
 
 **Their Finest Hour by Winston Churchill**
+
+“What General Weygand called the Battle of France is over. I expect that the Battle of Britain is about to begin. Upon this battle depends the survival of Christian civilization. Upon it depends our own British life, and the long continuity of our institutions and our Empire. The whole fury and might of the enemy must very soon be turned on us. Hitler knows that he will have to break us in this Island or lose the war. If we can stand up to him, all Europe may be free and the life of the world may move forward into broad, sunlit uplands. But if we fail, then the whole world, including the United States, including all that we have known and cared for, will sink into the abyss of a new Dark Age made more sinister, and perhaps more protracted, by the lights of perverted science. Let us therefore brace ourselves to our duties, and so bear ourselves that, if the British Empire and its Commonwealth last for a thousand years, men will still say, “This was their finest hour.””
+
 <details>
   <summary>Click to see details</summary>
   <br>
@@ -56,7 +59,6 @@ HootSpot runs as a "side panel" in your browser, allowing you to select text fro
   <img src="public/images/examples/churchill-pattern-03.jpg" alt="Highlighted text of Churchill's speech" width="40%">
   <img src="public/images/examples/churchill-pattern-04.jpg" alt="Highlighted text of Churchill's speech" width="40%">
   <img src="public/images/examples/churchill-pattern-05.jpg" alt="Highlighted text of Churchill's speech" width="40%">
-  <img src="public/images/examples/churchill-pattern-06.jpg" alt="Highlighted text of Churchill's speech" width="40%">
 </details>
 
   ---
