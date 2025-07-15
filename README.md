@@ -4,9 +4,11 @@
 
 **HootSpot is a Chrome Extension that uses the Google Gemini API to help you identify and understand a wide range of psychological, rhetorical, and political manipulation tactics in any text.**
 
+**It runs as a "side panel" in your browser, allowing you to select text from any webpage or paste it directly to receive an instant, in-depth analysis of its underlying messaging and potential manipulative techniques. Your API key is stored locally, ensuring your privacy.**
+
 I started building this extension frustrated by the level of information manipulation in news articles and political statements.
 
-Initially, I was relying on a 'Dictionary of Rhetorical Manipulation' that I had assembled myself. But it turned out, a more non-deterministic system gave much richer results with more convincing reasoning. Rhetorical tactics can be found in about any text intended to convince or sway a reader, regardless of the topic.
+Initially, I was relying on a 'Dictionary of Rhetorical Manipulation' that I had assembled myself. But it turned out, a more non-deterministic system gave much richer results with more convincing reasoning. Rhetorical tactics as it turns out can be found in about any text intended to convince or sway a reader, regardless of political affiliation or topic.
 
 [![React](https://img.shields.io/badge/React-19-blue?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue?logo=typescript)](https://www.typescriptlang.org/)
@@ -14,8 +16,6 @@ Initially, I was relying on a 'Dictionary of Rhetorical Manipulation' that I had
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-blue?logo=tailwindcss)](https://tailwindcss.com/)
 [![D3.js](https://img.shields.io/badge/D3.js-7.9-orange?logo=d3dotjs)](https://d3js.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-HootSpot runs as a "side panel" in your browser, allowing you to select text from any webpage or paste it directly to receive an instant, in-depth analysis of its underlying messaging and potential manipulative techniques. Your API key is stored locally, ensuring your privacy.
 
 ---
 
@@ -49,12 +49,12 @@ HootSpot runs as a "side panel" in your browser, allowing you to select text fro
 
   <img src="public/images/examples/churchill-report.jpg" alt="Analysis of Churchill's speech" width="40%">
   <img src="public/images/examples/churchill-chart.jpg" alt="Analysis of Churchill's speech" width="40%">
-  <br>
+  <br><br>
 
   *Highlighted Text*
 
   <img src="public/images/examples/churchill-highlighted-text.jpg" alt="Highlighted text of Churchill's speech" width="40%">
-  <br>
+  <br><br>
 
   *Found Patterns*
 
@@ -85,12 +85,12 @@ During my lifetime I have dedicated my life to this struggle of the African peop
 
   <img src="public/images/examples/mandela-report.jpg" alt="Analysis of Churchill's speech" width="40%">
   <img src="public/images/examples/mandela-chart.jpg" alt="Analysis of Churchill's speech" width="40%">
-  <br>
+  <br><br>
 
   *Highlighted Text*
 
   <img src="public/images/examples/mandela-highlighted-text.jpg" alt="Highlighted text of Churchill's speech" width="40%">
-  <br>
+  <br><br>
 
   *Found Patterns*
 
@@ -115,12 +115,12 @@ During my lifetime I have dedicated my life to this struggle of the African peop
 
   <img src="public/images/examples/trump-report.jpg" alt="Analysis of Churchill's speech" width="40%">
   <img src="public/images/examples/trump-chart.jpg" alt="Analysis of Churchill's speech" width="40%">
-  <br>
+  <br><br>
 
   *Highlighted Text*
 
   <img src="public/images/examples/trump-highlighted-text.jpg" alt="Highlighted text of Churchill's speech" width="40%">
-  <br>
+  <br><br>
 
   *Found Patterns*
 
