@@ -106,6 +106,7 @@ const styles = StyleSheet.create({
     breakInside: 'avoid',
     overflow: 'hidden',
     borderWidth: 1,
+    backgroundColor: '#f9fafb',
   },
   findingHeader: {
     padding: 10,
@@ -118,7 +119,6 @@ const styles = StyleSheet.create({
   },
   findingBody: {
     padding: 12,
-    backgroundColor: '#f9fafb',
   },
   findingQuoteLabel: {
     fontFamily: 'Helvetica-Bold',
