@@ -36,59 +36,78 @@ HootSpot runs as a "side panel" in your browser, allowing you to select text fro
 <img src="public/images/hootspot-gif.gif" alt="HootSpot" width="40%">
 
 **Their Finest Hour by Winston Churchill**
-**I Am Prepared to Die by Nelson Mandela**
-**Donald Trump’s address to nation after attack on Iran**
-
-**Their Finest Hour by Winston Churchill**
 <details>
   <summary>Click to see details</summary>
   <br>
 
   *Analysis and Visualization*
 
-  <img src="public/images/examples/churchill-report.jpg" alt="Analysis of Churchill's speech" width="30%">
-  <img src="public/images/examples/churchill-chart.jpg" alt="Analysis of Churchill's speech" width="30%">
+  <img src="public/images/examples/churchill-report.jpg" alt="Analysis of Churchill's speech" width="40%">
+  <img src="public/images/examples/churchill-chart.jpg" alt="Analysis of Churchill's speech" width="40%">
 
   *Highlighted Text*
 
-  <img src="public/images/examples/churchill-highlighted-text.jpg" alt="Highlighted text of Churchill's speech" width="100%">
+  <img src="public/images/examples/churchill-highlighted-text.jpg" alt="Highlighted text of Churchill's speech" width="40%">
 
   *Found Patterns*
 
-  <img src="public/images/examples/churchill-pattern-01.jpg" alt="Highlighted text of Churchill's speech" width="30%">
-  <img src="public/images/examples/churchill-pattern-02.jpg" alt="Highlighted text of Churchill's speech" width="30%">
-  <img src="public/images/examples/churchill-pattern-03.jpg" alt="Highlighted text of Churchill's speech" width="30%">
-  <img src="public/images/examples/churchill-pattern-04.jpg" alt="Highlighted text of Churchill's speech" width="30%">
-  <img src="public/images/examples/churchill-pattern-05.jpg" alt="Highlighted text of Churchill's speech" width="30%">
-  <img src="public/images/examples/churchill-pattern-06.jpg" alt="Highlighted text of Churchill's speech" width="30%">
+  <img src="public/images/examples/churchill-pattern-01.jpg" alt="Highlighted text of Churchill's speech" width="40%">
+  <img src="public/images/examples/churchill-pattern-02.jpg" alt="Highlighted text of Churchill's speech" width="40%">
+  <img src="public/images/examples/churchill-pattern-03.jpg" alt="Highlighted text of Churchill's speech" width="40%">
+  <img src="public/images/examples/churchill-pattern-04.jpg" alt="Highlighted text of Churchill's speech" width="40%">
+  <img src="public/images/examples/churchill-pattern-05.jpg" alt="Highlighted text of Churchill's speech" width="40%">
+  <img src="public/images/examples/churchill-pattern-06.jpg" alt="Highlighted text of Churchill's speech" width="40%">
 </details>
 
   ---
 
-  **I Am Prepared to Die by Nelson Mandela**
+**I Am Prepared to Die by Nelson Mandela**
+<details>
+  <summary>Click to see details</summary>
+  <br>
 
   *Analysis and Visualization*
 
-  <img src="public/images/screenshot_mandela_analysis.png" alt="Analysis of Mandela's speech" width="100%">
+  <img src="public/images/examples/mandela-report.jpg" alt="Analysis of Churchill's speech" width="40%">
+  <img src="public/images/examples/mandela-chart.jpg" alt="Analysis of Churchill's speech" width="40%">
 
   *Highlighted Text*
 
-  <img src="public/images/screenshot_mandela_text.png" alt="Highlighted text of Mandela's speech" width="100%">
+  <img src="public/images/examples/mandela-highlighted-text.jpg" alt="Highlighted text of Churchill's speech" width="40%">
+
+  *Found Patterns*
+
+  <img src="public/images/examples/mandela-pattern-01.jpg" alt="Highlighted text of Churchill's speech" width="40%">
+  <img src="public/images/examples/mandela-pattern-02.jpg" alt="Highlighted text of Churchill's speech" width="40%">
+  <img src="public/images/examples/mandela-pattern-03.jpg" alt="Highlighted text of Churchill's speech" width="40%">
+  <img src="public/images/examples/mandela-pattern-04.jpg" alt="Highlighted text of Churchill's speech" width="40%">
+  <img src="public/images/examples/mandela-pattern-05.jpg" alt="Highlighted text of Churchill's speech" width="40%">
+</details>
 
   ---
 
-  **Donald Trump’s address to nation after attack on Iran**
+**Donald Trump’s address to nation after attack on Iran**
+<details>
+  <summary>Click to see details</summary>
+  <br>
 
   *Analysis and Visualization*
 
-  <img src="public/images/screenshot_trump_analysis.png" alt="Analysis of Trump's address" width="100%">
+  <img src="public/images/examples/trump-report.jpg" alt="Analysis of Churchill's speech" width="40%">
+  <img src="public/images/examples/trump-chart.jpg" alt="Analysis of Churchill's speech" width="40%">
 
   *Highlighted Text*
 
-  <img src="public/images/screenshot_trump_text.png" alt="Highlighted text of Trump's address" width="100%">
+  <img src="public/images/examples/trump-highlighted-text.jpg" alt="Highlighted text of Churchill's speech" width="40%">
 
+  *Found Patterns*
+
+  <img src="public/images/examples/trump-pattern-01.jpg" alt="Highlighted text of Churchill's speech" width="40%">
+  <img src="public/images/examples/trump-pattern-02.jpg" alt="Highlighted text of Churchill's speech" width="40%">
+  <img src="public/images/examples/trump-pattern-03.jpg" alt="Highlighted text of Churchill's speech" width="40%">
+  <img src="public/images/examples/trump-pattern-04.jpg" alt="Highlighted text of Churchill's speech" width="40%">
+  <img src="public/images/examples/trump-pattern-05.jpg" alt="Highlighted text of Churchill's speech" width="40%">
 </details>
-
 
 ## How It Works
 
