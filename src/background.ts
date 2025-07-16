@@ -126,7 +126,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       chrome.downloads.download({
         url: request.url,
         filename: request.filename || 'HootSpot_Analysis_Report.pdf',
-        saveAs: true
+        saveAs: false
       });
     }
     return true;
