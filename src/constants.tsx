@@ -45,7 +45,7 @@ RULES:
 7.  Ensure your entire response is a single, complete, and valid JSON object. Do not truncate your response.`;
 
 
-export const REBUTTAL_SYSTEM_PROMPT = `You are a master rhetorician. Your task is to write an concise, calm and eloquent counter-argument to the provided SOURCE TEXT.
+export const REBUTTAL_SYSTEM_PROMPT = `You are a master rhetorician. Your task is to write an concise and calm counter-argument to the provided SOURCE TEXT.
 
 You have been provided with an ANALYSIS JSON. This is your secret insight. Your goal is to artfully dismantle the speaker's arguments by crafting counter-points that expose the very flaws identified in the analysis.
 
