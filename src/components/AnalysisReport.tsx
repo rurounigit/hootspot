@@ -82,9 +82,24 @@ interface AnalysisReportProps {
   sourceText: string | null;
   apiKey: string | null;
   selectedModel: string;
+  rebuttal: string | null;
+  isTranslatingRebuttal: boolean;
+  onRebuttalUpdate: (newRebuttal: string) => void;
+  includeRebuttalInJson: boolean;
+  includeRebuttalInPdf: boolean;
 }
 
-const AnalysisReport: React.FC<AnalysisReportProps> = ({ analysis, sourceText, apiKey, selectedModel }) => {
+const AnalysisReport: React.FC<AnalysisReportProps> = ({
+    analysis,
+    sourceText,
+    apiKey,
+    selectedModel,
+    rebuttal,
+    isTranslatingRebuttal,
+    onRebuttalUpdate,
+    includeRebuttalInJson,
+    includeRebuttalInPdf,
+}) => {
   const [chartDimensions, setChartDimensions] = useState({ width: 0, height: 0 });
   const [activeFindingId, setActiveFindingId] = useState<string | null>(null);
   const { t } = useTranslation();
@@ -227,6 +242,9 @@ const AnalysisReport: React.FC<AnalysisReportProps> = ({ analysis, sourceText, a
               highlightData={finalHighlights}
               patternColorMap={patternColorMap}
               bubbleChartData={bubbleChartData}
+              rebuttal={rebuttal}
+              includeRebuttalInJson={includeRebuttalInJson}
+              includeRebuttalInPdf={includeRebuttalInPdf}
            />
         )}
       </div>
@@ -285,6 +303,9 @@ const AnalysisReport: React.FC<AnalysisReportProps> = ({ analysis, sourceText, a
           sourceText={sourceText}
           apiKey={apiKey}
           selectedModel={selectedModel}
+          rebuttalForDisplay={rebuttal}
+          isTranslating={isTranslatingRebuttal}
+          onUpdate={onRebuttalUpdate}
         />
       )}
     </div>

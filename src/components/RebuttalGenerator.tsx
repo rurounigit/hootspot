@@ -11,26 +11,35 @@ interface RebuttalGeneratorProps {
     sourceText: string | null;
     apiKey: string | null;
     selectedModel: string;
+    rebuttalForDisplay: string | null;
+    isTranslating: boolean; // Renamed to be more generic, but only used for display
+    onUpdate: (newRebuttal: string) => void;
 }
 
-const RebuttalGenerator: React.FC<RebuttalGeneratorProps> = ({ analysis, sourceText, apiKey, selectedModel }) => {
-    const { t, language } = useTranslation(); // Get the current language code
-    const [rebuttalText, setRebuttalText] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
+const RebuttalGenerator: React.FC<RebuttalGeneratorProps> = ({
+    analysis,
+    sourceText,
+    apiKey,
+    selectedModel,
+    rebuttalForDisplay,
+    isTranslating,
+    onUpdate
+}) => {
+    const { t, language } = useTranslation();
+    const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const handleGenerate = async () => {
         if (!apiKey || !sourceText) return;
-        setIsLoading(true);
+        setIsGenerating(true);
         setError(null);
-        setRebuttalText(null);
         try {
-            const result = await generateRebuttal(apiKey, sourceText, analysis, selectedModel, language); // Pass the language code
-            setRebuttalText(result);
+            const result = await generateRebuttal(apiKey, sourceText, analysis, selectedModel, language);
+            onUpdate(result);
         } catch (err: any) {
             setError(err.message);
         } finally {
-            setIsLoading(false);
+            setIsGenerating(false);
         }
     };
 
@@ -44,10 +53,10 @@ const RebuttalGenerator: React.FC<RebuttalGeneratorProps> = ({ analysis, sourceT
             </p>
             <button
                 onClick={handleGenerate}
-                disabled={isLoading || !apiKey}
+                disabled={isGenerating || isTranslating || !apiKey}
                 className="flex items-center justify-center px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-button-disabled-bg-light dark:disabled:bg-button-disabled-bg-dark"
             >
-                {isLoading ? (
+                {isGenerating ? (
                     <>
                         <div className="spinner w-5 h-5 border-t-white mr-2"></div>
                         {t('rebuttal_button_generating')}
@@ -67,9 +76,9 @@ const RebuttalGenerator: React.FC<RebuttalGeneratorProps> = ({ analysis, sourceT
                 </div>
             )}
 
-            {rebuttalText && (
+            {rebuttalForDisplay && !isGenerating && (
                 <div className="mt-4 p-4 bg-panel-bg-light dark:bg-panel-bg-dark rounded-md shadow border border-panel-border-light dark:border-panel-border-dark">
-                    <p className="whitespace-pre-wrap text-text-main-light dark:text-text-main-dark">{rebuttalText}</p>
+                    <p className="whitespace-pre-wrap text-text-main-light dark:text-text-main-dark">{rebuttalForDisplay}</p>
                 </div>
             )}
         </div>

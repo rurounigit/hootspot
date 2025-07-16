@@ -23,6 +23,8 @@
   "config_model_preview_group": "Modelos de Vista Previa",
   "config_button_save_test": "Guardar y Probar Configuración",
   "config_night_mode": "Modo Nocturno",
+  "config_include_rebuttal_json": "Incluir refutación en JSON",
+  "config_include_rebuttal_pdf": "Incluir refutación en PDF",
   "config_button_saving": "Probando y Guardando...",
   "config_api_key_configured": "La clave de API está configurada. Expanda para cambiar la configuración.",
   "config_api_key_not_configured": "Clave de API no configurada. Por favor, expanda e introduzca su clave.",
@@ -95,7 +97,10 @@
   "error_json_load_failed": "Fallo al cargar el análisis:",
   "night_mode_toggle_tooltip": "Alternar Modo Nocturno",
   "rebuttal_title": "Hazle un 'roast' al texto",
+  "rebuttal_title_pdf": "Refutación",
   "rebuttal_description": "Usa el análisis para generar una refutación directa (experimental)",
   "rebuttal_button_generate": "Generar",
-  "rebuttal_button_generating": "Generando..."
+  "rebuttal_button_generating": "Generando...",
+  "info_translating_rebuttal": "Traduciendo refutación...",
+  "error_rebuttal_translation_failed": "Fallo al traducir la refutación: {message}"
 }

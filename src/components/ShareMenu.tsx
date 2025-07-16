@@ -19,9 +19,21 @@ interface ShareMenuProps {
   highlightData: any[];
   patternColorMap: Map<string, string>;
   bubbleChartData: BubbleData[];
+  rebuttal: string | null;
+  includeRebuttalInJson: boolean;
+  includeRebuttalInPdf: boolean;
 }
 
-const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightData, patternColorMap, bubbleChartData }) => {
+const ShareMenu: React.FC<ShareMenuProps> = ({
+    analysis,
+    sourceText,
+    highlightData,
+    patternColorMap,
+    bubbleChartData,
+    rebuttal,
+    includeRebuttalInJson,
+    includeRebuttalInPdf,
+}) => {
   const { t } = useTranslation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -119,12 +131,14 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
       highlightData,
       chartImage,
       patternColorMap: Object.fromEntries(patternColorMap.entries()),
+      rebuttal: includeRebuttalInPdf ? rebuttal : null,
       translations: {
         reportTitle: t('pdf_report_title'),
         summaryTitle: t('report_summary_title'),
         highlightedTextTitle: t('report_highlighted_text_title'),
         profileTitle: t('report_profile_title'),
         detectedPatternsTitle: t('report_detected_patterns_title'),
+        rebuttalTitle: t('rebuttal_title_pdf'),
         quoteLabel: t('report_quote_label'),
         explanationLabel: t('report_explanation_label'),
         pageNumber: t('pdf_page_number'),
@@ -149,11 +163,16 @@ const ShareMenu: React.FC<ShareMenuProps> = ({ analysis, sourceText, highlightDa
     const reportId = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
     const filename = `HootSpot_Analysis_Report_${reportId}.json`;
 
-    const dataToSave = {
+    const dataToSave: any = {
       reportId: reportId,
       sourceText: sourceText,
       analysisResult: analysis
     };
+
+    if (includeRebuttalInJson && rebuttal) {
+      dataToSave.rebuttal = rebuttal;
+    }
+
     const jsonString = JSON.stringify(dataToSave, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);

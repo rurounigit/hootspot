@@ -6,7 +6,7 @@ import TextAnalyzer from './components/TextAnalyzer';
 import AnalysisReport from './components/AnalysisReport';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import { useTranslation } from './i18n';
-import { analyzeText, translateAnalysisResult } from './services/geminiService';
+import { analyzeText, translateAnalysisResult, translateText } from './services/geminiService';
 import { useModels } from './hooks/useModels';
 import { GeminiAnalysisResponse, GeminiModel } from './types';
 import {
@@ -18,12 +18,13 @@ import {
   GEMINI_MODEL_NAME,
   SunIcon,
   MoonIcon,
+  INCLUDE_REBUTTAL_JSON_KEY,
+  INCLUDE_REBUTTAL_PDF_KEY,
 } from './constants';
 
 const NIGHT_MODE_STORAGE_KEY = 'hootspot-night-mode';
 
 const App: React.FC = () => {
-  // NO CHANGE IN THIS SECTION (State and Hooks)
   const { t, language } = useTranslation();
   const [apiKey, setApiKey] = useState<string | null>(null);
   const { models, isLoading: areModelsLoading, error: modelsError } = useModels(apiKey);
@@ -42,15 +43,18 @@ const App: React.FC = () => {
   const [translatedResults, setTranslatedResults] = useState<Record<string, GeminiAnalysisResponse>>({});
   const [isTranslating, setIsTranslating] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [isNightMode, setIsNightMode] = useState<boolean>(() => {
-    const storedValue = localStorage.getItem(NIGHT_MODE_STORAGE_KEY);
-    return storedValue === 'true';
-  });
+  const [isNightMode, setIsNightMode] = useState<boolean>(() => localStorage.getItem(NIGHT_MODE_STORAGE_KEY) === 'true');
+
+  const [rebuttal, setRebuttal] = useState<{ text: string; lang: string; } | null>(null);
+  const [translatedRebuttals, setTranslatedRebuttals] = useState<Record<string, string>>({});
+  const [isTranslatingRebuttal, setIsTranslatingRebuttal] = useState(false);
+  const [includeRebuttalInJson, setIncludeRebuttalInJson] = useState<boolean>(() => localStorage.getItem(INCLUDE_REBUTTAL_JSON_KEY) === 'true');
+  const [includeRebuttalInPdf, setIncludeRebuttalInPdf] = useState<boolean>(() => localStorage.getItem(INCLUDE_REBUTTAL_PDF_KEY) === 'true');
+
   const textWasSetProgrammatically = useRef(false);
   const lastAction = useRef<'PUSH' | 'APPEND'>('PUSH');
   const analysisReportRef = useRef<HTMLDivElement>(null);
 
-  // NO CHANGE IN THIS SECTION (useEffect blocks and handlers)
   useEffect(() => {
     const storedApiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
     if (storedApiKey) { setApiKey(storedApiKey); setIsKeyValid(true); }
@@ -82,6 +86,7 @@ const App: React.FC = () => {
     });
     return () => { chrome.runtime.onMessage.removeListener(messageListener); };
   }, []);
+
   useEffect(() => {
     const allModels = [...models.preview, ...models.stable];
     if (allModels.length === 0) return;
@@ -117,6 +122,7 @@ const App: React.FC = () => {
       textWasSetProgrammatically.current = false;
     }
   }, [textToAnalyze]);
+
   useEffect(() => {
     localStorage.setItem(NIGHT_MODE_STORAGE_KEY, String(isNightMode));
     if (isNightMode) {
@@ -125,6 +131,15 @@ const App: React.FC = () => {
       document.documentElement.classList.remove('dark');
     }
   }, [isNightMode]);
+
+  useEffect(() => {
+    localStorage.setItem(INCLUDE_REBUTTAL_JSON_KEY, String(includeRebuttalInJson));
+  }, [includeRebuttalInJson]);
+
+  useEffect(() => {
+    localStorage.setItem(INCLUDE_REBUTTAL_PDF_KEY, String(includeRebuttalInPdf));
+  }, [includeRebuttalInPdf]);
+
   const handleAnalyzeText = useCallback(async (text: string) => {
     if (!apiKey) {
       setError(t('error_api_key_not_configured'));
@@ -135,6 +150,9 @@ const App: React.FC = () => {
     setAnalysisResult(null);
     setCurrentTextAnalyzed(text);
     setTranslatedResults({});
+    setRebuttal(null);
+    setTranslatedRebuttals({});
+
     try {
       const englishResult = await analyzeText(apiKey, text, selectedModel);
       setAnalysisResult(englishResult);
@@ -151,6 +169,7 @@ const App: React.FC = () => {
       setIsLoading(false);
     }
   }, [apiKey, selectedModel, language, t]);
+
   useEffect(() => {
     if (!analysisResult || language === 'en') return;
     if (translatedResults[language]) return;
@@ -163,6 +182,22 @@ const App: React.FC = () => {
       .catch(err => setError(err.message))
       .finally(() => setIsTranslating(false));
   }, [language, analysisResult, translatedResults, apiKey, selectedModel, t]);
+
+  useEffect(() => {
+    if (!rebuttal || !apiKey) return;
+    if (language === rebuttal.lang) return;
+    if (translatedRebuttals[language]) return;
+
+    setIsTranslatingRebuttal(true);
+    setError(null);
+    translateText(apiKey, rebuttal.text, language, selectedModel, t)
+      .then(translated => {
+        setTranslatedRebuttals(prev => ({ ...prev, [language]: translated }));
+      })
+      .catch(err => setError(err.message))
+      .finally(() => setIsTranslatingRebuttal(false));
+  }, [language, rebuttal, translatedRebuttals, apiKey, selectedModel, t]);
+
   useEffect(() => {
     if (pendingAnalysis && apiKey) {
       handleAnalyzeText(pendingAnalysis.text);
@@ -185,6 +220,14 @@ const App: React.FC = () => {
           setCurrentTextAnalyzed(data.sourceText);
           setTextToAnalyze(data.sourceText);
           setTranslatedResults({});
+          if (data.rebuttal && typeof data.rebuttal === 'string') {
+            const initialRebuttal = { text: data.rebuttal, lang: 'en' };
+            setRebuttal(initialRebuttal);
+            setTranslatedRebuttals({ en: data.rebuttal });
+          } else {
+            setRebuttal(null);
+            setTranslatedRebuttals({});
+          }
           setError(null);
         } else {
           throw new Error(t('error_invalid_json_file'));
@@ -211,7 +254,13 @@ const App: React.FC = () => {
     localStorage.setItem(MAX_CHAR_LIMIT_STORAGE_KEY, newLimit.toString());
     setMaxCharLimit(newLimit);
   }, []);
+  const handleRebuttalUpdate = (newRebuttal: string) => {
+    const canonicalRebuttal = { text: newRebuttal, lang: language };
+    setRebuttal(canonicalRebuttal);
+    setTranslatedRebuttals({ [language]: newRebuttal });
+  };
   const displayedAnalysis = translatedResults[language] || analysisResult;
+  const displayedRebuttal = translatedRebuttals[language] || null;
 
   return (
     <div className="relative flex flex-col h-screen bg-app-bg-light dark:bg-app-bg-dark">
@@ -254,6 +303,10 @@ const App: React.FC = () => {
             modelsError={modelsError}
             isNightMode={isNightMode}
             onNightModeChange={setIsNightMode}
+            includeRebuttalInJson={includeRebuttalInJson}
+            onIncludeRebuttalInJsonChange={setIncludeRebuttalInJson}
+            includeRebuttalInPdf={includeRebuttalInPdf}
+            onIncludeRebuttalInPdfChange={setIncludeRebuttalInPdf}
           />
           <TextAnalyzer
             ref={textareaRef}
@@ -271,6 +324,12 @@ const App: React.FC = () => {
               {isLoading ? t('analyzer_button_analyzing') : t('info_translating_results')}
             </div>
           )}
+          {isTranslatingRebuttal && (
+            <div className="my-4 p-3 rounded-md text-sm bg-info-bg-light text-info-text-light border border-info-border-light dark:bg-info-bg-dark dark:text-info-text-dark dark:border-info-border-dark flex items-center justify-center">
+              <div className="spinner w-5 h-5 border-t-link-light mr-2"></div>
+              {t('info_translating_rebuttal')}
+            </div>
+          )}
           {error && (
             <div className="my-6 p-4 bg-error-bg-light border border-error-border-light text-error-text-light dark:bg-error-bg-dark dark:text-error-text-dark dark:border-error-border-dark rounded-md shadow-md" role="alert">
               <strong className="font-bold">{t('error_prefix')}</strong>
@@ -284,6 +343,11 @@ const App: React.FC = () => {
                     sourceText={currentTextAnalyzed}
                     apiKey={apiKey}
                     selectedModel={selectedModel}
+                    rebuttal={displayedRebuttal}
+                    isTranslatingRebuttal={isTranslatingRebuttal}
+                    onRebuttalUpdate={handleRebuttalUpdate}
+                    includeRebuttalInJson={includeRebuttalInJson}
+                    includeRebuttalInPdf={includeRebuttalInPdf}
                />
             )}
           </div>

@@ -1,7 +1,7 @@
 // src/services/geminiService.ts
 
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
-import { GEMINI_MODEL_NAME, SYSTEM_PROMPT, TRANSLATION_SYSTEM_PROMPT, ANALYSIS_TRANSLATION_PROMPT, REBUTTAL_SYSTEM_PROMPT, JSON_REPAIR_SYSTEM_PROMPT } from "../constants";
+import { GEMINI_MODEL_NAME, SYSTEM_PROMPT, TRANSLATION_SYSTEM_PROMPT, ANALYSIS_TRANSLATION_PROMPT, REBUTTAL_SYSTEM_PROMPT, JSON_REPAIR_SYSTEM_PROMPT, SIMPLE_TEXT_TRANSLATION_PROMPT } from "../constants";
 import { GeminiAnalysisResponse, GeminiModel } from "../types";
 import { LanguageCode } from "../i18n";
 import { GroupedModels } from "../hooks/useModels";
@@ -258,13 +258,48 @@ export const generateRebuttal = async (
       },
     });
 
-    return response.text;
+    return response.text.trim();
   } catch (error: any) {
     console.error("Error generating rebuttal:", error);
     if (error.message && error.message.includes("SAFETY")) {
         throw new Error("The rebuttal generation was blocked due to safety concerns from the API.");
     }
     throw new Error(`Failed to generate rebuttal: ${error.message || "Unknown API error"}`);
+  }
+};
+
+export const translateText = async (
+  apiKey: string,
+  textToTranslate: string,
+  targetLanguage: LanguageCode,
+  modelName: string,
+  t: TFunction
+): Promise<string> => {
+  if (!apiKey) {
+    throw new Error(t('error_api_key_not_configured'));
+  }
+  if (!textToTranslate) {
+    return "";
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
+
+  const systemPrompt = SIMPLE_TEXT_TRANSLATION_PROMPT.replace('{language}', targetLanguage);
+
+  try {
+    const response = await ai.models.generateContent({
+      model: modelName,
+      contents: [{ role: "user", parts: [{ text: textToTranslate }] }],
+      config: {
+        systemInstruction: systemPrompt,
+        temperature: 0.2,
+      },
+    });
+
+    return response.text.trim();
+  } catch (error: any) {
+    console.error(`Error translating text to ${targetLanguage}:`, error);
+    throw new Error(t('error_rebuttal_translation_failed', { message: error.message || "Unknown API error" }));
   }
 };
 

@@ -23,6 +23,8 @@
   "config_model_preview_group": "Modèles en Aperçu",
   "config_button_save_test": "Enregistrer & Tester la Configuration",
   "config_night_mode": "Mode Nuit",
+  "config_include_rebuttal_json": "Inclure la réfutation dans le JSON",
+  "config_include_rebuttal_pdf": "Inclure la réfutation dans le PDF",
   "config_button_saving": "Test & Sauvegarde...",
   "config_api_key_configured": "La clé API est configurée. Développez pour modifier les paramètres.",
   "config_api_key_not_configured": "Clé API non configurée. Veuillez développer et entrer votre clé.",
@@ -95,7 +97,10 @@
   "error_json_load_failed": "Échec du chargement de l'analyse :",
   "night_mode_toggle_tooltip": "Basculer le mode nuit",
   "rebuttal_title": "Passer le texte au gril",
+  "rebuttal_title_pdf": "Réfutation",
   "rebuttal_description": "Utilisez l'analyse pour générer une réfutation directe (expérimental)",
   "rebuttal_button_generate": "Générer",
-  "rebuttal_button_generating": "Génération en cours..."
+  "rebuttal_button_generating": "Génération en cours...",
+  "info_translating_rebuttal": "Traduction de la réfutation...",
+  "error_rebuttal_translation_failed": "Échec de la traduction de la réfutation : {message}"
 }

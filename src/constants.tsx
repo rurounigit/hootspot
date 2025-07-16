@@ -59,6 +59,13 @@ Here is the original source text you must rebut:
 {sourceText}
 `;
 
+export const SIMPLE_TEXT_TRANSLATION_PROMPT = `You are an expert translator. You will be given a text and a target language.
+RULES:
+1. Translate the provided text into the target language: {language}.
+2. Your output must be ONLY the translated text.
+3. Do not add any extra titles, introductions, explanations, or any other conversational text.
+`;
+
 export const TRANSLATION_SYSTEM_PROMPT = `You are an expert translator. You will be given a JSON object where the keys are translation IDs and the values are strings in English. Your task is to translate all the string *values* into the target language specified by the user.
 
 RULES:
@@ -73,6 +80,8 @@ export const API_KEY_STORAGE_KEY = 'athenaAIApiKey';
 export const MAX_CHAR_LIMIT_STORAGE_KEY = 'athenaAIMaxCharLimit';
 export const CUSTOM_LANGUAGES_KEY = 'athenaAICustomLanguages';
 export const SELECTED_MODEL_STORAGE_KEY = 'athenaAISelectedModel';
+export const INCLUDE_REBUTTAL_JSON_KEY = 'hootspot-rebuttal-in-json';
+export const INCLUDE_REBUTTAL_PDF_KEY = 'hootspot-rebuttal-in-pdf';
 export const DEFAULT_MAX_CHAR_LIMIT = 6000;
 
 export const HootSpotLogoIcon: React.FC<{ className?: string }> = ({ className }) => (

@@ -23,6 +23,8 @@
   "config_model_preview_group": "Vorschaumodelle",
   "config_button_save_test": "Konfiguration speichern & testen",
   "config_night_mode": "Nachtmodus",
+  "config_include_rebuttal_json": "Widerlegung in JSON einschließen",
+  "config_include_rebuttal_pdf": "Widerlegung in PDF einschließen",
   "config_button_saving": "Teste & speichere...",
   "config_api_key_configured": "API-Schlüssel ist konfiguriert. Erweitern, um Einstellungen zu ändern.",
   "config_api_key_not_configured": "API-Schlüssel nicht konfiguriert. Bitte erweitern und Ihren Schlüssel eingeben.",
@@ -95,7 +97,10 @@
   "error_json_load_failed": "Analyse konnte nicht geladen werden:",
   "night_mode_toggle_tooltip": "Nachtmodus umschalten",
   "rebuttal_title": "Den Text 'roasten'",
+  "rebuttal_title_pdf": "Widerlegung",
   "rebuttal_description": "Nutze die Analyse, um eine direkte Widerlegung zu erstellen (experimentell)",
   "rebuttal_button_generate": "Generieren",
-  "rebuttal_button_generating": "Generiert..."
+  "rebuttal_button_generating": "Generiert...",
+  "info_translating_rebuttal": "Übersetze Widerlegung...",
+  "error_rebuttal_translation_failed": "Widerlegung konnte nicht übersetzt werden: {message}"
 }

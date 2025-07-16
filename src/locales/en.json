@@ -23,6 +23,8 @@
   "config_model_preview_group": "Preview Models",
   "config_button_save_test": "Save & Test Configuration",
   "config_night_mode": "Night Mode",
+  "config_include_rebuttal_json": "Include rebuttal in JSON",
+  "config_include_rebuttal_pdf": "Include rebuttal in PDF",
   "config_button_saving": "Testing & Saving...",
   "config_api_key_configured": "API Key is configured. Expand to change settings.",
   "config_api_key_not_configured": "API Key not configured. Please expand and enter your key.",
@@ -95,7 +97,10 @@
   "error_json_load_failed": "Failed to load analysis:",
   "night_mode_toggle_tooltip": "Toggle Night Mode",
   "rebuttal_title": "Roast the text",
+  "rebuttal_title_pdf": "Rebuttal",
   "rebuttal_description": "Use the analysis to generate a direct rebuttal (experimental)",
   "rebuttal_button_generate": "Generate",
-  "rebuttal_button_generating": "Generating..."
+  "rebuttal_button_generating": "Generating...",
+  "info_translating_rebuttal": "Translating rebuttal...",
+  "error_rebuttal_translation_failed": "Failed to translate rebuttal: {message}"
   }

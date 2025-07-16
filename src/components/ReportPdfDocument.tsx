@@ -151,6 +151,19 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     alignSelf: 'center',
   },
+  rebuttalContainer: {
+    backgroundColor: '#f5f3ff',
+    borderLeftWidth: 3,
+    borderLeftColor: '#8b5cf6',
+    padding: 12,
+    marginTop: 12,
+    borderRadius: 4,
+    breakInside: 'avoid',
+  },
+  rebuttalText: {
+    fontSize: 11,
+    color: '#6d28d9',
+  },
   pageNumber: {
     position: 'absolute',
     fontSize: 9,
@@ -196,12 +209,14 @@ interface ReportPdfDocumentProps {
   highlightData: { start: number; end: number }[];
   chartImage: string | null;
   patternColorMap: PatternColorMap;
+  rebuttal: string | null;
   translations: {
     reportTitle: string;
     summaryTitle: string;
     highlightedTextTitle: string;
     profileTitle: string;
     detectedPatternsTitle: string;
+    rebuttalTitle: string;
     quoteLabel: string;
     explanationLabel: string;
     pageNumber: string;
@@ -216,6 +231,7 @@ export const ReportPdfDocument = ({
   chartImage,
   translations,
   patternColorMap,
+  rebuttal,
 }: ReportPdfDocumentProps): JSX.Element => {
   const findingsByCategory = groupByCategory(analysis?.findings || []);
   const defaultColor = '#dddddd';
@@ -249,7 +265,7 @@ export const ReportPdfDocument = ({
         )}
 
         {Object.keys(findingsByCategory).length > 0 && (
-          <View break>
+          <View break={!chartImage}>
             <Text style={styles.sectionTitle}>{translations.detectedPatternsTitle}</Text>
             {Object.entries(findingsByCategory).map(([categoryKey, findings]) => (
               <View key={categoryKey} style={styles.categoryContainer}>
@@ -291,6 +307,15 @@ export const ReportPdfDocument = ({
                 })}
               </View>
             ))}
+          </View>
+        )}
+
+        {rebuttal && (
+          <View break>
+            <Text style={styles.sectionTitle}>{translations.rebuttalTitle}</Text>
+            <View style={styles.rebuttalContainer}>
+              <Text style={styles.rebuttalText}>{rebuttal}</Text>
+            </View>
           </View>
         )}
 

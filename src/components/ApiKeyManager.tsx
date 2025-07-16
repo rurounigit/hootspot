@@ -21,6 +21,10 @@ interface ApiKeyManagerProps {
   modelsError: string | null;
   isNightMode: boolean;
   onNightModeChange: (value: boolean) => void;
+  includeRebuttalInJson: boolean;
+  onIncludeRebuttalInJsonChange: (value: boolean) => void;
+  includeRebuttalInPdf: boolean;
+  onIncludeRebuttalInPdfChange: (value: boolean) => void;
 }
 
 const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
@@ -35,7 +39,11 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
   areModelsLoading,
   modelsError,
   isNightMode,
-  onNightModeChange
+  onNightModeChange,
+  includeRebuttalInJson,
+  onIncludeRebuttalInJsonChange, // This was missing from the destructuring before
+  includeRebuttalInPdf,
+  onIncludeRebuttalInPdfChange // This was also missing
 }) => {
   const { t } = useTranslation();
   const [apiKeyInput, setApiKeyInput] = useState(currentApiKey || '');
@@ -104,7 +112,6 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
 
       {!isCollapsed && (
         <>
-          {/* CHANGE: This block is now using the semantic 'info-*' classes from the theme config. */}
           <div className="mb-4 p-4 bg-info-bg-light border border-info-border-light rounded-md dark:bg-info-bg-dark dark:border-info-border-dark">
             <div className="flex items-start">
               <InfoIcon className="w-5 h-5 mr-2 text-link-light dark:text-link-dark flex-shrink-0 mt-0.5" />
@@ -169,7 +176,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
               {!areModelsLoading && !modelsError && (
                 <>
                   {models.preview.length > 0 && ( <optgroup label={t('config_model_preview_group')}> {models.preview.map(model => ( <option key={model.name} value={model.name}> {model.displayName} </option> ))} </optgroup> )}
-                  {models.stable.length > 0 && ( <optgroup label={t('config_model_stable_group')}> {models.stable.map(model => ( <option key={model.name} value={model.name}> {model.displayName} </option> ))} </optgroup> )}
+                  {models.stable.length > 0 && ( <optgroup label={t('config_model_stable_group')}> {models.stable.map(model => ( <option key={model.name} value={model.name}> {model.displayName} </option>))} </optgroup> )}
                 </>
               )}
             </select>
@@ -186,11 +193,27 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
 
           {testStatus && ( <div className={`mt-4 p-3 rounded-md text-sm ${testStatus.type === 'success' ? 'bg-success-bg-light text-success-text-light border border-success-border-light dark:bg-success-bg-dark dark:text-success-text-dark dark:border-success-border-dark' : 'bg-error-bg-light text-error-text-light border border-error-border-light dark:bg-error-bg-dark dark:text-error-text-dark dark:border-error-border-dark'}`}> {testStatus.message} </div> )}
 
-          <div className="flex items-center justify-between mt-4 pt-4 border-t border-divider-light dark:border-divider-dark">
-              <label htmlFor="nightModeToggle" className="text-sm font-medium text-text-label-light dark:text-text-label-dark"> {t('config_night_mode')} </label>
-              <button onClick={() => onNightModeChange(!isNightMode)} className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${ isNightMode ? 'bg-toggle-bg-on-dark' : 'bg-toggle-bg-off-light' }`} >
-                  <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${ isNightMode ? 'translate-x-6' : 'translate-x-1' }`} />
+          <div className="mt-4 pt-4 border-t border-divider-light dark:border-divider-dark space-y-3">
+            <div className="flex items-center justify-between">
+                <label htmlFor="nightModeToggle" className="text-sm font-medium text-text-label-light dark:text-text-label-dark"> {t('config_night_mode')} </label>
+                <button onClick={() => onNightModeChange(!isNightMode)} className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${ isNightMode ? 'bg-toggle-bg-on-dark' : 'bg-toggle-bg-off-light' }`} >
+                    <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${ isNightMode ? 'translate-x-6' : 'translate-x-1' }`} />
+                </button>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <label htmlFor="rebuttalJsonToggle" className="text-sm font-medium text-text-label-light dark:text-text-label-dark"> {t('config_include_rebuttal_json')} </label>
+              <button onClick={() => onIncludeRebuttalInJsonChange(!includeRebuttalInJson)} className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${ includeRebuttalInJson ? 'bg-toggle-bg-on-dark' : 'bg-toggle-bg-off-light' }`} >
+                  <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${ includeRebuttalInJson ? 'translate-x-6' : 'translate-x-1' }`} />
               </button>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <label htmlFor="rebuttalPdfToggle" className="text-sm font-medium text-text-label-light dark:text-text-label-dark"> {t('config_include_rebuttal_pdf')} </label>
+              <button onClick={() => onIncludeRebuttalInPdfChange(!includeRebuttalInPdf)} className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${ includeRebuttalInPdf ? 'bg-toggle-bg-on-dark' : 'bg-toggle-bg-off-light' }`} >
+                  <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${ includeRebuttalInPdf ? 'translate-x-6' : 'translate-x-1' }`} />
+              </button>
+            </div>
           </div>
 
           <LanguageManager apiKey={currentApiKey} />
