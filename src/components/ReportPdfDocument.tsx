@@ -49,8 +49,8 @@ const styles = StyleSheet.create({
   },
   summaryContainer: {
     backgroundColor: '#eff6ff',
-    borderLeftWidth: 3,
-    borderLeftColor: '#60a5fa',
+    borderWidth: 1,
+    borderColor: '#60a5fa',
     padding: 12,
     marginBottom: 24,
     borderRadius: 4,
@@ -152,9 +152,9 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   rebuttalContainer: {
-    backgroundColor: '#f5f3ff',
-    borderLeftWidth: 3,
-    borderLeftColor: '#8b5cf6',
+    backgroundColor: '#eff6ff',
+    borderWidth: 1,
+    borderColor: '#60a5fa',
     padding: 12,
     marginTop: 12,
     borderRadius: 4,
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   },
   rebuttalText: {
     fontSize: 11,
-    color: '#6d28d9',
+    color: '#1e40af',
   },
   pageNumber: {
     position: 'absolute',
@@ -231,7 +231,7 @@ export const ReportPdfDocument = ({
   chartImage,
   translations,
   patternColorMap,
-  rebuttal,
+  rebuttal
 }: ReportPdfDocumentProps): JSX.Element => {
   const findingsByCategory = groupByCategory(analysis?.findings || []);
   const defaultColor = '#dddddd';

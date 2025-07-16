@@ -38,6 +38,7 @@ const generatePdf = async (event: MessageEvent) => {
         chartImage={data.chartImage}
         patternColorMap={data.patternColorMap}
         translations={data.translations}
+        rebuttal={data.rebuttal}
       />
     ).toBlob();
 
