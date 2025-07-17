@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   headerHootspotText: {
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Helvetica',
     fontSize: 18,
     color: '#1f2937',
     textAlign: 'left',
