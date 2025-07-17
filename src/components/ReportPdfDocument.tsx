@@ -40,9 +40,30 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     color: '#374151',
   },
-  header: {
+  // New Header Styles
+  headerSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  logo: {
+    width: 30,
+    height: 30,
+    marginRight: 10,
+  },
+  headerHootspotText: {
     fontFamily: 'Helvetica-Bold',
     fontSize: 24,
+    color: '#1f2937',
+  },
+  hr: {
+    height: 1,
+    backgroundColor: '#e5e7eb',
+    marginBottom: 15,
+  },
+  title: {
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 20,
     color: '#1f2937',
     textAlign: 'center',
     marginBottom: 20,
@@ -92,7 +113,6 @@ const styles = StyleSheet.create({
   },
   categoryContainer: {
     marginBottom: 16,
-    breakInside: 'avoid',
   },
   categoryTitle: {
     fontFamily: 'Helvetica-Bold',
@@ -100,21 +120,17 @@ const styles = StyleSheet.create({
     color: '#374151',
     marginBottom: 12,
   },
-  // This outer View creates the "border" with its background color and padding.
   findingCard: {
     borderRadius: 6,
     marginBottom: 12,
-    breakInside: 'avoid',
-    padding: 1, // This padding IS the border thickness.
+    padding: 1,
   },
-  // This inner View clips the content inside the "border".
   findingCardInner: {
-    borderRadius: 5, // Slightly smaller radius to fit inside the padded parent.
+    borderRadius: 5,
     overflow: 'hidden',
   },
   findingHeader: {
     padding: 10,
-    // Background color is now applied in the JSX.
   },
   findingPatternName: {
     fontFamily: 'Helvetica-Bold',
@@ -124,7 +140,7 @@ const styles = StyleSheet.create({
   },
   findingBody: {
     padding: 12,
-    backgroundColor: '#f9fafb', // The white/gray content area.
+    backgroundColor: '#f9fafb',
   },
   findingQuoteLabel: {
     fontFamily: 'Helvetica-Bold',
@@ -239,7 +255,15 @@ export const ReportPdfDocument = ({
   return (
     <Document title={translations.reportTitle} author="HootSpot AI">
       <Page size="A4" style={styles.page}>
-        <Text style={styles.header}>{translations.reportTitle}</Text>
+        {/* MODIFIED HEADER */}
+        <View>
+          <View style={styles.headerSection}>
+            <Image style={styles.logo} src="/images/icons/icon.png" />
+            <Text style={styles.headerHootspotText}>HootSpot</Text>
+          </View>
+          <View style={styles.hr} />
+          <Text style={styles.title}>{translations.reportTitle}</Text>
+        </View>
 
         {analysis?.analysis_summary && (
           <View style={styles.summaryContainer}>
@@ -276,30 +300,32 @@ export const ReportPdfDocument = ({
                   const color = patternColorMap[finding.pattern_name] || defaultColor;
                   const safeBg = getSafeBackgroundColor(color);
                   return (
-                    <View
-                      key={idx}
-                      style={[styles.findingCard, { backgroundColor: color }]}
-                    >
-                      <View style={styles.findingCardInner}>
-                        <View style={[styles.findingHeader, { backgroundColor: color }]}>
-                          <Text style={styles.findingPatternName}>{finding.display_name}</Text>
-                        </View>
-                        <View style={styles.findingBody}>
-                          <Text style={styles.findingQuoteLabel}>
-                            {translations.quoteLabel}
-                          </Text>
-                          <View
-                            style={[
-                              styles.findingQuote,
-                              { backgroundColor: safeBg, borderLeftColor: color },
-                            ]}
-                          >
-                            <Text>"{finding.specific_quote}"</Text>
+                    // WRAPPER FOR PAGE BREAK AVOIDANCE
+                    <View key={idx} style={{ breakInside: 'avoid' }}>
+                      <View
+                        style={[styles.findingCard, { backgroundColor: color }]}
+                      >
+                        <View style={styles.findingCardInner}>
+                          <View style={[styles.findingHeader, { backgroundColor: color }]}>
+                            <Text style={styles.findingPatternName}>{finding.display_name}</Text>
                           </View>
-                          <Text style={styles.findingExplanationLabel}>
-                            {translations.explanationLabel}
-                          </Text>
-                          <Text>{finding.explanation}</Text>
+                          <View style={styles.findingBody}>
+                            <Text style={styles.findingQuoteLabel}>
+                              {translations.quoteLabel}
+                            </Text>
+                            <View
+                              style={[
+                                styles.findingQuote,
+                                { backgroundColor: safeBg, borderLeftColor: color },
+                              ]}
+                            >
+                              <Text>"{finding.specific_quote}"</Text>
+                            </View>
+                            <Text style={styles.findingExplanationLabel}>
+                              {translations.explanationLabel}
+                            </Text>
+                            <Text>{finding.explanation}</Text>
+                          </View>
                         </View>
                       </View>
                     </View>
