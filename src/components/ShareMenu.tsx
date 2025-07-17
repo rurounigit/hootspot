@@ -7,7 +7,8 @@ import { GeminiAnalysisResponse, GeminiFinding } from '../types';
 import { ShareIcon } from '../constants';
 import { useTranslation } from '../i18n';
 import ExportableBubbleChart from './ExportableBubbleChart';
-import { PDF_CONFIG } from '../pdf-config';
+// CORRECTED: Import PDF_TITLE_TEXT from the config file.
+import { PDF_CONFIG, PDF_TITLE_TEXT } from '../pdf-config';
 
 // Define the interfaces for props
 interface BubbleData {
@@ -133,7 +134,8 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
       patternColorMap: Object.fromEntries(patternColorMap.entries()),
       rebuttal: includeRebuttalInPdf ? rebuttal : null,
       translations: {
-        reportTitle: t('pdf_report_title'),
+        // CORRECTED: Use the imported constant from the config file.
+        reportTitle: PDF_TITLE_TEXT,
         summaryTitle: t('report_summary_title'),
         highlightedTextTitle: t('report_highlighted_text_title'),
         profileTitle: t('report_profile_title'),
@@ -183,7 +185,6 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
 
   return (
     <div className="relative share-menu-container ml-3" ref={menuRef}>
-      {/* --- THIS IS THE CORRECTED BUTTON --- */}
       <button
         onClick={() => setIsMenuOpen(!isMenuOpen)}
         disabled={isGenerating}
@@ -200,7 +201,6 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
         }
       </button>
 
-      {/* The menu dropdown has also been updated to use theme-consistent colors */}
       {isMenuOpen && (
         <div className="absolute left-0 mt-2 w-48 bg-panel-bg-light dark:bg-panel-bg-dark rounded-md shadow-lg z-20 border border-panel-border-light dark:border-panel-border-dark">
           <ul className="py-1">

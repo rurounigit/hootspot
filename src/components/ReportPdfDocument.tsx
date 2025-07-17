@@ -3,6 +3,7 @@
 import React from 'react';
 import { Page, Text, View, Document, StyleSheet, Image } from '@react-pdf/renderer';
 import { GeminiAnalysisResponse, GeminiFinding } from '../types';
+import { PDF_HEADER_TEXT } from '../pdf-config';
 
 type PatternColorMap = Record<string, string>;
 
@@ -13,7 +14,6 @@ const getSafeBackgroundColor = (hslColor: string): string => {
     const parts = hslColor.match(/hsl\((\d+\.?\d*),\s*(\d+)%,\s*(\d+)%\)/);
     if (!parts) return '#f3f4f6';
     const [, hue, saturation] = parts;
-    /* 95 % lightness → very light, opaque, PDF-safe */
     return `hsl(${hue}, ${saturation}%, 95%)`;
   } catch {
     return '#f3f4f6';
@@ -49,11 +49,13 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     marginRight: 10,
+    marginTop: 6,
   },
   headerHootspotText: {
     fontFamily: 'Helvetica-Bold',
-    fontSize: 24,
+    fontSize: 18,
     color: '#1f2937',
+    textAlign: 'left',
   },
   hr: {
     height: 1,
@@ -74,6 +76,7 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 24,
     borderRadius: 4,
+    breakInside: 'avoid',
   },
   summaryTitle: {
     fontFamily: 'Helvetica-Bold',
@@ -122,10 +125,10 @@ const styles = StyleSheet.create({
   findingCard: {
     borderRadius: 6,
     marginBottom: 12,
-    padding: 1, // This padding IS the border thickness.
+    padding: 1,
   },
   findingCardInner: {
-    borderRadius: 5, // Slightly smaller radius to fit inside the padded parent.
+    borderRadius: 5,
     overflow: 'hidden',
   },
   findingHeader: {
@@ -139,7 +142,7 @@ const styles = StyleSheet.create({
   },
   findingBody: {
     padding: 12,
-    backgroundColor: '#f9fafb', // The white/gray content area.
+    backgroundColor: '#f9fafb',
   },
   findingQuoteLabel: {
     fontFamily: 'Helvetica-Bold',
@@ -161,7 +164,7 @@ const styles = StyleSheet.create({
     color: '#4b5563',
   },
   chartImage: {
-    width: '100%',
+    width: '70%',
     height: 'auto',
     marginBottom: 20,
     alignSelf: 'center',
@@ -190,34 +193,19 @@ const styles = StyleSheet.create({
   },
 });
 
-/* ---------- highlighted source text ---------- */
-const HighlightedSourceTextView = ({
-  text,
-  highlights,
-}: {
-  text: string;
-  highlights: { start: number; end: number }[];
-}): JSX.Element => {
+const HighlightedSourceTextView = ({ text, highlights }: { text: string; highlights: { start: number; end: number }[] }) => {
   if (!highlights.length) return <Text style={styles.sourceText}>{text}</Text>;
-
   const segments: JSX.Element[] = [];
   let last = 0;
-  [...highlights]
-    .sort((a, b) => a.start - b.start)
-    .forEach((h, i) => {
-      if (h.start > last) segments.push(<Text key={`t-${i}`}>{text.slice(last, h.start)}</Text>);
-      segments.push(
-        <Text key={`h-${i}`} style={styles.highlightedText}>
-          {text.slice(h.start, h.end)}
-        </Text>
-      );
-      last = h.end;
-    });
+  [...highlights].sort((a, b) => a.start - b.start).forEach((h, i) => {
+    if (h.start > last) segments.push(<Text key={`t-${i}`}>{text.slice(last, h.start)}</Text>);
+    segments.push(<Text key={`h-${i}`} style={styles.highlightedText}>{text.slice(h.start, h.end)}</Text>);
+    last = h.end;
+  });
   if (last < text.length) segments.push(<Text key="end">{text.slice(last)}</Text>);
   return <Text style={styles.sourceText}>{segments}</Text>;
 };
 
-/* ---------- main component ---------- */
 interface ReportPdfDocumentProps {
   analysis: GeminiAnalysisResponse;
   sourceText: string | null;
@@ -226,27 +214,12 @@ interface ReportPdfDocumentProps {
   patternColorMap: PatternColorMap;
   rebuttal: string | null;
   translations: {
-    reportTitle: string;
-    summaryTitle: string;
-    highlightedTextTitle: string;
-    profileTitle: string;
-    detectedPatternsTitle: string;
-    rebuttalTitle: string;
-    quoteLabel: string;
-    explanationLabel: string;
-    pageNumber: string;
-    categoryNames: Record<string, string>;
+    reportTitle: string; summaryTitle: string; highlightedTextTitle: string; profileTitle: string; detectedPatternsTitle: string; rebuttalTitle: string; quoteLabel: string; explanationLabel: string; pageNumber: string; categoryNames: Record<string, string>;
   };
 }
 
 export const ReportPdfDocument = ({
-  analysis,
-  sourceText,
-  highlightData,
-  chartImage,
-  translations,
-  patternColorMap,
-  rebuttal
+  analysis, sourceText, highlightData, chartImage, translations, patternColorMap, rebuttal
 }: ReportPdfDocumentProps): JSX.Element => {
   const findingsByCategory = groupByCategory(analysis?.findings || []);
   const defaultColor = '#dddddd';
@@ -257,71 +230,44 @@ export const ReportPdfDocument = ({
         <View>
           <View style={styles.headerSection}>
             <Image style={styles.logo} src="/images/icons/icon.png" />
-            <Text style={styles.headerHootspotText}>HootSpot</Text>
+            <Text style={styles.headerHootspotText}>{PDF_HEADER_TEXT}</Text>
           </View>
           <View style={styles.hr} />
           <Text style={styles.title}>{translations.reportTitle}</Text>
         </View>
 
         {analysis?.analysis_summary && (
-          <View style={styles.summaryContainer}>
-            <Text style={styles.summaryTitle}>{translations.summaryTitle}</Text>
-            <Text style={styles.summaryText}>{analysis.analysis_summary}</Text>
-          </View>
+          <View style={styles.summaryContainer}><Text style={styles.summaryTitle}>{translations.summaryTitle}</Text><Text style={styles.summaryText}>{analysis.analysis_summary}</Text></View>
         )}
 
-        {sourceText && highlightData?.length && (
-          <View>
-            <Text style={styles.sectionTitle}>{translations.highlightedTextTitle}</Text>
-            <View style={styles.sourceTextContainer}>
-              <HighlightedSourceTextView text={sourceText} highlights={highlightData} />
-            </View>
-          </View>
+        {sourceText && highlightData?.length > 0 && (
+          <View><Text style={styles.sectionTitle}>{translations.highlightedTextTitle}</Text><View style={styles.sourceTextContainer}><HighlightedSourceTextView text={sourceText} highlights={highlightData} /></View></View>
         )}
 
         {chartImage && (
-          <View break>
+          <View wrap={false}>
             <Text style={styles.sectionTitle}>{translations.profileTitle}</Text>
             <Image src={chartImage} style={styles.chartImage} />
           </View>
         )}
 
         {Object.keys(findingsByCategory).length > 0 && (
-          <View break={!chartImage}>
+          <View>
             <Text style={styles.sectionTitle}>{translations.detectedPatternsTitle}</Text>
             {Object.entries(findingsByCategory).map(([categoryKey, findings]) => (
               <View key={categoryKey} style={styles.categoryContainer}>
-                <Text style={styles.categoryTitle}>
-                  {translations.categoryNames[categoryKey] || categoryKey}
-                </Text>
+                <Text style={styles.categoryTitle}>{translations.categoryNames[categoryKey] || categoryKey}</Text>
                 {(findings as GeminiFinding[]).map((finding, idx) => {
                   const color = patternColorMap[finding.pattern_name] || defaultColor;
                   const safeBg = getSafeBackgroundColor(color);
                   return (
-                    <View
-                      key={idx}
-                      style={[styles.findingCard, { backgroundColor: color }]}
-                      wrap={false} // THIS IS THE CORRECT, MORE FORCEFUL FIX
-                    >
+                    <View key={idx} style={[styles.findingCard, { backgroundColor: color }]} wrap={false}>
                       <View style={styles.findingCardInner}>
-                        <View style={[styles.findingHeader, { backgroundColor: color }]}>
-                          <Text style={styles.findingPatternName}>{finding.display_name}</Text>
-                        </View>
+                        <View style={[styles.findingHeader, { backgroundColor: color }]}><Text style={styles.findingPatternName}>{finding.display_name}</Text></View>
                         <View style={styles.findingBody}>
-                          <Text style={styles.findingQuoteLabel}>
-                            {translations.quoteLabel}
-                          </Text>
-                          <View
-                            style={[
-                              styles.findingQuote,
-                              { backgroundColor: safeBg, borderLeftColor: color },
-                            ]}
-                          >
-                            <Text>"{finding.specific_quote}"</Text>
-                          </View>
-                          <Text style={styles.findingExplanationLabel}>
-                            {translations.explanationLabel}
-                          </Text>
+                          <Text style={styles.findingQuoteLabel}>{translations.quoteLabel}</Text>
+                          <View style={[styles.findingQuote, { backgroundColor: safeBg, borderLeftColor: color }]}><Text>"{finding.specific_quote}"</Text></View>
+                          <Text style={styles.findingExplanationLabel}>{translations.explanationLabel}</Text>
                           <Text>{finding.explanation}</Text>
                         </View>
                       </View>
@@ -334,23 +280,10 @@ export const ReportPdfDocument = ({
         )}
 
         {rebuttal && (
-          <View break>
-            <Text style={styles.sectionTitle}>{translations.rebuttalTitle}</Text>
-            <View style={styles.rebuttalContainer}>
-              <Text style={styles.rebuttalText}>{rebuttal}</Text>
-            </View>
-          </View>
+          <View break><Text style={styles.sectionTitle}>{translations.rebuttalTitle}</Text><View style={styles.rebuttalContainer}><Text style={styles.rebuttalText}>{rebuttal}</Text></View></View>
         )}
 
-        <Text
-          style={styles.pageNumber}
-          render={({ pageNumber, totalPages }) =>
-            translations.pageNumber
-              .replace('{pageNumber}', String(pageNumber))
-              .replace('{totalPages}', String(totalPages))
-          }
-          fixed
-        />
+        <Text style={styles.pageNumber} render={({ pageNumber, totalPages }) => translations.pageNumber.replace('{pageNumber}', String(pageNumber)).replace('{totalPages}', String(totalPages))} fixed />
       </Page>
     </Document>
   );
