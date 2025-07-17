@@ -4,6 +4,11 @@
  * Configuration file for visual aspects of the PDF generation.
  * This provides a central place to tweak the appearance of the bubble chart image.
  */
+
+// ADDED: Default text values for the PDF header and title.
+export const PDF_HEADER_TEXT = 'HootSpot';
+export const PDF_TITLE_TEXT = 'AI Analysis Report';
+
 export const PDF_CONFIG = {
   /**
    * Padding between the text and the edge of the bubble.
@@ -34,7 +39,7 @@ export const PDF_CONFIG = {
    * This is a padding value (in pixels) around the entire bubble group.
    * A larger value "zooms out" (more empty space), a smaller value "zooms in".
    */
-  CHART_ZOOM_PADDING: 45,
+  CHART_ZOOM_PADDING: 50,
 
   /**
    * Background color for the generated chart image.
