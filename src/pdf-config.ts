@@ -34,7 +34,7 @@ export const PDF_CONFIG = {
    * This is a padding value (in pixels) around the entire bubble group.
    * A larger value "zooms out" (more empty space), a smaller value "zooms in".
    */
-  CHART_ZOOM_PADDING: 30,
+  CHART_ZOOM_PADDING: 45,
 
   /**
    * Background color for the generated chart image.

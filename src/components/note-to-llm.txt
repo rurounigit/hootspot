@@ -6,9 +6,9 @@ You're right. I apologize for the repeated failures. My approach was wrong. The 
 The problem isn't the FileReader vs. the canvas. The problem is that something about the logoImage Base64 string is incompatible with the PDF renderer, just as the search results show others have experienced[1][2].
 The reason the chart image works is because html2canvas produces a very specific, clean, and standardized type of PNG Base64 string that the PDF library happens to accept. Other methods, like FileReader, might produce a string with subtle differences (like metadata or color profiles) that the library silently rejects.
 The only logical solution is to force the logo through the exact same process that we know works for the chart.
-Here is the definitive plan that will work:
-Load the logo file not as a Base64 string, but as an Image object in the browser.
-Create a temporary, hidden <canvas> element.
-Draw the loaded logo Image object onto that canvas.
-Call .toDataURL('image/png') on that canvas.
-This guarantees that the Base64 string we send to the PDF sandbox is in the exact same format that html2canvas produces, which we know works.
+
+Conclusion from the Final Verification
+Method 1 (Experimental) Length: 6: This tiny length confirms that when html2canvas tries to capture the <img> tag directly, it fails and produces an empty or blank image.
+Method 2 (Control) Length: 81606: This large length confirms that our "laundering" process—fetching the raw image data, drawing it to a clean canvas, and then creating a Base64 string—works perfectly and generates the complete image data.
+Identical? false: This is the most crucial piece of evidence. It proves that the two methods produce fundamentally different data.
+The thesis is now verified beyond any doubt: The problem was a security/sandboxing issue where html2canvas could not read the pixel data of an image from a chrome-extension:// URL. The "laundering" technique of fetching the raw bytes and redrawing them onto a new canvas successfully bypasses this restriction and creates a clean data stream that both html2canvas and @react-pdf/renderer can handle.
