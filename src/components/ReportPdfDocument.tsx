@@ -40,7 +40,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     color: '#374151',
   },
-  // New Header Styles
   headerSection: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -123,10 +122,10 @@ const styles = StyleSheet.create({
   findingCard: {
     borderRadius: 6,
     marginBottom: 12,
-    padding: 1,
+    padding: 1, // This padding IS the border thickness.
   },
   findingCardInner: {
-    borderRadius: 5,
+    borderRadius: 5, // Slightly smaller radius to fit inside the padded parent.
     overflow: 'hidden',
   },
   findingHeader: {
@@ -140,7 +139,7 @@ const styles = StyleSheet.create({
   },
   findingBody: {
     padding: 12,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f9fafb', // The white/gray content area.
   },
   findingQuoteLabel: {
     fontFamily: 'Helvetica-Bold',
@@ -255,7 +254,6 @@ export const ReportPdfDocument = ({
   return (
     <Document title={translations.reportTitle} author="HootSpot AI">
       <Page size="A4" style={styles.page}>
-        {/* MODIFIED HEADER */}
         <View>
           <View style={styles.headerSection}>
             <Image style={styles.logo} src="/images/icons/icon.png" />
@@ -300,32 +298,31 @@ export const ReportPdfDocument = ({
                   const color = patternColorMap[finding.pattern_name] || defaultColor;
                   const safeBg = getSafeBackgroundColor(color);
                   return (
-                    // WRAPPER FOR PAGE BREAK AVOIDANCE
-                    <View key={idx} style={{ breakInside: 'avoid' }}>
-                      <View
-                        style={[styles.findingCard, { backgroundColor: color }]}
-                      >
-                        <View style={styles.findingCardInner}>
-                          <View style={[styles.findingHeader, { backgroundColor: color }]}>
-                            <Text style={styles.findingPatternName}>{finding.display_name}</Text>
+                    <View
+                      key={idx}
+                      style={[styles.findingCard, { backgroundColor: color }]}
+                      wrap={false} // THIS IS THE CORRECT, MORE FORCEFUL FIX
+                    >
+                      <View style={styles.findingCardInner}>
+                        <View style={[styles.findingHeader, { backgroundColor: color }]}>
+                          <Text style={styles.findingPatternName}>{finding.display_name}</Text>
+                        </View>
+                        <View style={styles.findingBody}>
+                          <Text style={styles.findingQuoteLabel}>
+                            {translations.quoteLabel}
+                          </Text>
+                          <View
+                            style={[
+                              styles.findingQuote,
+                              { backgroundColor: safeBg, borderLeftColor: color },
+                            ]}
+                          >
+                            <Text>"{finding.specific_quote}"</Text>
                           </View>
-                          <View style={styles.findingBody}>
-                            <Text style={styles.findingQuoteLabel}>
-                              {translations.quoteLabel}
-                            </Text>
-                            <View
-                              style={[
-                                styles.findingQuote,
-                                { backgroundColor: safeBg, borderLeftColor: color },
-                              ]}
-                            >
-                              <Text>"{finding.specific_quote}"</Text>
-                            </View>
-                            <Text style={styles.findingExplanationLabel}>
-                              {translations.explanationLabel}
-                            </Text>
-                            <Text>{finding.explanation}</Text>
-                          </View>
+                          <Text style={styles.findingExplanationLabel}>
+                            {translations.explanationLabel}
+                          </Text>
+                          <Text>{finding.explanation}</Text>
                         </View>
                       </View>
                     </View>
