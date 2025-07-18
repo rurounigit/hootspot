@@ -138,6 +138,7 @@ export const analyzeText = async (
       try {
         parsedData = JSON.parse(jsonStr);
       } catch (e) {
+        // For Gemini, we can attempt to repair with the same API
         parsedData = await repairAndParseJson(apiKey, jsonStr, modelName);
       }
 
@@ -175,6 +176,117 @@ export const analyzeText = async (
         throw new Error(`Failed to analyze text: ${error.message || "Unknown API error"}`);
     }
 };
+
+// NEW: Function to test connection to LM Studio
+export const testLMStudioConnection = async (
+    serverUrl: string,
+    modelName: string,
+    t: TFunction
+): Promise<void> => {
+    if (!serverUrl || !modelName) {
+        throw new Error(t('error_local_server_config_missing'));
+    }
+    try {
+        const response = await fetch(`${serverUrl}/v1/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: modelName,
+                messages: [{ role: 'user', content: 'Hello' }],
+                max_tokens: 5,
+            }),
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(t('error_local_model_not_loaded', { model: modelName, message: errorData.error?.message || response.statusText }));
+        }
+        const data = await response.json();
+        if (!data.choices || data.choices.length === 0) {
+            throw new Error(t('test_query_returned_empty'));
+        }
+    } catch (error: any) {
+        if (error instanceof TypeError) { // Network error
+            throw new Error(t('error_local_server_connection', { url: serverUrl }));
+        }
+        throw error; // Re-throw other errors
+    }
+};
+
+// NEW: Function to analyze text using LM Studio
+export const analyzeTextWithLMStudio = async (
+    textToAnalyze: string,
+    serverUrl: string,
+    modelName: string,
+    t: TFunction
+): Promise<GeminiAnalysisResponse> => {
+    if (!serverUrl || !modelName) {
+        throw new Error(t('error_local_server_config_missing'));
+    }
+    if (!textToAnalyze.trim()) {
+        return { analysis_summary: "No text provided for analysis.", findings: [] };
+    }
+
+    const payload = {
+        model: modelName,
+        messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user", content: `Please analyze the following text: ${textToAnalyze}` }
+        ],
+        temperature: 0.2,
+        max_tokens: 8192,
+    };
+
+    try {
+        const response = await fetch(`${serverUrl}/v1/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(t('error_local_model_not_loaded', { model: modelName, message: errorData.error?.message || response.statusText }));
+        }
+
+        const data = await response.json();
+        const content = data.choices[0]?.message?.content;
+        if (!content) {
+            throw new Error(t('error_unexpected_json_structure'));
+        }
+
+        const jsonStr = extractJson(content);
+        let parsedData;
+
+        try {
+            parsedData = JSON.parse(jsonStr);
+        } catch (e) {
+            // Cannot use Gemini to repair, so we throw a more direct error.
+            console.error("--- HootSpot LOCAL JSON PARSE FAILED ---");
+            console.error("Original malformed JSON from local model:", jsonStr);
+            throw new Error(t('error_json_parse', { message: (e as Error).message, response: jsonStr.substring(0, 100) }));
+        }
+
+        if (typeof parsedData.analysis_summary === 'string' && Array.isArray(parsedData.findings)) {
+            parsedData.findings.sort((a: GeminiFinding, b: GeminiFinding) => {
+                const indexA = textToAnalyze.indexOf(a.specific_quote);
+                const indexB = textToAnalyze.indexOf(b.specific_quote);
+                if (indexA === -1) return 1;
+                if (indexB === -1) return -1;
+                return indexA - indexB;
+            });
+            return parsedData;
+        } else {
+            throw new Error(t('error_unexpected_json_structure'));
+        }
+    } catch (error: any) {
+        if (error instanceof TypeError) {
+             throw new Error(t('error_local_server_connection', { url: serverUrl }));
+        }
+        console.error("Error analyzing text with LM Studio:", error);
+        throw error; // Re-throw other errors
+    }
+};
+
 
 export const translateAnalysisResult = async (
   apiKey: string,

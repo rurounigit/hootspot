@@ -84,6 +84,12 @@ export const INCLUDE_REBUTTAL_JSON_KEY = 'hootspot-rebuttal-in-json';
 export const INCLUDE_REBUTTAL_PDF_KEY = 'hootspot-rebuttal-in-pdf';
 export const DEFAULT_MAX_CHAR_LIMIT = 6000;
 
+// NEW: Storage keys for the service provider and LM Studio configuration
+export const SERVICE_PROVIDER_KEY = 'hootspot-service-provider';
+export const LM_STUDIO_URL_KEY = 'hootspot-lmstudio-url';
+export const LM_STUDIO_MODEL_KEY = 'hootspot-lmstudio-model';
+
+
 export const HootSpotLogoIcon: React.FC<{ className?: string }> = ({ className }) => (
   <img
     src="/images/icons/icon.png" // The default image source
