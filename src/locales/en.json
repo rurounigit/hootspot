@@ -36,7 +36,6 @@
   "config_button_saving": "Testing & Saving...",
   "config_is_configured": "Configuration is set. Expand to change settings.",
   "config_not_configured": "Configuration needed. Please expand and set up a service provider.",
-  "config_cleared": "Configuration cleared successfully.",
   "analyzer_title": "Analyze",
   "analyzer_instruction": "Find patterns of information manipulation.",
   "analyzer_no_api_key_warning": "Please complete your configuration in the settings above to enable analysis.",

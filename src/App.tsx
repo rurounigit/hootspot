@@ -30,7 +30,6 @@ const NIGHT_MODE_STORAGE_KEY = 'hootspot-night-mode';
 const App: React.FC = () => {
   const { t, language } = useTranslation();
 
-  // --- State Management ---
   const [serviceProvider, setServiceProvider] = useState<'google' | 'local'>(() => (localStorage.getItem(SERVICE_PROVIDER_KEY) as 'google' | 'local') || 'google');
   const [apiKey, setApiKey] = useState<string | null>(() => localStorage.getItem(API_KEY_STORAGE_KEY));
   const [apiKeyInput, setApiKeyInput] = useState<string>(() => localStorage.getItem(API_KEY_STORAGE_KEY) || '');
@@ -39,7 +38,6 @@ const App: React.FC = () => {
   const [selectedModel, setSelectedModel] = useState<string>(() => localStorage.getItem(SELECTED_MODEL_STORAGE_KEY) || GEMINI_MODEL_NAME);
   const [lmStudioUrl, setLmStudioUrl] = useState<string>(() => localStorage.getItem(LM_STUDIO_URL_KEY) || '');
   const [lmStudioModel, setLmStudioModel] = useState<string>(() => localStorage.getItem(LM_STUDIO_MODEL_KEY) || '');
-  const [isConfigured, setIsConfigured] = useState<boolean>(() => !!(localStorage.getItem(API_KEY_STORAGE_KEY) || localStorage.getItem(LM_STUDIO_URL_KEY)));
   const [maxCharLimit, setMaxCharLimit] = useState<number>(DEFAULT_MAX_CHAR_LIMIT);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,9 +54,13 @@ const App: React.FC = () => {
   const [isTranslatingRebuttal, setIsTranslatingRebuttal] = useState(false);
   const [includeRebuttalInJson, setIncludeRebuttalInJson] = useState<boolean>(() => localStorage.getItem(INCLUDE_REBUTTAL_JSON_KEY) === 'true');
   const [includeRebuttalInPdf, setIncludeRebuttalInPdf] = useState<boolean>(() => localStorage.getItem(INCLUDE_REBUTTAL_PDF_KEY) === 'true');
+  const [isConfigCollapsed, setIsConfigCollapsed] = useState(() => !!(localStorage.getItem(API_KEY_STORAGE_KEY) || localStorage.getItem(LM_STUDIO_URL_KEY)));
+  const [initialConfigError, setInitialConfigError] = useState<string | null>(null);
   const textWasSetProgrammatically = useRef(false);
   const lastAction = useRef<'PUSH' | 'APPEND'>('PUSH');
   const analysisReportRef = useRef<HTMLDivElement>(null);
+
+  const isCurrentProviderConfigured = (serviceProvider === 'google' && !!apiKeyInput.trim()) || (serviceProvider === 'local' && !!lmStudioUrl.trim() && !!lmStudioModel.trim());
 
   useEffect(() => {
     const handler = setTimeout(() => { setDebouncedApiKey(apiKeyInput.trim()); }, 500);
@@ -83,7 +85,14 @@ const App: React.FC = () => {
       if (request.type === 'PUSH_TEXT_TO_PANEL' && request.text) {
         lastAction.current = 'PUSH';
         setTextToAnalyze(request.text);
-        if (request.autoAnalyze) { setPendingAnalysis({ text: request.text }); }
+        if (request.autoAnalyze) {
+          if (isCurrentProviderConfigured) {
+              setPendingAnalysis({ text: request.text });
+          } else {
+              setIsConfigCollapsed(false);
+              setInitialConfigError(serviceProvider === 'google' ? 'error_api_key_empty' : 'error_local_server_config_missing');
+          }
+        }
       } else if (request.type === 'APPEND_TEXT_TO_PANEL' && request.text) {
         lastAction.current = 'APPEND';
         setTextToAnalyze(prevText => `${prevText}${prevText.trim() ? '\n\n' : ''}${request.text}`);
@@ -96,15 +105,23 @@ const App: React.FC = () => {
         textWasSetProgrammatically.current = true;
         lastAction.current = 'PUSH';
         setTextToAnalyze(response.text);
-        if (response.autoAnalyze) { setPendingAnalysis({ text: response.text }); }
+        if (response.autoAnalyze) {
+          if (isCurrentProviderConfigured) {
+              setPendingAnalysis({ text: response.text });
+          } else {
+              setIsConfigCollapsed(false);
+              setInitialConfigError(serviceProvider === 'google' ? 'error_api_key_empty' : 'error_local_server_config_missing');
+          }
+        }
       }
     });
     return () => { chrome.runtime.onMessage.removeListener(messageListener); };
-  }, []);
+  }, [isCurrentProviderConfigured, serviceProvider]);
 
   const handleAnalyzeText = useCallback(async (text: string) => {
-    if (!isConfigured) {
-      setError(t('analyzer_no_api_key_warning'));
+    if (!isCurrentProviderConfigured) {
+      setIsConfigCollapsed(false);
+      setInitialConfigError(serviceProvider === 'google' ? 'error_api_key_empty' : 'error_local_server_config_missing');
       return;
     }
     setIsLoading(true);
@@ -119,8 +136,8 @@ const App: React.FC = () => {
       let result;
       if (serviceProvider === 'local') {
         result = await analyzeTextWithLMStudio(text, lmStudioUrl, lmStudioModel, t);
-      } else { // 'google'
-        if (!apiKey) throw new Error(t('error_api_key_not_configured'));
+      } else {
+        if (!apiKey) throw new Error('error_api_key_not_configured');
         result = await analyzeText(apiKey, text, selectedModel);
       }
       setAnalysisResult(result);
@@ -132,19 +149,27 @@ const App: React.FC = () => {
         setIsTranslating(false);
       }
     } catch (err: any) {
-      setError(err.message || "An unknown error occurred during analysis.");
+      const errorMessage = (err as Error).message || "An unknown error occurred during analysis.";
+      const configErrorKeys = ['error_local_server_config_missing', 'error_api_key_empty', 'error_api_key_not_configured'];
+
+      if (configErrorKeys.includes(errorMessage)) {
+        setIsConfigCollapsed(false);
+        setInitialConfigError(errorMessage);
+      } else {
+        setError(errorMessage);
+      }
       setAnalysisResult(null);
     } finally {
       setIsLoading(false);
     }
-  }, [isConfigured, serviceProvider, lmStudioUrl, lmStudioModel, apiKey, selectedModel, language, t]);
+  }, [isCurrentProviderConfigured, serviceProvider, lmStudioUrl, lmStudioModel, apiKey, selectedModel, language, t]);
 
   useEffect(() => {
-    if (pendingAnalysis && isConfigured) {
+    if (pendingAnalysis && isCurrentProviderConfigured) {
       handleAnalyzeText(pendingAnalysis.text);
       setPendingAnalysis(null);
     }
-  }, [pendingAnalysis, isConfigured, handleAnalyzeText]);
+  }, [pendingAnalysis, isCurrentProviderConfigured, handleAnalyzeText]);
 
   useEffect(() => {
     if (!analysisResult || language === 'en' || serviceProvider === 'local' || !apiKey) return;
@@ -224,9 +249,7 @@ const App: React.FC = () => {
 
   const displayedAnalysis = translatedResults[language] || analysisResult;
   const displayedRebuttal = translatedRebuttals[language] || null;
-  // --- FIX START: Combine loading states for the Analyze button ---
   const isBusy = isLoading || (serviceProvider === 'google' && areModelsLoading);
-  // --- FIX END ---
 
   return (
     <div className="relative flex flex-col h-screen bg-app-bg-light dark:bg-app-bg-dark">
@@ -269,29 +292,32 @@ const App: React.FC = () => {
             onIncludeRebuttalInJsonChange={setIncludeRebuttalInJson}
             includeRebuttalInPdf={includeRebuttalInPdf}
             onIncludeRebuttalInPdfChange={setIncludeRebuttalInPdf}
-            onConfigured={setIsConfigured}
-            // --- FIX START ---
-            isConfigured={isConfigured}
-            // --- FIX END ---
+            onConfigured={(configured) => {
+                if (configured) setIsConfigCollapsed(true);
+            }}
+            isCurrentProviderConfigured={isCurrentProviderConfigured}
+            isCollapsed={isConfigCollapsed}
+            onToggleCollapse={() => setIsConfigCollapsed(!isConfigCollapsed)}
+            initialConfigError={initialConfigError}
+            onClearInitialError={() => setInitialConfigError(null)}
           />
           <TextAnalyzer
             ref={textareaRef}
             text={textToAnalyze}
-            onTextChange={setTextToAnalyze}
+            onTextChange={(newText) => {
+                setTextToAnalyze(newText);
+                if (initialConfigError) setInitialConfigError(null);
+            }}
             onAnalyze={handleAnalyzeText}
-            // --- FIX START: Pass the combined busy state ---
             isLoading={isBusy}
-            // --- FIX END ---
             maxCharLimit={maxCharLimit}
             onJsonLoad={handleJsonLoad}
-            hasApiKey={isConfigured}
+            hasApiKey={isCurrentProviderConfigured}
           />
           {(isLoading || isTranslating) && (
             <div className="my-4 p-3 rounded-md text-sm bg-info-bg-light text-info-text-light border border-info-border-light dark:bg-info-bg-dark dark:text-info-text-dark dark:border-info-border-dark flex items-center justify-center">
               <div className="spinner w-5 h-5 border-t-link-light mr-2"></div>
-              {/* --- FIX START: Show a better message when models are loading --- */}
               {areModelsLoading ? t('config_model_loading') : (isLoading ? t('analyzer_button_analyzing') : t('info_translating_results'))}
-              {/* --- FIX END --- */}
             </div>
           )}
           {isTranslatingRebuttal && (
@@ -303,7 +329,7 @@ const App: React.FC = () => {
           {error && (
             <div className="my-6 p-4 bg-error-bg-light border border-error-border-light text-error-text-light dark:bg-error-bg-dark dark:text-error-text-dark dark:border-error-border-dark rounded-md shadow-md" role="alert">
               <strong className="font-bold">{t('error_prefix')}</strong>
-              <span>{error}</span>
+              <span>{t(error) || error}</span>
             </div>
           )}
           <div ref={analysisReportRef} className="mt-2">
@@ -321,12 +347,12 @@ const App: React.FC = () => {
                />
             )}
           </div>
-          {(!isLoading && !error && !analysisResult && currentTextAnalyzed && !isConfigured) && (
+          {!isBusy && !error && !analysisResult && currentTextAnalyzed && !isCurrentProviderConfigured && (
             <div className="mt-4 p-4 bg-warning-bg-light border border-warning-border-light text-warning-text-light dark:bg-warning-bg-dark dark:text-warning-text-dark dark:border-warning-border-dark rounded-md shadow-md">
                 {t('analyzer_no_api_key_warning')}
             </div>
           )}
-          {(!isLoading && !error && !analysisResult && !currentTextAnalyzed && isConfigured) && (
+          {!isBusy && !error && !analysisResult && !currentTextAnalyzed && isCurrentProviderConfigured && (
             <div className="mt-4 p-6 bg-panel-bg-light border border-panel-border-light text-text-subtle-light dark:bg-panel-bg-dark dark:border-panel-border-dark dark:text-text-subtle-dark rounded-lg shadow-md text-center">
                 <p className="text-lg">{t('info_enter_text_to_analyze')}</p>
                 <p className="text-sm mt-2">{t('info_uncover_patterns')}</p>

@@ -33,7 +33,9 @@ interface ApiKeyManagerProps {
   includeRebuttalInPdf: boolean;
   onIncludeRebuttalInPdfChange: (value: boolean) => void;
   onConfigured: (isConfigured: boolean) => void;
-  isConfigured: boolean;
+  isCurrentProviderConfigured: boolean;
+  isCollapsed: boolean;
+  onToggleCollapse: () => void;
 }
 
 const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
@@ -59,53 +61,75 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
   includeRebuttalInPdf,
   onIncludeRebuttalInPdfChange,
   onConfigured,
-  isConfigured
+  isCurrentProviderConfigured,
+  isCollapsed,
+  onToggleCollapse,
 }) => {
   const { t } = useTranslation();
   const [maxCharLimitInput, setMaxCharLimitInput] = useState(currentMaxCharLimit.toString());
   const [isTesting, setIsTesting] = useState(false);
   const [testStatus, setTestStatus] = useState<{message: string, type: 'success' | 'error' } | null>(null);
-  const [isCollapsed, setIsCollapsed] = useState(() => !!(localStorage.getItem(API_KEY_STORAGE_KEY) || localStorage.getItem(LM_STUDIO_URL_KEY)));
 
   useEffect(() => {
     setMaxCharLimitInput(currentMaxCharLimit.toString());
   }, [currentMaxCharLimit]);
 
+  // --- FIX START: This is now the single source of truth for contextual validation errors ---
   useEffect(() => {
-    setTestStatus(null);
-  }, [serviceProvider]);
+    // Don't show validation errors if the panel is closed.
+    if (isCollapsed) {
+        setTestStatus(null);
+        return;
+    }
+
+    // When the panel is open, always show the correct error for the ACTIVE tab.
+    if (serviceProvider === 'google') {
+        if (!apiKeyInput.trim()) {
+            setTestStatus({ message: t('error_api_key_empty'), type: 'error' });
+        } else {
+            // If the user fixed the input on this tab, clear the error.
+            setTestStatus(null);
+        }
+    } else { // serviceProvider === 'local'
+        if (!lmStudioUrl.trim() || !lmStudioModel.trim()) {
+            setTestStatus({ message: t('error_local_server_config_missing'), type: 'error' });
+        } else {
+            // If the user fixed the inputs on this tab, clear the error.
+            setTestStatus(null);
+        }
+    }
+  }, [isCollapsed, serviceProvider, apiKeyInput, lmStudioUrl, lmStudioModel, t]);
+  // --- FIX END ---
 
   const handleSave = async () => {
+    // This pre-validation is still useful for instant feedback on button click.
+    if (serviceProvider === 'google' && !apiKeyInput.trim()) {
+      setTestStatus({ message: t('error_api_key_empty'), type: 'error' });
+      return;
+    }
+    if (serviceProvider === 'local' && (!lmStudioUrl.trim() || !lmStudioModel.trim())) {
+      setTestStatus({ message: t('error_local_server_config_missing'), type: 'error' });
+      return;
+    }
+
     setIsTesting(true);
     setTestStatus(null);
     try {
       if (serviceProvider === 'google') {
         const trimmedApiKey = apiKeyInput.trim();
-        if (!trimmedApiKey) {
-            localStorage.removeItem(API_KEY_STORAGE_KEY);
-            onConfigured(false);
-            setTestStatus({ message: t('config_cleared'), type: 'success' });
-            setIsCollapsed(false);
-            return;
-        }
         await testApiKey(trimmedApiKey, t, selectedModel);
         localStorage.setItem(API_KEY_STORAGE_KEY, trimmedApiKey);
+        localStorage.removeItem(LM_STUDIO_URL_KEY);
+        localStorage.removeItem(LM_STUDIO_MODEL_KEY);
         onConfigured(true);
         setTestStatus({ message: t('success_api_key_saved'), type: 'success' });
       } else {
         const trimmedUrl = lmStudioUrl.trim();
         const trimmedModel = lmStudioModel.trim();
-        if (!trimmedUrl) {
-            localStorage.removeItem(LM_STUDIO_URL_KEY);
-            localStorage.removeItem(LM_STUDIO_MODEL_KEY);
-            onConfigured(false);
-            setTestStatus({ message: t('config_cleared'), type: 'success' });
-            setIsCollapsed(false);
-            return;
-        }
         await testLMStudioConnection(trimmedUrl, trimmedModel, t);
         localStorage.setItem(LM_STUDIO_URL_KEY, trimmedUrl);
         localStorage.setItem(LM_STUDIO_MODEL_KEY, trimmedModel);
+        localStorage.removeItem(API_KEY_STORAGE_KEY);
         onConfigured(true);
         setTestStatus({ message: t('success_local_connection'), type: 'success' });
       }
@@ -114,10 +138,10 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
       if (!isNaN(newLimit) && newLimit > 0) {
         onMaxCharLimitSave(newLimit);
       }
-      setIsCollapsed(true);
+      onToggleCollapse();
     } catch (err: any) {
       onConfigured(false);
-      setTestStatus({ message: err.message, type: 'error' });
+      setTestStatus({ message: (err as Error).message, type: 'error' });
     } finally {
       setIsTesting(false);
     }
@@ -143,7 +167,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
           </div>
           <div className="mb-4">
             <label htmlFor="apiKey" className="block text-sm font-medium text-text-label-light dark:text-text-label-dark mb-1">{t('config_api_key_label')}</label>
-            <input type="password" id="apiKey" value={apiKeyInput} onChange={(e) => { onApiKeyInputChange(e.target.value); setTestStatus(null); }} placeholder={t('config_api_key_placeholder')} className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-input-bg-light border-input-border-light text-input-text-light dark:bg-input-bg-dark dark:border-input-border-dark dark:text-input-text-dark" />
+            <input type="password" id="apiKey" value={apiKeyInput} onChange={(e) => onApiKeyInputChange(e.target.value)} placeholder={t('config_api_key_placeholder')} className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-input-bg-light border-input-border-light text-input-text-light dark:bg-input-bg-dark dark:border-input-border-dark dark:text-input-text-dark" />
           </div>
           <div className="mb-6">
             <label htmlFor="modelSelector" className="block text-sm font-medium text-text-label-light dark:text-text-label-dark mb-1">{t('config_model_label')}</label>
@@ -171,11 +195,11 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
           </div>
           <div className="mb-4">
             <label htmlFor="lmStudioUrl" className="block text-sm font-medium text-text-label-light dark:text-text-label-dark mb-1">{t('config_local_server_url_label')}</label>
-            <input type="text" id="lmStudioUrl" value={lmStudioUrl} onChange={(e) => { onLmStudioUrlChange(e.target.value); setTestStatus(null); }} placeholder={t('config_local_server_url_placeholder')} className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-input-bg-light border-input-border-light text-input-text-light dark:bg-input-bg-dark dark:border-input-border-dark dark:text-input-text-dark" />
+            <input type="text" id="lmStudioUrl" value={lmStudioUrl} onChange={(e) => onLmStudioUrlChange(e.target.value)} placeholder={t('config_local_server_url_placeholder')} className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-input-bg-light border-input-border-light text-input-text-light dark:bg-input-bg-dark dark:border-input-border-dark dark:text-input-text-dark" />
           </div>
           <div className="mb-6">
             <label htmlFor="lmStudioModel" className="block text-sm font-medium text-text-label-light dark:text-text-label-dark mb-1">{t('config_local_model_name_label')}</label>
-            <input type="text" id="lmStudioModel" value={lmStudioModel} onChange={(e) => { onLmStudioModelChange(e.target.value); setTestStatus(null); }} placeholder={t('config_local_model_name_placeholder')} className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-input-bg-light border-input-border-light text-input-text-light dark:bg-input-bg-dark dark:border-input-border-dark dark:text-input-text-dark" />
+            <input type="text" id="lmStudioModel" value={lmStudioModel} onChange={(e) => onLmStudioModelChange(e.target.value)} placeholder={t('config_local_model_name_placeholder')} className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-input-bg-light border-input-border-light text-input-text-light dark:bg-input-bg-dark dark:border-input-border-dark dark:text-input-text-dark" />
           </div>
         </>
       );
@@ -186,8 +210,8 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
     <div className="bg-panel-bg-light dark:bg-panel-bg-dark shadow-md rounded-lg p-4 mb-4 border border-panel-border-light dark:border-panel-border-dark">
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center"><SettingsIcon className="w-6 h-6 mr-2 text-link-light dark:text-link-dark" /><h2 className="text-lg font-semibold text-text-label-light dark:text-text-label-dark">{t('config_title')}</h2></div>
-        <button onClick={() => setIsCollapsed(!isCollapsed)} className="text-link-light hover:text-link-hover-light" aria-label={isCollapsed ? t('config_toggle_expand') : t('config_toggle_collapse')}>
-          {isCollapsed ? (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>) : (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" /></svg>)}
+        <button onClick={onToggleCollapse} className="text-link-light hover:text-link-hover-light" aria-label={isCollapsed ? t('config_toggle_expand') : t('config_toggle_collapse')}>
+          {isCollapsed ? (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>) : (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" /></svg>)}
         </button>
       </div>
 
@@ -227,8 +251,8 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
           <LanguageManager apiKey={apiKeyInput} />
         </>
       )}
-       {isCollapsed && isConfigured && ( <p className="text-sm text-success-text-light dark:text-success-text-dark">{t('config_is_configured')}</p> )}
-       {isCollapsed && !isConfigured && ( <p className="text-sm text-error-text-light dark:text-error-text-dark">{t('config_not_configured')}</p> )}
+       {isCollapsed && isCurrentProviderConfigured && ( <p className="text-sm text-success-text-light dark:text-success-text-dark">{t('config_is_configured')}</p> )}
+       {isCollapsed && !isCurrentProviderConfigured && ( <p className="text-sm text-error-text-light dark:text-error-text-dark">{t('config_not_configured')}</p> )}
     </div>
   );
 };

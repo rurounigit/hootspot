@@ -42,7 +42,6 @@ async function repairAndParseJson(
             model: modelName,
             contents: [{ role: "user", parts: [{ text: brokenJson }] }],
             config: {
-                // FIX 1: Cast to string to satisfy the type checker.
                 systemInstruction: String(JSON_REPAIR_SYSTEM_PROMPT),
                 temperature: 0,
             },
@@ -63,7 +62,7 @@ export const testApiKey = async (
   modelName: string
 ): Promise<void> => {
   if (!apiKey) {
-    throw new Error(t('error_api_key_empty'));
+    throw new Error('error_api_key_empty');
   }
   try {
     const ai = new GoogleGenAI({ apiKey });
@@ -104,7 +103,7 @@ export const analyzeText = async (
   modelName: string,
 ): Promise<GeminiAnalysisResponse> => {
     if (!apiKey) {
-      throw new Error("API Key is not configured.");
+      throw new Error("error_api_key_not_configured");
     }
     if (!textToAnalyze.trim()) {
       return {
@@ -122,7 +121,6 @@ export const analyzeText = async (
           { role: "user", parts: [{ text: `Please analyze the following text: ${textToAnalyze}` }] }
         ],
         config: {
-          // FIX 2: Cast to string to satisfy the type checker.
           systemInstruction: String(SYSTEM_PROMPT),
           temperature: 0,
           topP: 0,
@@ -138,7 +136,6 @@ export const analyzeText = async (
       try {
         parsedData = JSON.parse(jsonStr);
       } catch (e) {
-        // For Gemini, we can attempt to repair with the same API
         parsedData = await repairAndParseJson(apiKey, jsonStr, modelName);
       }
 
@@ -177,14 +174,13 @@ export const analyzeText = async (
     }
 };
 
-// NEW: Function to test connection to LM Studio
 export const testLMStudioConnection = async (
     serverUrl: string,
     modelName: string,
     t: TFunction
 ): Promise<void> => {
     if (!serverUrl || !modelName) {
-        throw new Error(t('error_local_server_config_missing'));
+        throw new Error('error_local_server_config_missing');
     }
     try {
         const response = await fetch(`${serverUrl}/v1/chat/completions`, {
@@ -205,14 +201,13 @@ export const testLMStudioConnection = async (
             throw new Error(t('test_query_returned_empty'));
         }
     } catch (error: any) {
-        if (error instanceof TypeError) { // Network error
+        if (error instanceof TypeError) {
             throw new Error(t('error_local_server_connection', { url: serverUrl }));
         }
-        throw error; // Re-throw other errors
+        throw error;
     }
 };
 
-// NEW: Function to analyze text using LM Studio
 export const analyzeTextWithLMStudio = async (
     textToAnalyze: string,
     serverUrl: string,
@@ -220,7 +215,7 @@ export const analyzeTextWithLMStudio = async (
     t: TFunction
 ): Promise<GeminiAnalysisResponse> => {
     if (!serverUrl || !modelName) {
-        throw new Error(t('error_local_server_config_missing'));
+        throw new Error('error_local_server_config_missing');
     }
     if (!textToAnalyze.trim()) {
         return { analysis_summary: "No text provided for analysis.", findings: [] };
@@ -260,7 +255,6 @@ export const analyzeTextWithLMStudio = async (
         try {
             parsedData = JSON.parse(jsonStr);
         } catch (e) {
-            // Cannot use Gemini to repair, so we throw a more direct error.
             console.error("--- HootSpot LOCAL JSON PARSE FAILED ---");
             console.error("Original malformed JSON from local model:", jsonStr);
             throw new Error(t('error_json_parse', { message: (e as Error).message, response: jsonStr.substring(0, 100) }));
@@ -283,10 +277,9 @@ export const analyzeTextWithLMStudio = async (
              throw new Error(t('error_local_server_connection', { url: serverUrl }));
         }
         console.error("Error analyzing text with LM Studio:", error);
-        throw error; // Re-throw other errors
+        throw error;
     }
 };
-
 
 export const translateAnalysisResult = async (
   apiKey: string,
@@ -308,7 +301,6 @@ export const translateAnalysisResult = async (
       model: modelName || GEMINI_MODEL_NAME,
       contents: [{ role: "user", parts: [{ text: contentToTranslate }] }],
       config: {
-        // FIX 3: Cast to string to satisfy the type checker.
         systemInstruction: String(systemPrompt),
         temperature: 0.2,
         maxOutputTokens: 8192,
@@ -416,7 +408,6 @@ export const translateText = async (
   }
 };
 
-
 export const fetchModels = async (apiKey: string): Promise<GroupedModels> => {
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
@@ -513,7 +504,6 @@ export const translateUI = async (
                 { role: "user", parts: [{ text: `Translate the following JSON values to ${targetLanguage}:\n\n${baseTranslationsJSON}` }] }
             ],
             config: {
-                // FIX 4: Cast to string to satisfy the type checker.
                 systemInstruction: String(TRANSLATION_SYSTEM_PROMPT),
                 temperature: 0.2,
                 maxOutputTokens: 8192,
