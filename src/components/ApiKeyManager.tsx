@@ -211,7 +211,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center"><SettingsIcon className="w-6 h-6 mr-2 text-link-light dark:text-link-dark" /><h2 className="text-lg font-semibold text-text-label-light dark:text-text-label-dark">{t('config_title')}</h2></div>
         <button onClick={onToggleCollapse} className="text-link-light hover:text-link-hover-light" aria-label={isCollapsed ? t('config_toggle_expand') : t('config_toggle_collapse')}>
-          {isCollapsed ? (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>) : (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" /></svg>)}
+          {isCollapsed ? (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>) : (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" /></svg>)}
         </button>
       </div>
 
