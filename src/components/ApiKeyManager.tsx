@@ -5,7 +5,6 @@ import { SaveIcon, SettingsIcon, ExternalLinkIcon, InfoIcon } from '../constants
 import { testApiKey } from '../services/geminiService';
 import { useTranslation } from '../i18n';
 import LanguageManager from './LanguageManager';
-import { GeminiModel } from '../types';
 import { GroupedModels } from '../hooks/useModels';
 
 interface ApiKeyManagerProps {
@@ -16,7 +15,6 @@ interface ApiKeyManagerProps {
   models: GroupedModels;
   selectedModel: string;
   onModelChange: (model: string) => void;
-  currentModelDetails: GeminiModel | null;
   areModelsLoading: boolean;
   modelsError: string | null;
   isNightMode: boolean;
@@ -35,7 +33,6 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
   models,
   selectedModel,
   onModelChange,
-  currentModelDetails,
   areModelsLoading,
   modelsError,
   isNightMode,

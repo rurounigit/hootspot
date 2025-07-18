@@ -84,7 +84,8 @@ export const calculateOptimalFontSize = (
   }
 ): { fontSize: number; lines: string[] } => {
   const { minFont, maxFontSize, paddingFactor } = options;
-  if (!text || radius <= 0) return { fontSize: minFont, lines: [] };
+  // FIX: Added a null check for 'context' to satisfy the compiler.
+  if (!text || radius <= 0 || !context) return { fontSize: minFont, lines: [] };
 
   let low = minFont;
   let high = maxFontSize;

@@ -1,9 +1,9 @@
 // src/components/ShareMenu.tsx
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import html2canvas from 'html2canvas';
-import { GeminiAnalysisResponse, GeminiFinding } from '../types';
+import { GeminiAnalysisResponse } from '../types';
 import { ShareIcon } from '../constants';
 import { useTranslation } from '../i18n';
 import ExportableBubbleChart from './ExportableBubbleChart';

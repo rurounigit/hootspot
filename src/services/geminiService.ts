@@ -1,8 +1,8 @@
 // src/services/geminiService.ts
 
-import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import { GEMINI_MODEL_NAME, SYSTEM_PROMPT, TRANSLATION_SYSTEM_PROMPT, ANALYSIS_TRANSLATION_PROMPT, REBUTTAL_SYSTEM_PROMPT, JSON_REPAIR_SYSTEM_PROMPT, SIMPLE_TEXT_TRANSLATION_PROMPT } from "../constants";
-import { GeminiAnalysisResponse, GeminiModel } from "../types";
+import { GeminiAnalysisResponse, GeminiModel, GeminiFinding } from "../types";
 import { LanguageCode } from "../i18n";
 import { GroupedModels } from "../hooks/useModels";
 
@@ -42,12 +42,13 @@ async function repairAndParseJson(
             model: modelName,
             contents: [{ role: "user", parts: [{ text: brokenJson }] }],
             config: {
-                systemInstruction: JSON_REPAIR_SYSTEM_PROMPT,
+                // FIX 1: Cast to string to satisfy the type checker.
+                systemInstruction: String(JSON_REPAIR_SYSTEM_PROMPT),
                 temperature: 0,
             },
         });
-        const repairedJson = extractJson(repairResponse.text);
-        return JSON.parse(repairedJson); // Attempt to parse the repaired JSON
+        const repairedJson = extractJson(repairResponse.text ?? '');
+        return JSON.parse(repairedJson);
     } catch (e) {
         console.error("--- HootSpot JSON REPAIR FAILED ---");
         console.error("Original broken JSON:", brokenJson);
@@ -66,16 +67,16 @@ export const testApiKey = async (
   }
   try {
     const ai = new GoogleGenAI({ apiKey });
-    const response: GenerateContentResponse = await ai.models.generateContent({
+    const response = await ai.models.generateContent({
       model: modelName || GEMINI_MODEL_NAME,
-      contents: "Hello",
+      contents: [{role: "user", parts:[{text: "Hello"}]}],
       config: {
         temperature: 0,
         topK: 1,
         topP: 0,
       }
     });
-    if (!response.text || response.text.trim().length === 0) {
+    if (!(response.text) || response.text.trim().length === 0) {
         throw new Error(t('test_query_returned_empty'));
     }
   } catch (error: any) {
@@ -121,7 +122,8 @@ export const analyzeText = async (
           { role: "user", parts: [{ text: `Please analyze the following text: ${textToAnalyze}` }] }
         ],
         config: {
-          systemInstruction: SYSTEM_PROMPT,
+          // FIX 2: Cast to string to satisfy the type checker.
+          systemInstruction: String(SYSTEM_PROMPT),
           temperature: 0,
           topP: 0,
           topK: 1,
@@ -129,19 +131,18 @@ export const analyzeText = async (
         },
       });
 
-      const rawText = fullResponse.text;
+      const rawText = fullResponse.text ?? '';
       const jsonStr = extractJson(rawText);
       let parsedData;
 
       try {
         parsedData = JSON.parse(jsonStr);
       } catch (e) {
-        // If parsing fails, attempt to repair the JSON
         parsedData = await repairAndParseJson(apiKey, jsonStr, modelName);
       }
 
       if (typeof parsedData.analysis_summary === 'string' && Array.isArray(parsedData.findings)) {
-          parsedData.findings.sort((a, b) => {
+          parsedData.findings.sort((a: GeminiFinding, b: GeminiFinding) => {
             const indexA = textToAnalyze.indexOf(a.specific_quote);
             const indexB = textToAnalyze.indexOf(b.specific_quote);
             if (indexA === -1) return 1;
@@ -195,13 +196,14 @@ export const translateAnalysisResult = async (
       model: modelName || GEMINI_MODEL_NAME,
       contents: [{ role: "user", parts: [{ text: contentToTranslate }] }],
       config: {
-        systemInstruction: systemPrompt,
+        // FIX 3: Cast to string to satisfy the type checker.
+        systemInstruction: String(systemPrompt),
         temperature: 0.2,
         maxOutputTokens: 8192,
       },
     });
 
-    const rawText = fullResponse.text;
+    const rawText = fullResponse.text ?? '';
     const jsonStr = extractJson(rawText);
     let parsedData;
 
@@ -242,7 +244,6 @@ export const generateRebuttal = async (
 
   const ai = new GoogleGenAI({ apiKey });
 
-  // Construct the prompt with the source text, its analysis, and the desired language
   const prompt = REBUTTAL_SYSTEM_PROMPT
     .replace('{analysisJson}', JSON.stringify(analysis, null, 2))
     .replace('{sourceText}', sourceText)
@@ -258,7 +259,7 @@ export const generateRebuttal = async (
       },
     });
 
-    return response.text.trim();
+    return (response.text ?? '').trim();
   } catch (error: any) {
     console.error("Error generating rebuttal:", error);
     if (error.message && error.message.includes("SAFETY")) {
@@ -291,12 +292,12 @@ export const translateText = async (
       model: modelName,
       contents: [{ role: "user", parts: [{ text: textToTranslate }] }],
       config: {
-        systemInstruction: systemPrompt,
+        systemInstruction: String(systemPrompt),
         temperature: 0.2,
       },
     });
 
-    return response.text.trim();
+    return (response.text ?? '').trim();
   } catch (error: any) {
     console.error(`Error translating text to ${targetLanguage}:`, error);
     throw new Error(t('error_rebuttal_translation_failed', { message: error.message || "Unknown API error" }));
@@ -400,13 +401,14 @@ export const translateUI = async (
                 { role: "user", parts: [{ text: `Translate the following JSON values to ${targetLanguage}:\n\n${baseTranslationsJSON}` }] }
             ],
             config: {
-                systemInstruction: TRANSLATION_SYSTEM_PROMPT,
+                // FIX 4: Cast to string to satisfy the type checker.
+                systemInstruction: String(TRANSLATION_SYSTEM_PROMPT),
                 temperature: 0.2,
                 maxOutputTokens: 8192,
             },
         });
 
-        const rawText = fullResponse.text;
+        const rawText = fullResponse.text ?? '';
         const jsonStr = extractJson(rawText);
         let parsedData;
         try {

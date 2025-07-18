@@ -111,7 +111,7 @@ chrome.commands.onCommand.addListener(async (command, tab) => {
 });
 
 // This onMessage listener remains the same and is correct.
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.type === 'PULL_INITIAL_TEXT') {
     if (dataForNewlyOpenedPanel) {
       sendResponse(dataForNewlyOpenedPanel);

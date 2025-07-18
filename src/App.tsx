@@ -8,7 +8,7 @@ import LanguageSwitcher from './components/LanguageSwitcher';
 import { useTranslation } from './i18n';
 import { analyzeText, translateAnalysisResult, translateText } from './services/geminiService';
 import { useModels } from './hooks/useModels';
-import { GeminiAnalysisResponse, GeminiModel } from './types';
+import { GeminiAnalysisResponse } from './types';
 import {
   API_KEY_STORAGE_KEY,
   MAX_CHAR_LIMIT_STORAGE_KEY,
@@ -31,7 +31,6 @@ const App: React.FC = () => {
   const [selectedModel, setSelectedModel] = useState<string>(() => {
     return localStorage.getItem(SELECTED_MODEL_STORAGE_KEY) || GEMINI_MODEL_NAME;
   });
-  const [currentModelDetails, setCurrentModelDetails] = useState<GeminiModel | null>(null);
   const [maxCharLimit, setMaxCharLimit] = useState<number>(DEFAULT_MAX_CHAR_LIMIT);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -92,24 +91,19 @@ const App: React.FC = () => {
     if (allModels.length === 0) return;
     localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel);
     const details = allModels.find(m => m.name === selectedModel) || null;
-    setCurrentModelDetails(details);
     if (!details) {
       const defaultModel = allModels.find(m => m.name === GEMINI_MODEL_NAME) || allModels[0];
       if (defaultModel) { setSelectedModel(defaultModel.name); }
     }
   }, [selectedModel, models]);
+
   useEffect(() => {
     if (!areModelsLoading && modelsError) {
       console.warn(`Model fetch failed: ${modelsError}. Falling back to default: ${GEMINI_MODEL_NAME}`);
       setSelectedModel(GEMINI_MODEL_NAME);
-      setCurrentModelDetails({
-        name: 'models/gemini-2.5-flash-lite-preview-06-17',
-        displayName: 'Gemini 2.5 Flash-Lite Preview 06-17',
-        supportedGenerationMethods: ['generateContent'],
-        version: '2.5-preview-06-17',
-      });
     }
   }, [areModelsLoading, modelsError]);
+
   useEffect(() => {
     if (textWasSetProgrammatically.current) {
       textareaRef.current?.focus();
@@ -175,12 +169,14 @@ const App: React.FC = () => {
     if (translatedResults[language]) return;
     setIsTranslating(true);
     setError(null);
-    translateAnalysisResult(apiKey!, analysisResult, language, selectedModel, t)
-      .then(translated => {
-        setTranslatedResults(prev => ({ ...prev, [language]: translated }));
-      })
-      .catch(err => setError(err.message))
-      .finally(() => setIsTranslating(false));
+    if(apiKey) {
+        translateAnalysisResult(apiKey, analysisResult, language, selectedModel, t)
+        .then(translated => {
+            setTranslatedResults(prev => ({ ...prev, [language]: translated }));
+        })
+        .catch(err => setError(err.message))
+        .finally(() => setIsTranslating(false));
+    }
   }, [language, analysisResult, translatedResults, apiKey, selectedModel, t]);
 
   useEffect(() => {
@@ -204,11 +200,13 @@ const App: React.FC = () => {
       setPendingAnalysis(null);
     }
   }, [pendingAnalysis, apiKey, handleAnalyzeText]);
+
   useEffect(() => {
     if (analysisResult && analysisReportRef.current) {
       analysisReportRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, [analysisResult]);
+
   const handleJsonLoad = (file: File) => {
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -238,6 +236,7 @@ const App: React.FC = () => {
     };
     reader.readAsText(file);
   };
+
   const handleApiKeySave = useCallback(async (newApiKey: string) => {
     try {
       localStorage.setItem(API_KEY_STORAGE_KEY, newApiKey);
@@ -250,15 +249,18 @@ const App: React.FC = () => {
       return {success: false, error: t('error_save_api_key_storage')};
     }
   }, [t]);
+
   const handleMaxCharLimitSave = useCallback((newLimit: number) => {
     localStorage.setItem(MAX_CHAR_LIMIT_STORAGE_KEY, newLimit.toString());
     setMaxCharLimit(newLimit);
   }, []);
+
   const handleRebuttalUpdate = (newRebuttal: string) => {
     const canonicalRebuttal = { text: newRebuttal, lang: language };
     setRebuttal(canonicalRebuttal);
     setTranslatedRebuttals({ [language]: newRebuttal });
   };
+
   const displayedAnalysis = translatedResults[language] || analysisResult;
   const displayedRebuttal = translatedRebuttals[language] || null;
 
@@ -298,7 +300,6 @@ const App: React.FC = () => {
             models={models}
             selectedModel={selectedModel}
             onModelChange={setSelectedModel}
-            currentModelDetails={currentModelDetails}
             areModelsLoading={areModelsLoading}
             modelsError={modelsError}
             isNightMode={isNightMode}

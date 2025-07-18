@@ -3,7 +3,6 @@
 import { Buffer } from 'buffer';
 window.Buffer = Buffer;
 
-import React from 'react';
 import { pdf } from '@react-pdf/renderer';
 import { ReportPdfDocument } from './components/ReportPdfDocument';
 
