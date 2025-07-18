@@ -1,0 +1,2 @@
+The solution to correctly displaying images in the pdf is to understand that react pdf renderer uses its own tags that are written starting
+with a capital Letter. So the <img> tag in HTML has to be changed to <Img> tag in React PDF renderer.
