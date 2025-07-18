@@ -20,6 +20,7 @@ export const useModels = (apiKey: string | null) => {
     // If there's no API key, reset the state and do nothing.
     if (!apiKey) {
       setModels({ preview: [], stable: [] });
+      setIsLoading(false); // Ensure loading is turned off if key is cleared
       return;
     }
 

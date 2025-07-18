@@ -1,14 +1,16 @@
 // src/components/ApiKeyManager.tsx
 
 import React, { useState, useEffect } from 'react';
-import { SaveIcon, SettingsIcon, ExternalLinkIcon, InfoIcon } from '../constants';
+// CORRECTED: Added API_KEY_STORAGE_KEY to the import list
+import { SaveIcon, SettingsIcon, ExternalLinkIcon, InfoIcon, API_KEY_STORAGE_KEY } from '../constants';
 import { testApiKey } from '../services/geminiService';
 import { useTranslation } from '../i18n';
 import LanguageManager from './LanguageManager';
 import { GroupedModels } from '../hooks/useModels';
 
 interface ApiKeyManagerProps {
-  currentApiKey: string | null;
+  apiKeyInput: string;
+  onApiKeyInputChange: (key: string) => void;
   onApiKeySave: (key: string) => Promise<{success: boolean, error?: string}>;
   currentMaxCharLimit: number;
   onMaxCharLimitSave: (limit: number) => void;
@@ -26,7 +28,8 @@ interface ApiKeyManagerProps {
 }
 
 const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
-  currentApiKey,
+  apiKeyInput,
+  onApiKeyInputChange,
   onApiKeySave,
   currentMaxCharLimit,
   onMaxCharLimitSave,
@@ -43,15 +46,11 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
   onIncludeRebuttalInPdfChange
 }) => {
   const { t } = useTranslation();
-  const [apiKeyInput, setApiKeyInput] = useState(currentApiKey || '');
   const [maxCharLimitInput, setMaxCharLimitInput] = useState(currentMaxCharLimit.toString());
   const [isTesting, setIsTesting] = useState(false);
   const [testStatus, setTestStatus] = useState<{message: string, type: 'success' | 'error' } | null>(null);
-  const [isCollapsed, setIsCollapsed] = useState(() => !!localStorage.getItem('athenaAIApiKey'));
-
-  useEffect(() => {
-    setApiKeyInput(currentApiKey || '');
-  }, [currentApiKey]);
+  // This line now works because API_KEY_STORAGE_KEY is imported
+  const [isCollapsed, setIsCollapsed] = useState(() => !!localStorage.getItem(API_KEY_STORAGE_KEY));
 
   useEffect(() => {
     setMaxCharLimitInput(currentMaxCharLimit.toString());
@@ -136,7 +135,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
               type="password"
               id="apiKey"
               value={apiKeyInput}
-              onChange={(e) => { setApiKeyInput(e.target.value); setTestStatus(null); }}
+              onChange={(e) => { onApiKeyInputChange(e.target.value); setTestStatus(null); }}
               placeholder={t('config_api_key_placeholder')}
               className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-input-bg-light border-input-border-light text-input-text-light dark:bg-input-bg-dark dark:border-input-border-dark dark:text-input-text-dark"
             />
@@ -170,6 +169,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
             >
               {areModelsLoading && <option>{t('config_model_loading')}</option>}
               {modelsError && <option>{t('config_model_error')}</option>}
+              {!areModelsLoading && !modelsError && allModelsEmpty && <option>Enter API Key to see models</option>}
               {!areModelsLoading && !modelsError && (
                 <>
                   {models.preview.length > 0 && ( <optgroup label={t('config_model_preview_group')}> {models.preview.map(model => ( <option key={model.name} value={model.name}> {model.displayName} </option> ))} </optgroup> )}
@@ -213,11 +213,11 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
             </div>
           </div>
 
-          <LanguageManager apiKey={currentApiKey} />
+          <LanguageManager apiKey={apiKeyInput} />
         </>
       )}
-       {isCollapsed && currentApiKey && ( <p className="text-sm text-success-text-light dark:text-success-text-dark">{t('config_api_key_configured')}</p> )}
-       {isCollapsed && !currentApiKey && ( <p className="text-sm text-error-text-light dark:text-error-text-dark">{t('config_api_key_not_configured')}</p> )}
+       {isCollapsed && apiKeyInput && ( <p className="text-sm text-success-text-light dark:text-success-text-dark">{t('config_api_key_configured')}</p> )}
+       {isCollapsed && !apiKeyInput && ( <p className="text-sm text-error-text-light dark:text-error-text-dark">{t('config_api_key_not_configured')}</p> )}
     </div>
   );
 };

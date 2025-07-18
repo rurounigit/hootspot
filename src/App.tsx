@@ -26,11 +26,27 @@ const NIGHT_MODE_STORAGE_KEY = 'hootspot-night-mode';
 
 const App: React.FC = () => {
   const { t, language } = useTranslation();
-  const [apiKey, setApiKey] = useState<string | null>(null);
-  const { models, isLoading: areModelsLoading, error: modelsError } = useModels(apiKey);
+
+  // State for the saved/validated API key and the live input value
+  const [apiKey, setApiKey] = useState<string | null>(() => localStorage.getItem(API_KEY_STORAGE_KEY));
+  const [apiKeyInput, setApiKeyInput] = useState<string>(() => localStorage.getItem(API_KEY_STORAGE_KEY) || '');
+  const [debouncedApiKey, setDebouncedApiKey] = useState<string | null>(apiKey);
+
+  // Debounce the API key input from the user to avoid excessive API calls
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedApiKey(apiKeyInput.trim());
+    }, 500); // 500ms delay
+    return () => clearTimeout(handler);
+  }, [apiKeyInput]);
+
+  // useModels is now driven by the debounced key
+  const { models, isLoading: areModelsLoading, error: modelsError } = useModels(debouncedApiKey);
+
   const [selectedModel, setSelectedModel] = useState<string>(() => {
     return localStorage.getItem(SELECTED_MODEL_STORAGE_KEY) || GEMINI_MODEL_NAME;
   });
+
   const [maxCharLimit, setMaxCharLimit] = useState<number>(DEFAULT_MAX_CHAR_LIMIT);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,10 +71,11 @@ const App: React.FC = () => {
   const analysisReportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const storedApiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
-    if (storedApiKey) { setApiKey(storedApiKey); setIsKeyValid(true); }
+    // This effect now only handles initial setup that doesn't depend on the API key directly
     const storedMaxCharLimit = localStorage.getItem(MAX_CHAR_LIMIT_STORAGE_KEY);
     if (storedMaxCharLimit) { setMaxCharLimit(parseInt(storedMaxCharLimit, 10) || DEFAULT_MAX_CHAR_LIMIT); }
+    if (apiKey) { setIsKeyValid(true); }
+
     const messageListener = (request: any) => {
       textWasSetProgrammatically.current = true;
       if (request.type === 'PUSH_TEXT_TO_PANEL' && request.text) {
@@ -84,16 +101,20 @@ const App: React.FC = () => {
       }
     });
     return () => { chrome.runtime.onMessage.removeListener(messageListener); };
-  }, []);
+  }, [apiKey]); // Keep apiKey dependency here to re-evaluate isKeyValid if it changes
 
+  // This effect handles saving the selected model and validating it against the fetched list
   useEffect(() => {
+    localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel);
+
     const allModels = [...models.preview, ...models.stable];
     if (allModels.length === 0) return;
-    localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel);
-    const details = allModels.find(m => m.name === selectedModel) || null;
-    if (!details) {
-      const defaultModel = allModels.find(m => m.name === GEMINI_MODEL_NAME) || allModels[0];
-      if (defaultModel) { setSelectedModel(defaultModel.name); }
+
+    const isSelectedModelAvailable = allModels.some(m => m.name === selectedModel);
+
+    // If the currently selected model is NOT in the new list, reset to the default.
+    if (!isSelectedModelAvailable) {
+      setSelectedModel(GEMINI_MODEL_NAME);
     }
   }, [selectedModel, models]);
 
@@ -293,7 +314,8 @@ const App: React.FC = () => {
 
         <main className="flex-grow">
           <ApiKeyManager
-            currentApiKey={apiKey}
+            apiKeyInput={apiKeyInput}
+            onApiKeyInputChange={setApiKeyInput}
             onApiKeySave={handleApiKeySave}
             currentMaxCharLimit={maxCharLimit}
             onMaxCharLimitSave={handleMaxCharLimitSave}
