@@ -11,11 +11,8 @@ import LanguageManager from './LanguageManager';
 import { GroupedModels } from '../hooks/useModels';
 
 interface ApiKeyManagerProps {
-  // --- Provider State ---
   serviceProvider: 'google' | 'local';
   onServiceProviderChange: (provider: 'google' | 'local') => void;
-
-  // --- Google Gemini State ---
   apiKeyInput: string;
   onApiKeyInputChange: (key: string) => void;
   models: GroupedModels;
@@ -23,14 +20,10 @@ interface ApiKeyManagerProps {
   onModelChange: (model: string) => void;
   areModelsLoading: boolean;
   modelsError: string | null;
-
-  // --- LM Studio State ---
   lmStudioUrl: string;
   onLmStudioUrlChange: (url: string) => void;
   lmStudioModel: string;
   onLmStudioModelChange: (model: string) => void;
-
-  // --- General Config State ---
   currentMaxCharLimit: number;
   onMaxCharLimitSave: (limit: number) => void;
   isNightMode: boolean;
@@ -40,6 +33,7 @@ interface ApiKeyManagerProps {
   includeRebuttalInPdf: boolean;
   onIncludeRebuttalInPdfChange: (value: boolean) => void;
   onConfigured: (isConfigured: boolean) => void;
+  isConfigured: boolean;
 }
 
 const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
@@ -64,7 +58,8 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
   onIncludeRebuttalInJsonChange,
   includeRebuttalInPdf,
   onIncludeRebuttalInPdfChange,
-  onConfigured
+  onConfigured,
+  isConfigured
 }) => {
   const { t } = useTranslation();
   const [maxCharLimitInput, setMaxCharLimitInput] = useState(currentMaxCharLimit.toString());
@@ -76,19 +71,38 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
     setMaxCharLimitInput(currentMaxCharLimit.toString());
   }, [currentMaxCharLimit]);
 
+  useEffect(() => {
+    setTestStatus(null);
+  }, [serviceProvider]);
+
   const handleSave = async () => {
     setIsTesting(true);
     setTestStatus(null);
     try {
       if (serviceProvider === 'google') {
         const trimmedApiKey = apiKeyInput.trim();
+        if (!trimmedApiKey) {
+            localStorage.removeItem(API_KEY_STORAGE_KEY);
+            onConfigured(false);
+            setTestStatus({ message: t('config_cleared'), type: 'success' });
+            setIsCollapsed(false);
+            return;
+        }
         await testApiKey(trimmedApiKey, t, selectedModel);
         localStorage.setItem(API_KEY_STORAGE_KEY, trimmedApiKey);
         onConfigured(true);
         setTestStatus({ message: t('success_api_key_saved'), type: 'success' });
-      } else { // serviceProvider === 'local'
+      } else {
         const trimmedUrl = lmStudioUrl.trim();
         const trimmedModel = lmStudioModel.trim();
+        if (!trimmedUrl) {
+            localStorage.removeItem(LM_STUDIO_URL_KEY);
+            localStorage.removeItem(LM_STUDIO_MODEL_KEY);
+            onConfigured(false);
+            setTestStatus({ message: t('config_cleared'), type: 'success' });
+            setIsCollapsed(false);
+            return;
+        }
         await testLMStudioConnection(trimmedUrl, trimmedModel, t);
         localStorage.setItem(LM_STUDIO_URL_KEY, trimmedUrl);
         localStorage.setItem(LM_STUDIO_MODEL_KEY, trimmedModel);
@@ -96,7 +110,6 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
         setTestStatus({ message: t('success_local_connection'), type: 'success' });
       }
 
-      // Save shared settings
       const newLimit = parseInt(maxCharLimitInput, 10);
       if (!isNaN(newLimit) && newLimit > 0) {
         onMaxCharLimitSave(newLimit);
@@ -147,7 +160,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
           </div>
         </>
       );
-    } else { // Local Provider
+    } else {
       return (
         <>
           <div className="mb-4 p-4 bg-info-bg-light border border-info-border-light rounded-md dark:bg-info-bg-dark dark:border-info-border-dark">
@@ -214,8 +227,8 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
           <LanguageManager apiKey={apiKeyInput} />
         </>
       )}
-       {isCollapsed && (apiKeyInput || lmStudioUrl) && ( <p className="text-sm text-success-text-light dark:text-success-text-dark">{t('config_api_key_configured')}</p> )}
-       {isCollapsed && !apiKeyInput && !lmStudioUrl && ( <p className="text-sm text-error-text-light dark:text-error-text-dark">{t('config_api_key_not_configured')}</p> )}
+       {isCollapsed && isConfigured && ( <p className="text-sm text-success-text-light dark:text-success-text-dark">{t('config_is_configured')}</p> )}
+       {isCollapsed && !isConfigured && ( <p className="text-sm text-error-text-light dark:text-error-text-dark">{t('config_not_configured')}</p> )}
     </div>
   );
 };

@@ -31,21 +31,14 @@ const App: React.FC = () => {
   const { t, language } = useTranslation();
 
   // --- State Management ---
-  // Service Provider State
   const [serviceProvider, setServiceProvider] = useState<'google' | 'local'>(() => (localStorage.getItem(SERVICE_PROVIDER_KEY) as 'google' | 'local') || 'google');
-
-  // Google Gemini State
   const [apiKey, setApiKey] = useState<string | null>(() => localStorage.getItem(API_KEY_STORAGE_KEY));
   const [apiKeyInput, setApiKeyInput] = useState<string>(() => localStorage.getItem(API_KEY_STORAGE_KEY) || '');
   const [debouncedApiKey, setDebouncedApiKey] = useState<string | null>(apiKey);
   const { models, isLoading: areModelsLoading, error: modelsError } = useModels(serviceProvider === 'google' ? debouncedApiKey : null);
   const [selectedModel, setSelectedModel] = useState<string>(() => localStorage.getItem(SELECTED_MODEL_STORAGE_KEY) || GEMINI_MODEL_NAME);
-
-  // LM Studio State
   const [lmStudioUrl, setLmStudioUrl] = useState<string>(() => localStorage.getItem(LM_STUDIO_URL_KEY) || '');
   const [lmStudioModel, setLmStudioModel] = useState<string>(() => localStorage.getItem(LM_STUDIO_MODEL_KEY) || '');
-
-  // General App State
   const [isConfigured, setIsConfigured] = useState<boolean>(() => !!(localStorage.getItem(API_KEY_STORAGE_KEY) || localStorage.getItem(LM_STUDIO_URL_KEY)));
   const [maxCharLimit, setMaxCharLimit] = useState<number>(DEFAULT_MAX_CHAR_LIMIT);
   const [isLoading, setIsLoading] = useState(false);
@@ -63,18 +56,15 @@ const App: React.FC = () => {
   const [isTranslatingRebuttal, setIsTranslatingRebuttal] = useState(false);
   const [includeRebuttalInJson, setIncludeRebuttalInJson] = useState<boolean>(() => localStorage.getItem(INCLUDE_REBUTTAL_JSON_KEY) === 'true');
   const [includeRebuttalInPdf, setIncludeRebuttalInPdf] = useState<boolean>(() => localStorage.getItem(INCLUDE_REBUTTAL_PDF_KEY) === 'true');
-
   const textWasSetProgrammatically = useRef(false);
   const lastAction = useRef<'PUSH' | 'APPEND'>('PUSH');
   const analysisReportRef = useRef<HTMLDivElement>(null);
 
-  // Debounce the API key input to avoid excessive model fetching
   useEffect(() => {
     const handler = setTimeout(() => { setDebouncedApiKey(apiKeyInput.trim()); }, 500);
     return () => clearTimeout(handler);
   }, [apiKeyInput]);
 
-  // --- Local Storage Effects ---
   useEffect(() => { localStorage.setItem(SERVICE_PROVIDER_KEY, serviceProvider); }, [serviceProvider]);
   useEffect(() => { localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel); }, [selectedModel]);
   useEffect(() => { localStorage.setItem(NIGHT_MODE_STORAGE_KEY, String(isNightMode)); document.documentElement.classList.toggle('dark', isNightMode); }, [isNightMode]);
@@ -84,7 +74,6 @@ const App: React.FC = () => {
   useEffect(() => { localStorage.setItem(LM_STUDIO_URL_KEY, lmStudioUrl) }, [lmStudioUrl]);
   useEffect(() => { localStorage.setItem(LM_STUDIO_MODEL_KEY, lmStudioModel) }, [lmStudioModel]);
 
-  // --- Initial Setup & Message Listeners ---
   useEffect(() => {
     const storedMaxCharLimit = localStorage.getItem(MAX_CHAR_LIMIT_STORAGE_KEY);
     if (storedMaxCharLimit) { setMaxCharLimit(parseInt(storedMaxCharLimit, 10) || DEFAULT_MAX_CHAR_LIMIT); }
@@ -113,7 +102,6 @@ const App: React.FC = () => {
     return () => { chrome.runtime.onMessage.removeListener(messageListener); };
   }, []);
 
-  // --- Logic for handling analysis ---
   const handleAnalyzeText = useCallback(async (text: string) => {
     if (!isConfigured) {
       setError(t('analyzer_no_api_key_warning'));
@@ -151,8 +139,6 @@ const App: React.FC = () => {
     }
   }, [isConfigured, serviceProvider, lmStudioUrl, lmStudioModel, apiKey, selectedModel, language, t]);
 
-
-  // --- Auto-analysis and Translation Effects ---
   useEffect(() => {
     if (pendingAnalysis && isConfigured) {
       handleAnalyzeText(pendingAnalysis.text);
@@ -183,7 +169,6 @@ const App: React.FC = () => {
       .finally(() => setIsTranslatingRebuttal(false));
   }, [language, rebuttal, translatedRebuttals, apiKey, selectedModel, t, serviceProvider]);
 
-  // --- UI and Focus Effects ---
   useEffect(() => {
     if (textWasSetProgrammatically.current) {
       textareaRef.current?.focus();
@@ -203,7 +188,6 @@ const App: React.FC = () => {
     }
   }, [analysisResult]);
 
-  // --- Handlers ---
   const handleJsonLoad = (file: File) => {
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -240,6 +224,9 @@ const App: React.FC = () => {
 
   const displayedAnalysis = translatedResults[language] || analysisResult;
   const displayedRebuttal = translatedRebuttals[language] || null;
+  // --- FIX START: Combine loading states for the Analyze button ---
+  const isBusy = isLoading || (serviceProvider === 'google' && areModelsLoading);
+  // --- FIX END ---
 
   return (
     <div className="relative flex flex-col h-screen bg-app-bg-light dark:bg-app-bg-dark">
@@ -283,13 +270,18 @@ const App: React.FC = () => {
             includeRebuttalInPdf={includeRebuttalInPdf}
             onIncludeRebuttalInPdfChange={setIncludeRebuttalInPdf}
             onConfigured={setIsConfigured}
+            // --- FIX START ---
+            isConfigured={isConfigured}
+            // --- FIX END ---
           />
           <TextAnalyzer
             ref={textareaRef}
             text={textToAnalyze}
             onTextChange={setTextToAnalyze}
             onAnalyze={handleAnalyzeText}
-            isLoading={isLoading}
+            // --- FIX START: Pass the combined busy state ---
+            isLoading={isBusy}
+            // --- FIX END ---
             maxCharLimit={maxCharLimit}
             onJsonLoad={handleJsonLoad}
             hasApiKey={isConfigured}
@@ -297,7 +289,9 @@ const App: React.FC = () => {
           {(isLoading || isTranslating) && (
             <div className="my-4 p-3 rounded-md text-sm bg-info-bg-light text-info-text-light border border-info-border-light dark:bg-info-bg-dark dark:text-info-text-dark dark:border-info-border-dark flex items-center justify-center">
               <div className="spinner w-5 h-5 border-t-link-light mr-2"></div>
-              {isLoading ? t('analyzer_button_analyzing') : t('info_translating_results')}
+              {/* --- FIX START: Show a better message when models are loading --- */}
+              {areModelsLoading ? t('config_model_loading') : (isLoading ? t('analyzer_button_analyzing') : t('info_translating_results'))}
+              {/* --- FIX END --- */}
             </div>
           )}
           {isTranslatingRebuttal && (
