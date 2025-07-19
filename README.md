@@ -85,22 +85,22 @@ During my lifetime I have dedicated my life to this struggle of the African peop
 
   *Analysis and Visualization*
 
-  <img src="public/images/examples/mandela-report.jpg" alt="Analysis of Churchill's speech" width="40%">
-  <img src="public/images/examples/mandela-chart.jpg" alt="Analysis of Churchill's speech" width="40%">
+  <img src="public/images/examples/mandela-report.jpg" alt="Analysis of Mandela's speech" width="40%">
+  <img src="public/images/examples/mandela-chart.jpg" alt="Analysis of Mandela's speech" width="40%">
   <br><br>
 
   *Highlighted Text*
 
-  <img src="public/images/examples/mandela-highlighted-text.jpg" alt="Highlighted text of Churchill's speech" width="40%">
+  <img src="public/images/examples/mandela-highlighted-text.jpg" alt="Highlighted text of Mandela's speech" width="40%">
   <br><br>
 
   *Found Patterns*
 
-  <img src="public/images/examples/mandela-pattern-01.jpg" alt="Highlighted text of Churchill's speech" width="40%">
-  <img src="public/images/examples/mandela-pattern-02.jpg" alt="Highlighted text of Churchill's speech" width="40%">
-  <img src="public/images/examples/mandela-pattern-03.jpg" alt="Highlighted text of Churchill's speech" width="40%">
-  <img src="public/images/examples/mandela-pattern-04.jpg" alt="Highlighted text of Churchill's speech" width="40%">
-  <img src="public/images/examples/mandela-pattern-05.jpg" alt="Highlighted text of Churchill's speech" width="40%">
+  <img src="public/images/examples/mandela-pattern-01.jpg" alt="Highlighted text of Mandela's speech" width="40%">
+  <img src="public/images/examples/mandela-pattern-02.jpg" alt="Highlighted text of Mandela's speech" width="40%">
+  <img src="public/images/examples/mandela-pattern-03.jpg" alt="Highlighted text of Mandela's speech" width="40%">
+  <img src="public/images/examples/mandela-pattern-04.jpg" alt="Highlighted text of Mandela's speech" width="40%">
+  <img src="public/images/examples/mandela-pattern-05.jpg" alt="Highlighted text of Mandela's speech" width="40%">
 </details>
 
   ---
@@ -115,22 +115,22 @@ During my lifetime I have dedicated my life to this struggle of the African peop
 
   *Analysis and Visualization*
 
-  <img src="public/images/examples/trump-report.jpg" alt="Analysis of Churchill's speech" width="40%">
-  <img src="public/images/examples/trump-chart.jpg" alt="Analysis of Churchill's speech" width="40%">
+  <img src="public/images/examples/trump-report.jpg" alt="Analysis of Trump's speech" width="40%">
+  <img src="public/images/examples/trump-chart.jpg" alt="Analysis of Trump's speech" width="40%">
   <br><br>
 
   *Highlighted Text*
 
-  <img src="public/images/examples/trump-highlighted-text.jpg" alt="Highlighted text of Churchill's speech" width="40%">
+  <img src="public/images/examples/trump-highlighted-text.jpg" alt="Highlighted text of Trump's speech" width="40%">
   <br><br>
 
   *Found Patterns*
 
-  <img src="public/images/examples/trump-pattern-01.jpg" alt="Highlighted text of Churchill's speech" width="40%">
-  <img src="public/images/examples/trump-pattern-02.jpg" alt="Highlighted text of Churchill's speech" width="40%">
-  <img src="public/images/examples/trump-pattern-03.jpg" alt="Highlighted text of Churchill's speech" width="40%">
-  <img src="public/images/examples/trump-pattern-04.jpg" alt="Highlighted text of Churchill's speech" width="40%">
-  <img src="public/images/examples/trump-pattern-05.jpg" alt="Highlighted text of Churchill's speech" width="40%">
+  <img src="public/images/examples/trump-pattern-01.jpg" alt="Highlighted text of Trump's speech" width="40%">
+  <img src="public/images/examples/trump-pattern-02.jpg" alt="Highlighted text of Trump's speech" width="40%">
+  <img src="public/images/examples/trump-pattern-03.jpg" alt="Highlighted text of Trump's speech" width="40%">
+  <img src="public/images/examples/trump-pattern-04.jpg" alt="Highlighted text of Trump's speech" width="40%">
+  <img src/images/examples/trump-pattern-05.jpg" alt="Highlighted text of Trump's speech" width="40%">
   <br><br>
 
   *Rebuttal*
@@ -140,13 +140,13 @@ During my lifetime I have dedicated my life to this struggle of the African peop
 
 ## How It Works
 
-HootSpot is built as a modern Manifest V3 Chrome Extension, ensuring security and performance.
+HootSpot is built as a modern Manifest V3 Chrome Extension with a modular, hook-based React architecture.
 
-1.  **Input**: A user selects text and uses the context menu or pastes text directly into the side panel.
-2.  **Request**: The `background.ts` service worker or the UI (`App.tsx`) sends the user's text and the core `SYSTEM_PROMPT` to the **selected AI service (Google Gemini API or a local LM Studio server)** via `geminiService.ts`.
+1.  **Input**: A user selects text and uses the context menu, keyboard shortcut, or pastes text directly into the side panel's text area.
+2.  **Request**: The `background.ts` service worker or the UI (`App.tsx`) initiates the analysis. `App.tsx` coordinates state using custom hooks. The core logic resides in `useAnalysis.ts`, which, based on the provider chosen in `useConfig.ts`, calls the appropriate function in the API layer (`src/api/google.ts` or `src/api/lm-studio.ts`). The request sends the user's text and the relevant system prompt from `src/config/api-prompts.ts`.
 3.  **Analysis**: The **AI model (from Google Gemini or LM Studio)** acts as an expert in linguistics and psychology. It analyzes the text for manipulative patterns and returns a structured JSON response.
-4.  **Response Handling**: The `geminiService.ts` includes robust logic to parse the API's response, including extracting JSON from markdown code blocks to handle various model outputs gracefully.
-5.  **Rendering**: The React frontend (`App.tsx`) processes this JSON and renders an interactive, multi-part report in the side panel, featuring the summary, the D3.js bubble chart (`ManipulationBubbleChart.tsx`), and the highlighted source text.
+4.  **Response Handling**: The API modules in `src/api/` contain robust logic to parse the API's response. This includes extracting JSON from markdown code blocks and even attempting to self-heal malformed JSON to handle various model outputs gracefully.
+5.  **Rendering**: The `useAnalysis` hook updates the application state with the analysis result. This triggers a re-render in the React frontend, where `App.tsx` passes the result to the `AnalysisReport` component. This component then renders the full interactive report, including the D3.js bubble chart (`ManipulationBubbleChart.tsx`) and the highlighted source text.
 6.  **PDF Generation**: For PDF exports, the app uses a sandboxed `iframe` (`pdf-generator.html`) for security. It renders an off-screen, high-resolution version of the bubble chart using `html2canvas` and constructs the PDF with `@react-pdf/renderer` in the sandbox, preventing direct access to sensitive resources.
 
 ## Installation and Usage
@@ -229,55 +229,43 @@ If you want to run the project locally for development or testing, follow these 
 
 ## Directory Structure
 
-The project is structured to be clean and maintainable:
-
 ```
 /
 ├── dist/                  # Built extension files (output of `npm run build`)
-├── public/                # Static assets, manifest.json, and locales
-│   ├── _locales/          # i18n message files for different languages
+├── public/                # Static assets, manifest.json, and Chrome-specific locales
+│   ├── _locales/          # i18n message files for Chrome context menus
 │   └── manifest.json      # Core Chrome Extension configuration
 └── src/                   # Main application source code
-    ├── components/        # Reusable React components
-    │   ├── AnalysisReport.tsx
-    │   ├── ApiKeyManager.tsx
-    │   ├── ExportableBubbleChart.tsx
-    │   ├── LanguageManager.tsx
-    │   ├── LanguageSwitcher.tsx
-    │   ├── ManipulationBubbleChart.tsx
-    │   ├── RebuttalGenerator.tsx
-    │   ├── ReportPdfDocument.tsx
-    │   ├── ShareMenu.tsx
-    │   └── TextAnalyzer.tsx
-    ├── hooks/             # Custom React hooks (e.g., `useModels.ts`)
-    │   └── useModels.ts
-    ├── locales/           # English-language JSON strings for i18n
-    ├── services/          # API communication logic (e.g., `geminiService.ts`)
-    │   └── geminiService.ts
-    ├── utils/             # Helper functions (e.g., text manipulation)
-    │   ├── note-to-llm.txt
-    │   └── textUtils.ts
-    ├── App.tsx            # Main React application component
+    ├── api/               # All external API communication logic
+    │   ├── google.ts      # Functions for interacting with the Google Gemini API
+    │   └── lm-studio.ts   # Functions for interacting with a local LM Studio server
+    ├── assets/            # SVG icons and other static assets used in the app
+    │   └── icons.tsx      # React components for all SVG icons
+    ├── components/        # React components, organized by feature
+    │   ├── analysis/      # Components related to displaying the analysis report
+    │   ├── config/        # Components for the configuration section
+    │   └── pdf/           # Components used specifically for PDF generation
+    ├── config/            # Centralized application configuration
+    │   ├── api-prompts.ts # System prompts for all AI interactions
+    │   ├── chart.ts       # Visual configuration for charts (UI and PDF)
+    │   ├── storage-keys.ts# Constants for localStorage keys
+    │   └── theme.ts       # Centralized color theme for Tailwind CSS
+    ├── hooks/             # Custom React hooks for managing state and business logic
+    │   ├── useAnalysis.ts # Manages the entire analysis workflow and state
+    │   ├── useConfig.ts   # Manages all user configuration and settings
+    │   ├── useModels.ts   # Fetches and manages the list of available AI models
+    │   └── useTranslationManager.ts # Manages translation of dynamic content
+    ├── locales/           # UI translation files (JSON) for different languages
+    ├── types/             # TypeScript type definitions for the application
+    ├── utils/             # Helper functions
+    ├── App.tsx            # Main React application component (state coordinator)
     ├── background.ts      # Extension service worker (context menus, etc.)
-    ├── constants.tsx      # Global constants, prompt definitions, and icons
-    ├── i18n.tsx           # Internationalization setup
+    ├── i18n.tsx           # Internationalization setup and provider
     ├── index.tsx          # React entry point
-    ├── pdf-config.ts      # Configuration for PDF generation visuals
-    ├── pdf-generator.tsx  # React code for the sandboxed PDF page
-    ├── tailwind-input.css # Tailwind CSS entry point
-    ├── types.ts           # TypeScript type definitions
-    ├── ui-chart-config.ts # Configuration for interactive chart visuals
-    ├── ui-config.ts       # Centralized UI color definitions
-    └── vite-env.d.ts      # Vite environment declarations
+    └── pdf-generator.tsx  # React code for the sandboxed PDF generation page
 ├── index.html             # Main HTML entry point for the side panel
-├── LICENSE                # Project license details
-├── metadata.json          # Chrome Web Store metadata
 ├── package.json           # Project dependencies and scripts
-├── pdf-generator.html     # HTML entry point for the sandboxed PDF generation iframe
-├── postcss.config.cjs     # PostCSS configuration for Tailwind
-├── tailwind.config.cjs    # Tailwind CSS configuration
-├── tsconfig.json          # TypeScript compiler configuration
-└── vite.config.ts         # Vite build configuration
+└── ...                    # Other project configuration files
 ```
 
 ## Tech Stack
