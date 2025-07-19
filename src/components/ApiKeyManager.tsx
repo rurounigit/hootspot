@@ -187,7 +187,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
             onIncludeRebuttalInPdfChange={onIncludeRebuttalInPdfChange}
           />
 
-          <button onClick={handleSave} disabled={isTesting} className="w-full flex items-center justify-center px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-button-disabled-bg-light dark:disabled:bg-button-disabled-bg-dark">
+          <button onClick={handleSave} disabled={isTesting} className="mt-6 w-full flex items-center justify-center px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-button-disabled-bg-light dark:disabled:bg-button-disabled-bg-dark">
             {isTesting ? ( <div className="spinner w-5 h-5 border-t-white mr-2"></div> ) : ( <SaveIcon className="w-5 h-5 mr-2" /> )}
             {isTesting ? t('config_button_saving') : t('config_button_save_test')}
           </button>
