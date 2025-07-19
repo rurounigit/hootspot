@@ -68,7 +68,7 @@ const TextAnalyzer = forwardRef<HTMLTextAreaElement, TextAnalyzerProps>(
           onKeyDown={handleKeyDown}
           placeholder={t('analyzer_placeholder')}
           rows={8}
-          className="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 dark:border-gray-600 disabled:dark:bg-gray-700"
+          className="w-full p-3 border rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 disabled:bg-gray-50 disabled:dark:bg-gray-700"
           maxLength={maxCharLimit + 500}
           disabled={!hasApiKey || isLoading}
         />
