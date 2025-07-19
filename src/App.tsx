@@ -55,7 +55,6 @@ const App: React.FC = () => {
   const [includeRebuttalInJson, setIncludeRebuttalInJson] = useState<boolean>(() => localStorage.getItem(INCLUDE_REBUTTAL_JSON_KEY) === 'true');
   const [includeRebuttalInPdf, setIncludeRebuttalInPdf] = useState<boolean>(() => localStorage.getItem(INCLUDE_REBUTTAL_PDF_KEY) === 'true');
   const [isConfigCollapsed, setIsConfigCollapsed] = useState(() => !!(localStorage.getItem(API_KEY_STORAGE_KEY) || localStorage.getItem(LM_STUDIO_URL_KEY)));
-  const [initialConfigError, setInitialConfigError] = useState<string | null>(null);
   const textWasSetProgrammatically = useRef(false);
   const lastAction = useRef<'PUSH' | 'APPEND'>('PUSH');
   const analysisReportRef = useRef<HTMLDivElement>(null);
@@ -90,7 +89,6 @@ const App: React.FC = () => {
               setPendingAnalysis({ text: request.text });
           } else {
               setIsConfigCollapsed(false);
-              setInitialConfigError(serviceProvider === 'google' ? 'error_api_key_empty' : 'error_local_server_config_missing');
           }
         }
       } else if (request.type === 'APPEND_TEXT_TO_PANEL' && request.text) {
@@ -110,7 +108,6 @@ const App: React.FC = () => {
               setPendingAnalysis({ text: response.text });
           } else {
               setIsConfigCollapsed(false);
-              setInitialConfigError(serviceProvider === 'google' ? 'error_api_key_empty' : 'error_local_server_config_missing');
           }
         }
       }
@@ -121,7 +118,6 @@ const App: React.FC = () => {
   const handleAnalyzeText = useCallback(async (text: string) => {
     if (!isCurrentProviderConfigured) {
       setIsConfigCollapsed(false);
-      setInitialConfigError(serviceProvider === 'google' ? 'error_api_key_empty' : 'error_local_server_config_missing');
       return;
     }
     setIsLoading(true);
@@ -154,7 +150,6 @@ const App: React.FC = () => {
 
       if (configErrorKeys.includes(errorMessage)) {
         setIsConfigCollapsed(false);
-        setInitialConfigError(errorMessage);
       } else {
         setError(errorMessage);
       }
@@ -298,15 +293,12 @@ const App: React.FC = () => {
             isCurrentProviderConfigured={isCurrentProviderConfigured}
             isCollapsed={isConfigCollapsed}
             onToggleCollapse={() => setIsConfigCollapsed(!isConfigCollapsed)}
-            initialConfigError={initialConfigError}
-            onClearInitialError={() => setInitialConfigError(null)}
           />
           <TextAnalyzer
             ref={textareaRef}
             text={textToAnalyze}
             onTextChange={(newText) => {
                 setTextToAnalyze(newText);
-                if (initialConfigError) setInitialConfigError(null);
             }}
             onAnalyze={handleAnalyzeText}
             isLoading={isBusy}

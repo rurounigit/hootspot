@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     SaveIcon, SettingsIcon, ExternalLinkIcon, InfoIcon, API_KEY_STORAGE_KEY,
-    SERVICE_PROVIDER_KEY, LM_STUDIO_URL_KEY, LM_STUDIO_MODEL_KEY
+    LM_STUDIO_URL_KEY, LM_STUDIO_MODEL_KEY
 } from '../constants';
 import { testApiKey, testLMStudioConnection } from '../services/geminiService';
 import { useTranslation } from '../i18n';

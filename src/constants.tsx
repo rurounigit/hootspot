@@ -2,17 +2,7 @@
 
 import React from 'react';
 
-export const GEMINI_MODEL_NAME = 'gemini-2.5-flash-lite-preview-06-17';
-//models/gemini-2.5-pro-preview-03-25
-//models/gemini-2.5-flash-preview-04-17
-//models/gemini-2.5-flash-preview-05-20
-//models/gemini-2.5-flash-preview-04-17-thinking
-//models/gemini-2.5-flash-lite-preview-06-17
-//models/gemini-2.5-pro-preview-05-06
-//models/gemini-2.5-pro-preview-06-05
-//models/gemini-2.0-flash-lite-preview-02-05
-//models/gemini-2.0-flash-lite-preview
-
+export const GEMINI_MODEL_NAME = 'models/gemini-2.5-flash-lite-preview-06-17';
 export const SYSTEM_PROMPT = `You are HootSpot AI, a world-class expert in linguistics, psychology, and rhetoric. Your task is to analyze a given text for patterns of psychological, rhetorical, and logical manipulation.
 
 For each manipulative pattern you identify, you must provide:
