@@ -1,6 +1,6 @@
 // tailwind.config.cjs
 
-const { themeColors } = require('./src/ui-config');
+const { themeColors } = require('./src/config/theme');
 
 /**
  * This function flattens the nested color theme object into a single-level

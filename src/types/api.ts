@@ -1,4 +1,3 @@
-
 export interface GeminiFinding {
   pattern_name: string;
   display_name: string; // The translated name for UI display

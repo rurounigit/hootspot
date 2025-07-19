@@ -1,6 +1,6 @@
 // src/components/TextAnalyzer.tsx
 import React, { forwardRef, useRef } from 'react'; // Import forwardRef and useRef
-import { FolderOpenIcon } from '../constants';
+import { FolderOpenIcon } from '../assets/icons';
 import { useTranslation } from '../i18n';
 
 

@@ -1,10 +1,10 @@
-// src/components/ManipulationBubbleChart.tsx
+// src/components/analysis/ManipulationBubbleChart.tsx
 
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { useTranslation } from '../i18n';
+import { useTranslation } from '../../i18n';
 import * as d3 from 'd3';
-import { calculateOptimalFontSize } from '../utils/textUtils';
-import { UI_CHART_CONFIG } from '../ui-chart-config';
+import { calculateOptimalFontSize } from '../../utils/textUtils';
+import { UI_CHART_CONFIG } from '../../config/chart';
 
 // --- INTERFACES ---
 interface BubbleData {

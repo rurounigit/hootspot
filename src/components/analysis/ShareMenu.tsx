@@ -3,12 +3,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import html2canvas from 'html2canvas';
-import { GeminiAnalysisResponse } from '../types';
-import { ShareIcon } from '../constants';
-import { useTranslation } from '../i18n';
-import ExportableBubbleChart from './ExportableBubbleChart';
+import { GeminiAnalysisResponse } from '../../types/api';
+import { ShareIcon } from '../../assets/icons';
+import { useTranslation } from '../../i18n';
+import ExportableBubbleChart from '../pdf/ExportableBubbleChart';
 // CORRECTED: Import PDF_TITLE_TEXT from the config file.
-import { PDF_CONFIG, PDF_TITLE_TEXT } from '../pdf-config';
+import { PDF_CHART_CONFIG, PDF_TITLE_TEXT } from '../../config/chart';
 
 // Define the interfaces for props
 interface BubbleData {
@@ -99,7 +99,7 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
     hiddenContainer.style.left = '-9999px';
     hiddenContainer.style.width = '600px';
     hiddenContainer.style.height = '450px';
-    hiddenContainer.style.backgroundColor = PDF_CONFIG.CHART_BACKGROUND_COLOR;
+    hiddenContainer.style.backgroundColor = PDF_CHART_CONFIG.CHART_BACKGROUND_COLOR;
     document.body.appendChild(hiddenContainer);
 
     const root = createRoot(hiddenContainer);
@@ -115,7 +115,7 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
 
     try {
       const canvas = await html2canvas(hiddenContainer, {
-        scale: PDF_CONFIG.CHART_IMAGE_SCALE,
+        scale: PDF_CHART_CONFIG.CHART_IMAGE_SCALE,
         backgroundColor: null
       });
       chartImage = canvas.toDataURL('image/png');

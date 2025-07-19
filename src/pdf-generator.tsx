@@ -4,7 +4,7 @@ import { Buffer } from 'buffer';
 window.Buffer = Buffer;
 
 import { pdf } from '@react-pdf/renderer';
-import { ReportPdfDocument } from './components/ReportPdfDocument';
+import { ReportPdfDocument } from './components/pdf/ReportPdfDocument';
 
 const generatePdf = async (event: MessageEvent) => {
   // --- FOOLPROOF DEBUGGING ---

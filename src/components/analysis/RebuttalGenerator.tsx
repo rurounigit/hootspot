@@ -1,10 +1,10 @@
-// src/components/RebuttalGenerator.tsx
+// src/components/analysis/RebuttalGenerator.tsx
 
 import React, { useState } from 'react';
-import { generateRebuttal } from '../services/geminiService';
-import { GeminiAnalysisResponse } from '../types';
-import { useTranslation } from '../i18n';
-import { SparklesIcon } from '../constants';
+import { generateRebuttal } from '../../api/google';
+import { GeminiAnalysisResponse } from '../../types/api';
+import { useTranslation } from '../../i18n';
+import { SparklesIcon } from '../../assets/icons';
 
 interface RebuttalGeneratorProps {
     analysis: GeminiAnalysisResponse;

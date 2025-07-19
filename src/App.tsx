@@ -1,84 +1,90 @@
 // src/App.tsx
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import ApiKeyManager from './components/ApiKeyManager';
 import TextAnalyzer from './components/TextAnalyzer';
-import AnalysisReport from './components/AnalysisReport';
+import AnalysisReport from './components/analysis/AnalysisReport';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import { useTranslation } from './i18n';
-import { analyzeText, analyzeTextWithLMStudio, translateAnalysisResult, translateText } from './services/geminiService';
 import { useModels } from './hooks/useModels';
-import { GeminiAnalysisResponse } from './types';
-import {
-  API_KEY_STORAGE_KEY,
-  MAX_CHAR_LIMIT_STORAGE_KEY,
-  DEFAULT_MAX_CHAR_LIMIT,
-  HootSpotLogoIcon,
-  SELECTED_MODEL_STORAGE_KEY,
-  GEMINI_MODEL_NAME,
-  SunIcon,
-  MoonIcon,
-  INCLUDE_REBUTTAL_JSON_KEY,
-  INCLUDE_REBUTTAL_PDF_KEY,
-  SERVICE_PROVIDER_KEY,
-  LM_STUDIO_URL_KEY,
-  LM_STUDIO_MODEL_KEY
-} from './constants';
-
-const NIGHT_MODE_STORAGE_KEY = 'hootspot-night-mode';
+import { useConfig } from './hooks/useConfig';
+import { useAnalysis } from './hooks/useAnalysis';
+import { useTranslationManager } from './hooks/useTranslationManager';
+import { HootSpotLogoIcon, SunIcon, MoonIcon } from './assets/icons';
+import { DEFAULT_MAX_CHAR_LIMIT } from './constants';
 
 const App: React.FC = () => {
   const { t, language } = useTranslation();
+  const {
+    serviceProvider,
+    setServiceProvider,
+    apiKey,
+    apiKeyInput,
+    setApiKeyInput,
+    debouncedApiKey,
+    selectedModel,
+    setSelectedModel,
+    lmStudioUrl,
+    setLmStudioUrl,
+    lmStudioModel,
+    setLmStudioModel,
+    maxCharLimit,
+    isNightMode,
+    setIsNightMode,
+    includeRebuttalInJson,
+    setIncludeRebuttalInJson,
+    includeRebuttalInPdf,
+    setIncludeRebuttalInPdf,
+    isConfigCollapsed,
+    setIsConfigCollapsed,
+    isCurrentProviderConfigured,
+    handleMaxCharLimitSave,
+  } = useConfig();
 
-  const [serviceProvider, setServiceProvider] = useState<'google' | 'local'>(() => (localStorage.getItem(SERVICE_PROVIDER_KEY) as 'google' | 'local') || 'google');
-  const [apiKey, setApiKey] = useState<string | null>(() => localStorage.getItem(API_KEY_STORAGE_KEY));
-  const [apiKeyInput, setApiKeyInput] = useState<string>(() => localStorage.getItem(API_KEY_STORAGE_KEY) || '');
-  const [debouncedApiKey, setDebouncedApiKey] = useState<string | null>(apiKey);
   const { models, isLoading: areModelsLoading, error: modelsError } = useModels(serviceProvider === 'google' ? debouncedApiKey : null);
-  const [selectedModel, setSelectedModel] = useState<string>(() => localStorage.getItem(SELECTED_MODEL_STORAGE_KEY) || GEMINI_MODEL_NAME);
-  const [lmStudioUrl, setLmStudioUrl] = useState<string>(() => localStorage.getItem(LM_STUDIO_URL_KEY) || '');
-  const [lmStudioModel, setLmStudioModel] = useState<string>(() => localStorage.getItem(LM_STUDIO_MODEL_KEY) || '');
-  const [maxCharLimit, setMaxCharLimit] = useState<number>(DEFAULT_MAX_CHAR_LIMIT);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [analysisResult, setAnalysisResult] = useState<GeminiAnalysisResponse | null>(null);
-  const [currentTextAnalyzed, setCurrentTextAnalyzed] = useState<string | null>(null);
-  const [textToAnalyze, setTextToAnalyze] = useState('');
-  const [pendingAnalysis, setPendingAnalysis] = useState<{ text: string } | null>(null);
-  const [translatedResults, setTranslatedResults] = useState<Record<string, GeminiAnalysisResponse>>({});
-  const [isTranslating, setIsTranslating] = useState(false);
+
+  const {
+    isLoading,
+    error,
+    analysisResult,
+    currentTextAnalyzed,
+    textToAnalyze,
+    setTextToAnalyze,
+    setPendingAnalysis,
+    isTranslating,
+    handleAnalyzeText,
+    handleJsonLoad,
+    analysisReportRef,
+    displayedAnalysis,
+  } = useAnalysis(
+    serviceProvider,
+    apiKey,
+    lmStudioUrl,
+    lmStudioModel,
+    selectedModel,
+    isCurrentProviderConfigured,
+    setIsConfigCollapsed
+  );
+
+  const {
+    rebuttal,
+    setRebuttal,
+    isTranslatingRebuttal,
+    handleRebuttalUpdate,
+    displayedRebuttal,
+    translationError,
+  } = useTranslationManager(
+    analysisResult,
+    apiKey,
+    selectedModel,
+    serviceProvider
+  );
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [isNightMode, setIsNightMode] = useState<boolean>(() => localStorage.getItem(NIGHT_MODE_STORAGE_KEY) === 'true');
-  const [rebuttal, setRebuttal] = useState<{ text: string; lang: string; } | null>(null);
-  const [translatedRebuttals, setTranslatedRebuttals] = useState<Record<string, string>>({});
-  const [isTranslatingRebuttal, setIsTranslatingRebuttal] = useState(false);
-  const [includeRebuttalInJson, setIncludeRebuttalInJson] = useState<boolean>(() => localStorage.getItem(INCLUDE_REBUTTAL_JSON_KEY) === 'true');
-  const [includeRebuttalInPdf, setIncludeRebuttalInPdf] = useState<boolean>(() => localStorage.getItem(INCLUDE_REBUTTAL_PDF_KEY) === 'true');
-  const [isConfigCollapsed, setIsConfigCollapsed] = useState(() => !!(localStorage.getItem(API_KEY_STORAGE_KEY) || localStorage.getItem(LM_STUDIO_URL_KEY)));
   const textWasSetProgrammatically = useRef(false);
   const lastAction = useRef<'PUSH' | 'APPEND'>('PUSH');
-  const analysisReportRef = useRef<HTMLDivElement>(null);
-
-  const isCurrentProviderConfigured = (serviceProvider === 'google' && !!apiKeyInput.trim()) || (serviceProvider === 'local' && !!lmStudioUrl.trim() && !!lmStudioModel.trim());
 
   useEffect(() => {
-    const handler = setTimeout(() => { setDebouncedApiKey(apiKeyInput.trim()); }, 500);
-    return () => clearTimeout(handler);
-  }, [apiKeyInput]);
-
-  useEffect(() => { localStorage.setItem(SERVICE_PROVIDER_KEY, serviceProvider); }, [serviceProvider]);
-  useEffect(() => { localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel); }, [selectedModel]);
-  useEffect(() => { localStorage.setItem(NIGHT_MODE_STORAGE_KEY, String(isNightMode)); document.documentElement.classList.toggle('dark', isNightMode); }, [isNightMode]);
-  useEffect(() => { localStorage.setItem(INCLUDE_REBUTTAL_JSON_KEY, String(includeRebuttalInJson)); }, [includeRebuttalInJson]);
-  useEffect(() => { localStorage.setItem(INCLUDE_REBUTTAL_PDF_KEY, String(includeRebuttalInPdf)); }, [includeRebuttalInPdf]);
-  useEffect(() => { if (serviceProvider === 'google') setApiKey(apiKeyInput); }, [apiKeyInput, serviceProvider]);
-  useEffect(() => { localStorage.setItem(LM_STUDIO_URL_KEY, lmStudioUrl) }, [lmStudioUrl]);
-  useEffect(() => { localStorage.setItem(LM_STUDIO_MODEL_KEY, lmStudioModel) }, [lmStudioModel]);
-
-  useEffect(() => {
-    const storedMaxCharLimit = localStorage.getItem(MAX_CHAR_LIMIT_STORAGE_KEY);
-    if (storedMaxCharLimit) { setMaxCharLimit(parseInt(storedMaxCharLimit, 10) || DEFAULT_MAX_CHAR_LIMIT); }
-
     const messageListener = (request: any) => {
       textWasSetProgrammatically.current = true;
       if (request.type === 'PUSH_TEXT_TO_PANEL' && request.text) {
@@ -86,9 +92,9 @@ const App: React.FC = () => {
         setTextToAnalyze(request.text);
         if (request.autoAnalyze) {
           if (isCurrentProviderConfigured) {
-              setPendingAnalysis({ text: request.text });
+            setPendingAnalysis({ text: request.text });
           } else {
-              setIsConfigCollapsed(false);
+            setIsConfigCollapsed(false);
           }
         }
       } else if (request.type === 'APPEND_TEXT_TO_PANEL' && request.text) {
@@ -105,89 +111,15 @@ const App: React.FC = () => {
         setTextToAnalyze(response.text);
         if (response.autoAnalyze) {
           if (isCurrentProviderConfigured) {
-              setPendingAnalysis({ text: response.text });
+            setPendingAnalysis({ text: response.text });
           } else {
-              setIsConfigCollapsed(false);
+            setIsConfigCollapsed(false);
           }
         }
       }
     });
     return () => { chrome.runtime.onMessage.removeListener(messageListener); };
-  }, [isCurrentProviderConfigured, serviceProvider]);
-
-  const handleAnalyzeText = useCallback(async (text: string) => {
-    if (!isCurrentProviderConfigured) {
-      setIsConfigCollapsed(false);
-      return;
-    }
-    setIsLoading(true);
-    setError(null);
-    setAnalysisResult(null);
-    setCurrentTextAnalyzed(text);
-    setTranslatedResults({});
-    setRebuttal(null);
-    setTranslatedRebuttals({});
-
-    try {
-      let result;
-      if (serviceProvider === 'local') {
-        result = await analyzeTextWithLMStudio(text, lmStudioUrl, lmStudioModel, t);
-      } else {
-        if (!apiKey) throw new Error('error_api_key_not_configured');
-        result = await analyzeText(apiKey, text, selectedModel);
-      }
-      setAnalysisResult(result);
-
-      if (language !== 'en' && result.findings.length > 0 && serviceProvider === 'google' && apiKey) {
-        setIsTranslating(true);
-        const translatedResult = await translateAnalysisResult(apiKey, result, language, selectedModel, t);
-        setTranslatedResults({ [language]: translatedResult });
-        setIsTranslating(false);
-      }
-    } catch (err: any) {
-      const errorMessage = (err as Error).message || "An unknown error occurred during analysis.";
-      const configErrorKeys = ['error_local_server_config_missing', 'error_api_key_empty', 'error_api_key_not_configured'];
-
-      if (configErrorKeys.includes(errorMessage)) {
-        setIsConfigCollapsed(false);
-      } else {
-        setError(errorMessage);
-      }
-      setAnalysisResult(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [isCurrentProviderConfigured, serviceProvider, lmStudioUrl, lmStudioModel, apiKey, selectedModel, language, t]);
-
-  useEffect(() => {
-    if (pendingAnalysis && isCurrentProviderConfigured) {
-      handleAnalyzeText(pendingAnalysis.text);
-      setPendingAnalysis(null);
-    }
-  }, [pendingAnalysis, isCurrentProviderConfigured, handleAnalyzeText]);
-
-  useEffect(() => {
-    if (!analysisResult || language === 'en' || serviceProvider === 'local' || !apiKey) return;
-    if (translatedResults[language]) return;
-    setIsTranslating(true);
-    setError(null);
-    translateAnalysisResult(apiKey, analysisResult, language, selectedModel, t)
-      .then(translated => setTranslatedResults(prev => ({ ...prev, [language]: translated })))
-      .catch(err => setError(err.message))
-      .finally(() => setIsTranslating(false));
-  }, [language, analysisResult, translatedResults, apiKey, selectedModel, t, serviceProvider]);
-
-  useEffect(() => {
-    if (!rebuttal || !apiKey || serviceProvider === 'local') return;
-    if (language === rebuttal.lang) return;
-    if (translatedRebuttals[language]) return;
-    setIsTranslatingRebuttal(true);
-    setError(null);
-    translateText(apiKey, rebuttal.text, language, selectedModel, t)
-      .then(translated => setTranslatedRebuttals(prev => ({ ...prev, [language]: translated })))
-      .catch(err => setError(err.message))
-      .finally(() => setIsTranslatingRebuttal(false));
-  }, [language, rebuttal, translatedRebuttals, apiKey, selectedModel, t, serviceProvider]);
+  }, [isCurrentProviderConfigured, serviceProvider, setPendingAnalysis, setTextToAnalyze, setIsConfigCollapsed]);
 
   useEffect(() => {
     if (textWasSetProgrammatically.current) {
@@ -202,48 +134,7 @@ const App: React.FC = () => {
     }
   }, [textToAnalyze]);
 
-  useEffect(() => {
-    if (analysisResult && analysisReportRef.current) {
-      analysisReportRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, [analysisResult]);
-
-  const handleJsonLoad = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const text = event.target?.result as string;
-        const data = JSON.parse(text);
-        if (data.reportId && data.analysisResult && typeof data.sourceText === 'string') {
-          setAnalysisResult(data.analysisResult);
-          setCurrentTextAnalyzed(data.sourceText);
-          setTextToAnalyze(data.sourceText);
-          setTranslatedResults({});
-          if (data.rebuttal && typeof data.rebuttal === 'string') {
-            const initialRebuttal = { text: data.rebuttal, lang: 'en' };
-            setRebuttal(initialRebuttal);
-            setTranslatedRebuttals({ en: data.rebuttal });
-          } else { setRebuttal(null); setTranslatedRebuttals({}); }
-          setError(null);
-        } else { throw new Error(t('error_invalid_json_file')); }
-      } catch (e: any) { setError(`${t('error_json_load_failed')} ${e.message}`); }
-    };
-    reader.readAsText(file);
-  };
-
-  const handleMaxCharLimitSave = useCallback((newLimit: number) => {
-    localStorage.setItem(MAX_CHAR_LIMIT_STORAGE_KEY, newLimit.toString());
-    setMaxCharLimit(newLimit);
-  }, []);
-
-  const handleRebuttalUpdate = (newRebuttal: string) => {
-    const canonicalRebuttal = { text: newRebuttal, lang: language };
-    setRebuttal(canonicalRebuttal);
-    setTranslatedRebuttals({ [language]: newRebuttal });
-  };
-
-  const displayedAnalysis = translatedResults[language] || analysisResult;
-  const displayedRebuttal = translatedRebuttals[language] || null;
+  const combinedError = error || translationError;
   const isBusy = isLoading || (serviceProvider === 'google' && areModelsLoading);
 
   return (

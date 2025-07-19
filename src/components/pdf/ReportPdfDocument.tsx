@@ -1,8 +1,8 @@
 // src/components/ReportPdfDocument.tsx
 
 import { Page, Text, View, Document, StyleSheet, Image } from '@react-pdf/renderer';
-import { GeminiAnalysisResponse, GeminiFinding } from '../types';
-import { PDF_HEADER_TEXT } from '../pdf-config';
+import { GeminiAnalysisResponse, GeminiFinding } from '../../types/api';
+import { PDF_HEADER_TEXT } from '../../config/chart';
 
 type PatternColorMap = Record<string, string>;
 

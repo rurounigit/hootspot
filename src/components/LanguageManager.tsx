@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import { useTranslation } from '../i18n';
-import { translateUI } from '../services/geminiService';
-import { AddIcon } from '../constants';
+import { translateUI } from '../api/google';
+import { AddIcon } from '../assets/icons';
 import { defaultLanguages } from '../i18n';
 
 interface LanguageManagerProps {

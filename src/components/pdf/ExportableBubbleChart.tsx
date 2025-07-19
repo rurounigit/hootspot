@@ -1,9 +1,9 @@
-// src/components/ExportableBubbleChart.tsx
+// src/components/pdf/ExportableBubbleChart.tsx
 
 import React, { useMemo } from 'react';
 import * as d3 from 'd3';
-import { calculateOptimalFontSize } from '../utils/textUtils';
-import { PDF_CONFIG } from '../pdf-config';
+import { calculateOptimalFontSize } from '../../utils/textUtils';
+import { PDF_CHART_CONFIG } from '../../config/chart';
 
 // --- INTERFACES ---
 interface BubbleData {
@@ -43,7 +43,7 @@ const CategoryHull: React.FC<CategoryHullProps> = ({ nodes, color }) => {
   }, [nodes]);
   if (!pathData) return null;
   return <path d={pathData} fill={color} fillOpacity={0.15} stroke={color}
-    strokeWidth={PDF_CONFIG.HULL_BORDER_SIZE}
+    strokeWidth={PDF_CHART_CONFIG.HULL_BORDER_SIZE}
     strokeOpacity={0.4} strokeLinejoin="round" />;
 };
 
@@ -75,7 +75,7 @@ const ExportableBubbleChart: React.FC<ExportableBubbleChartProps> = ({ data, wid
 
   const transform = useMemo(() => {
     if (simulatedData.length === 0) return '';
-    const PADDING = PDF_CONFIG.CHART_ZOOM_PADDING;
+    const PADDING = PDF_CHART_CONFIG.CHART_ZOOM_PADDING;
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     simulatedData.forEach(node => {
       minX = Math.min(minX, node.x! - node.radius);
@@ -110,9 +110,9 @@ const ExportableBubbleChart: React.FC<ExportableBubbleChartProps> = ({ data, wid
           const { x, y, radius, color, name, id } = node;
 
           const { fontSize, lines } = calculateOptimalFontSize(name, radius, {
-            minFont: PDF_CONFIG.BUBBLE_MIN_FONT_SIZE,
-            maxFontSize: PDF_CONFIG.BUBBLE_MAX_FONT_SIZE,
-            paddingFactor: PDF_CONFIG.BUBBLE_TEXT_PADDING_FACTOR,
+            minFont: PDF_CHART_CONFIG.BUBBLE_MIN_FONT_SIZE,
+            maxFontSize: PDF_CHART_CONFIG.BUBBLE_MAX_FONT_SIZE,
+            paddingFactor: PDF_CHART_CONFIG.BUBBLE_TEXT_PADDING_FACTOR,
           });
 
           return (

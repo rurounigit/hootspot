@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, useCallback, ReactNode } from 'react';
-import { CUSTOM_LANGUAGES_KEY } from './constants';
+import { CUSTOM_LANGUAGES_KEY } from './config/storage-keys';
 
 // Define default languages
 export const defaultLanguages = { // Add 'export'

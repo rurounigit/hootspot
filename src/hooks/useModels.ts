@@ -1,8 +1,8 @@
 // src/hooks/useModels.ts
 
 import { useState, useEffect } from 'react';
-import { GeminiModel } from '../types';
-import { fetchModels } from '../services/geminiService';
+import { GeminiModel } from '../types/api';
+import { fetchModels } from '../api/google';
 
 // Define the new shape for our models state, which will be returned by fetchModels
 export interface GroupedModels {
