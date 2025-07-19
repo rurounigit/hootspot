@@ -11,10 +11,9 @@ import { useConfig } from './hooks/useConfig';
 import { useAnalysis } from './hooks/useAnalysis';
 import { useTranslationManager } from './hooks/useTranslationManager';
 import { HootSpotLogoIcon, SunIcon, MoonIcon } from './assets/icons';
-import { DEFAULT_MAX_CHAR_LIMIT } from './constants';
 
 const App: React.FC = () => {
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
   const {
     serviceProvider,
     setServiceProvider,
@@ -67,14 +66,11 @@ const App: React.FC = () => {
   );
 
   const {
-    rebuttal,
-    setRebuttal,
     isTranslatingRebuttal,
     handleRebuttalUpdate,
     displayedRebuttal,
     translationError,
   } = useTranslationManager(
-    analysisResult,
     apiKey,
     selectedModel,
     serviceProvider
@@ -209,10 +205,10 @@ const App: React.FC = () => {
               {t('info_translating_rebuttal')}
             </div>
           )}
-          {error && (
+          {combinedError && (
             <div className="my-6 p-4 bg-error-bg-light border border-error-border-light text-error-text-light dark:bg-error-bg-dark dark:text-error-text-dark dark:border-error-border-dark rounded-md shadow-md" role="alert">
               <strong className="font-bold">{t('error_prefix')}</strong>
-              <span>{t(error) || error}</span>
+              <span>{t(combinedError) || combinedError}</span>
             </div>
           )}
           <div ref={analysisReportRef} className="mt-2">

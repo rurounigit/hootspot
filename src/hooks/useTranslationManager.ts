@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from '../i18n';
 import { translateText } from '../api/google';
-import { GeminiAnalysisResponse } from '../types/api';
 
 export const useTranslationManager = (
-  analysisResult: GeminiAnalysisResponse | null,
   apiKey: string | null,
   selectedModel: string,
   serviceProvider: 'google' | 'local'
