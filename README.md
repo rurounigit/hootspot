@@ -131,6 +131,11 @@ During my lifetime I have dedicated my life to this struggle of the African peop
   <img src="public/images/examples/trump-pattern-03.jpg" alt="Highlighted text of Churchill's speech" width="40%">
   <img src="public/images/examples/trump-pattern-04.jpg" alt="Highlighted text of Churchill's speech" width="40%">
   <img src="public/images/examples/trump-pattern-05.jpg" alt="Highlighted text of Churchill's speech" width="40%">
+  <br><br>
+
+  *Rebuttal*
+
+  <img src="public/images/examples/trump-rebuttal.jpg" alt="Rebuttal of Trump's speech" width="40%">
 </details>
 
 ## How It Works
