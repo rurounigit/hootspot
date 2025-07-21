@@ -12,11 +12,11 @@
     "description": "Context menu item to append selected text to the side panel."
   },
   "extName": {
-    "message": "HootSpot AI Text Analyzer Extension",
+    "message": "HootSpot",
     "description": "The name of the extension."
   },
   "extDescription": {
-    "message": "An application to analyze text for psychological and rhetorical patterns using the Gemini API. Users provide their own API key.",
+    "message": "Extension to analyze text for psychological and rhetorical patterns using the Gemini API or a local LLM via LM Studio.",
     "description": "The description of the extension."
   }
 }
