@@ -42,7 +42,7 @@
   "analyzer_placeholder": "Pegue el texto aquí para analizar...",
   "analyzer_chars_count": "{count} / {limit}",
   "analyzer_chars_over_limit": " (Límite excedido por {over})",
-  "analyzer_button_analyze": "Analizar  ⌘⏎",
+  "analyzer_button_analyze": "Analizar  {shortcut}",
   "analyzer_button_analyzing": "Analizando...",
   "report_title": "Informe de Análisis",
   "report_summary_title": "Resumen del Análisis",

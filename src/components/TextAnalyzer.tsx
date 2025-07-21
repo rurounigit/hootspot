@@ -1,5 +1,5 @@
 // src/components/TextAnalyzer.tsx
-import React, { forwardRef, useRef } from 'react'; // Import forwardRef and useRef
+import React, { forwardRef, useRef, useState, useEffect } from 'react';
 import { FolderOpenIcon } from '../assets/icons';
 import { useTranslation } from '../i18n';
 
@@ -21,6 +21,20 @@ const TextAnalyzer = forwardRef<HTMLTextAreaElement, TextAnalyzerProps>(
     const charCount = text.length;
     const exceedsLimit = charCount > maxCharLimit;
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [shortcut, setShortcut] = useState('Ctrl+Enter');
+
+    useEffect(() => {
+      if (typeof chrome.runtime?.getPlatformInfo === 'function') {
+        chrome.runtime.getPlatformInfo((info) => {
+          const isMac = info.os === 'mac';
+          setShortcut(isMac ? '⌘⏎' : 'Ctrl+Enter');
+        });
+      } else {
+        // Fallback for non-chrome environments
+        const isMac = /mac/i.test(navigator.platform);
+        setShortcut(isMac ? '⌘⏎' : 'Ctrl+Enter');
+      }
+    }, []);
 
     const handleUploadClick = () => {
       fileInputRef.current?.click();
@@ -89,25 +103,25 @@ const TextAnalyzer = forwardRef<HTMLTextAreaElement, TextAnalyzerProps>(
             {exceedsLimit && ` ${t('analyzer_chars_over_limit', { over: charCount - maxCharLimit })}`}
           </p>
           <div className="flex items-center space-x-2">
-  <button onClick={handleUploadClick} disabled={isLoading} className="px-3 py-2 bg-gray-500 text-white font-semibold rounded-md shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 disabled:bg-gray-400" title={t('analyzer_button_load_json')}>
-    <FolderOpenIcon className="w-5 h-5" />
-  </button>
-  <button
-  onClick={handleAnalyze}
-  disabled={isLoading || exceedsLimit || !hasApiKey || text.trim().length === 0}
-  className="flex items-center justify-center px-4 py-2 bg-green-600 text-white font-semibold rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400"
->
-  {isLoading ? (
-    <>
-      <div className="spinner w-5 h-5 border-t-white mr-2"></div>
-      {t('analyzer_button_analyzing')}
-    </>
-  ) : (
-    t('analyzer_button_analyze')
-  )}
-</button>
-</div>
-       </div>
+            <button onClick={handleUploadClick} disabled={isLoading} className="px-3 py-2 bg-gray-500 text-white font-semibold rounded-md shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 disabled:bg-gray-400" title={t('analyzer_button_load_json')}>
+              <FolderOpenIcon className="w-5 h-5" />
+            </button>
+            <button
+              onClick={handleAnalyze}
+              disabled={isLoading || exceedsLimit || !hasApiKey || text.trim().length === 0}
+              className="flex items-center justify-center px-4 py-2 bg-green-600 text-white font-semibold rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400"
+            >
+              {isLoading ? (
+                <>
+                  <div className="spinner w-5 h-5 border-t-white mr-2"></div>
+                  {t('analyzer_button_analyzing')}
+                </>
+              ) : (
+                t('analyzer_button_analyze', { shortcut: shortcut })
+              )}
+            </button>
+          </div>
+        </div>
       </div>
     );
   }

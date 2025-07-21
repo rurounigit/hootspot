@@ -42,7 +42,7 @@
   "analyzer_placeholder": "Paste text here for analysis...",
   "analyzer_chars_count": "{count} / {limit}",
   "analyzer_chars_over_limit": " (Over limit by {over})",
-  "analyzer_button_analyze": "Analyze  ⌘⏎",
+  "analyzer_button_analyze": "Analyze  {shortcut}",
   "analyzer_button_analyzing": "Analyzing...",
   "report_title": "Analysis Report",
   "report_summary_title": "Analysis Summary",
