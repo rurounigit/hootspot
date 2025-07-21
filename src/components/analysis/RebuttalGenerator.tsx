@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { generateRebuttal } from '../../api/google';
+import { generateRebuttalWithLMStudio } from '../../api/lm-studio';
 import { GeminiAnalysisResponse } from '../../types/api';
 import { useTranslation } from '../../i18n';
 import { SparklesIcon } from '../../assets/icons';
@@ -14,6 +15,9 @@ interface RebuttalGeneratorProps {
     rebuttalForDisplay: string | null;
     isTranslating: boolean; // Renamed to be more generic, but only used for display
     onUpdate: (newRebuttal: string) => void;
+    serviceProvider: 'google' | 'local';
+    lmStudioUrl: string;
+    lmStudioModel: string;
 }
 
 const RebuttalGenerator: React.FC<RebuttalGeneratorProps> = ({
@@ -23,18 +27,31 @@ const RebuttalGenerator: React.FC<RebuttalGeneratorProps> = ({
     selectedModel,
     rebuttalForDisplay,
     isTranslating,
-    onUpdate
+    onUpdate,
+    serviceProvider,
+    lmStudioUrl,
+    lmStudioModel,
 }) => {
     const { t, language } = useTranslation();
     const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const isProviderConfigured =
+        (serviceProvider === 'google' && !!apiKey) ||
+        (serviceProvider === 'local' && !!lmStudioUrl && !!lmStudioModel);
+
     const handleGenerate = async () => {
-        if (!apiKey || !sourceText) return;
+        if (!isProviderConfigured || !sourceText) return;
         setIsGenerating(true);
         setError(null);
         try {
-            const result = await generateRebuttal(apiKey, sourceText, analysis, selectedModel, language);
+          let result: string;
+            if (serviceProvider === 'local') {
+                result = await generateRebuttalWithLMStudio(sourceText, analysis, lmStudioUrl, lmStudioModel, language, t);
+            } else {
+                if (!apiKey) throw new Error(t('error_api_key_not_configured'));
+                result = await generateRebuttal(apiKey, sourceText, analysis, selectedModel, language);
+            }
             onUpdate(result);
         } catch (err: any) {
             setError(err.message);
@@ -53,7 +70,7 @@ const RebuttalGenerator: React.FC<RebuttalGeneratorProps> = ({
             </p>
             <button
                 onClick={handleGenerate}
-                disabled={isGenerating || isTranslating || !apiKey}
+                disabled={isGenerating || isTranslating || !isProviderConfigured}
                 className="flex items-center justify-center px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-button-disabled-bg-light dark:disabled:bg-button-disabled-bg-dark"
             >
                 {isGenerating ? (

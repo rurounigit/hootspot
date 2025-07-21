@@ -27,6 +27,9 @@ interface AnalysisReportProps {
   onRebuttalUpdate: (newRebuttal: string) => void;
   includeRebuttalInJson: boolean;
   includeRebuttalInPdf: boolean;
+  serviceProvider: 'google' | 'local';
+  lmStudioUrl: string;
+  lmStudioModel: string;
 }
 
 const AnalysisReport: React.FC<AnalysisReportProps> = ({
@@ -39,6 +42,9 @@ const AnalysisReport: React.FC<AnalysisReportProps> = ({
     onRebuttalUpdate,
     includeRebuttalInJson,
     includeRebuttalInPdf,
+    serviceProvider,
+    lmStudioUrl,
+    lmStudioModel,
 }) => {
   const [chartDimensions, setChartDimensions] = useState({ width: 0, height: 0 });
   const [activeFindingId, setActiveFindingId] = useState<string | null>(null);
@@ -246,6 +252,9 @@ const AnalysisReport: React.FC<AnalysisReportProps> = ({
           rebuttalForDisplay={rebuttal}
           isTranslating={isTranslatingRebuttal}
           onUpdate={onRebuttalUpdate}
+          serviceProvider={serviceProvider}
+          lmStudioUrl={lmStudioUrl}
+          lmStudioModel={lmStudioModel}
         />
       )}
     </div>

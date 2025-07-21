@@ -223,6 +223,9 @@ const App: React.FC = () => {
                     onRebuttalUpdate={handleRebuttalUpdate}
                     includeRebuttalInJson={includeRebuttalInJson}
                     includeRebuttalInPdf={includeRebuttalInPdf}
+                    serviceProvider={serviceProvider}
+                    lmStudioUrl={lmStudioUrl}
+                    lmStudioModel={lmStudioModel}
                />
             )}
           </div>
