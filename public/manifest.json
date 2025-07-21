@@ -39,7 +39,6 @@
     {
       "resources": [
         "assets/*",
-        "background.js",
         "images/*",
         "pdf-generator.html"
       ],
