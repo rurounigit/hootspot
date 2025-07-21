@@ -5,7 +5,7 @@
   "app_footer_responsibility": "L'utilisateur est responsable de tous les coûts de l'API Google Gemini.",
   "error_prefix": "Erreur : ",
   "error_no_api_key_for_results": "Veuillez configurer votre clé API pour voir les résultats de l'analyse.",
-  "info_enter_text_to_analyze": "Entrez du texte ci-dessus et cliquez sur \"Analyser\" pour voir les aperçus de l'IA. Vous pouvez également utiliser le menu contextuel (sélectionnez le texte et faites un clic droit) ou les raccourcis clavier (sélectionnez le texte et appuyez sur Alt/⌥+Maj+A) pour analyser le texte.",pour analyser le texte.",
+  "info_enter_text_to_analyze": "Entrez du texte ci-dessus et cliquez sur \"Analyser\" pour voir les aperçus de l'IA. Vous pouvez également utiliser le menu contextuel (sélectionnez le texte et faites un clic droit) ou les raccourcis clavier (sélectionnez le texte et appuyez sur Alt/⌥+Maj+A) pour analyser le texte.",
   "info_uncover_patterns": "HootSpot AI vous aidera à découvrir des schémas psychologiques et rhétoriques cachés.",
   "config_title": "Configuration",
   "config_toggle_expand": "Développer les paramètres",
