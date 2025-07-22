@@ -135,19 +135,19 @@ const App: React.FC = () => {
   const isBusy = isLoading || (serviceProvider === 'google' && areModelsLoading);
 
   return (
-    <div className="relative flex flex-col h-screen bg-app-bg-light dark:bg-app-bg-dark">
+    <div className="relative flex flex-col h-screen bg-gray-100 dark:bg-gray-600">
       <div className="absolute top-2 right-4 z-10 flex items-center space-x-2">
-        <button onClick={() => setIsNightMode(!isNightMode)} className="p-1.5 text-text-subtle-light dark:text-text-subtle-dark hover:bg-container-border-light dark:hover:bg-container-border-dark rounded-full focus:outline-none" title={t('night_mode_toggle_tooltip')}>
-          {isNightMode ? <SunIcon className="w-5 h-5 text-sun-icon-light" /> : <MoonIcon className="w-5 h-5 text-moon-icon-light" />}
+        <button onClick={() => setIsNightMode(!isNightMode)} className="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full focus:outline-none" title={t('night_mode_toggle_tooltip')}>
+          {isNightMode ? <SunIcon className="w-5 h-5 text-amber-500" /> : <MoonIcon className="w-5 h-5 text-gray-600" />}
         </button>
         <LanguageSwitcher />
       </div>
-      <div className="flex flex-col flex-1 w-full p-2 md:p-4 overflow-y-auto text-text-main-light dark:text-text-main-dark">
+      <div className="flex flex-col flex-1 w-full p-2 md:p-4 overflow-y-auto text-gray-800 dark:text-gray-50">
         <header className="mb-1 text-left">
           <div className="inline-flex items-center justify-center">
-             <HootSpotLogoIcon className="w-9 h-9 md:w-13 md:h-13 text-logo-icon-light dark:text-logo-icon-dark mr-2 md:mr-3 ml-2.5" />
+             <HootSpotLogoIcon className="w-9 h-9 md:w-13 md:h-13 text-blue-600 dark:text-blue-400 mr-2 md:mr-3 ml-2.5" />
             <div>
-                <h1 className="text-lg md:text-3xl font-semibold text-text-main-light dark:text-text-main-dark">{t('app_title')}</h1>
+                <h1 className="text-lg md:text-3xl font-semibold text-gray-800 dark:text-gray-50">{t('app_title')}</h1>
             </div>
           </div>
         </header>
@@ -195,19 +195,19 @@ const App: React.FC = () => {
             hasApiKey={isCurrentProviderConfigured}
           />
           {(isLoading || isTranslating) && (
-            <div className="my-4 p-3 rounded-md text-sm bg-info-bg-light text-info-text-light border border-info-border-light dark:bg-info-bg-dark dark:text-info-text-dark dark:border-info-border-dark flex items-center justify-center">
-              <div className="spinner w-5 h-5 border-t-link-light mr-2"></div>
+            <div className="my-4 p-3 rounded-md text-sm bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700 flex items-center justify-center">
+              <div className="spinner w-5 h-5 border-t-blue-600 mr-2"></div>
               {areModelsLoading ? t('config_model_loading') : (isLoading ? t('analyzer_button_analyzing') : t('info_translating_results'))}
             </div>
           )}
           {isTranslatingRebuttal && (
-            <div className="my-4 p-3 rounded-md text-sm bg-info-bg-light text-info-text-light border border-info-border-light dark:bg-info-bg-dark dark:text-info-text-dark dark:border-info-border-dark flex items-center justify-center">
-              <div className="spinner w-5 h-5 border-t-link-light mr-2"></div>
+            <div className="my-4 p-3 rounded-md text-sm bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700 flex items-center justify-center">
+              <div className="spinner w-5 h-5 border-t-blue-600 mr-2"></div>
               {t('info_translating_rebuttal')}
             </div>
           )}
           {combinedError && (
-            <div className="my-6 p-4 bg-error-bg-light border border-error-border-light text-error-text-light dark:bg-error-bg-dark dark:text-error-text-dark dark:border-error-border-dark rounded-md shadow-md" role="alert">
+            <div className="my-6 p-4 bg-red-100 border border-red-300 text-red-700 dark:bg-red-900/50 dark:text-red-300 dark:border-red-500 rounded-md shadow-md" role="alert">
               <strong className="font-bold">{t('error_prefix')}</strong>
               <span>{t(combinedError) || combinedError}</span>
             </div>
@@ -231,18 +231,18 @@ const App: React.FC = () => {
             )}
           </div>
           {!isBusy && !error && !analysisResult && currentTextAnalyzed && !isCurrentProviderConfigured && (
-            <div className="mt-4 p-4 bg-warning-bg-light border border-warning-border-light text-warning-text-light dark:bg-warning-bg-dark dark:text-warning-text-dark dark:border-warning-border-dark rounded-md shadow-md">
+            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-300 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-400 rounded-md shadow-md">
                 {t('analyzer_no_api_key_warning')}
             </div>
           )}
           {!isBusy && !error && !analysisResult && !currentTextAnalyzed && isCurrentProviderConfigured && (
-            <div className="mt-4 p-6 bg-panel-bg-light border border-panel-border-light text-text-subtle-light dark:bg-panel-bg-dark dark:border-panel-border-dark dark:text-text-subtle-dark rounded-lg shadow-md text-center">
+            <div className="mt-4 p-6 bg-white border border-gray-200 text-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 rounded-lg shadow-md text-center">
                 <p className="text-lg">{t('info_enter_text_to_analyze')}</p>
                 <p className="text-sm mt-2">{t('info_uncover_patterns')}</p>
             </div>
           )}
         </main>
-        <footer className="mt-auto pt-6 text-center text-sm text-text-subtle-light dark:text-text-subtle-dark">
+        <footer className="mt-auto pt-6 text-center text-sm text-gray-600 dark:text-gray-400">
           <p>
             {t('app_footer_copyright', { year: new Date().getFullYear() })}
             <Tooltip content={t('app_footer_responsibility')}>

@@ -88,33 +88,29 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
       <button
         onClick={() => setIsMenuOpen(!isMenuOpen)}
         disabled={isGenerating}
-        className="p-2 rounded-full disabled:opacity-50 disabled:cursor-wait
-                   bg-gray-100 text-gray-600
-                   dark:bg-input-bg-dark dark:text-text-subtle-dark
-                   hover:text-link-light dark:hover:text-link-dark
-                   transition-colors duration-150"
+        className="p-2 rounded-full disabled:opacity-50 disabled:cursor-wait bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-150"
         title={t('share_menu_tooltip')}
       >
         {isGenerating
-          ? <div className="spinner w-5 h-5 border-t-link-light"></div>
+          ? <div className="spinner w-5 h-5 border-t-blue-600"></div>
           : <ShareIcon className="w-5 h-5 pr-[3px]" />
         }
       </button>
 
       {isMenuOpen && (
-        <div className="absolute left-0 mt-2 w-48 bg-panel-bg-light dark:bg-panel-bg-dark rounded-md shadow-lg z-20 border border-panel-border-light dark:border-panel-border-dark">
+        <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-20 border border-gray-200 dark:border-gray-700">
           <ul className="py-1">
             <li>
               <button
                 onClick={handlePdfDownload}
-                className="w-full text-left px-4 py-2 text-sm text-text-main-light dark:text-text-main-dark hover:bg-container-bg-light dark:hover:bg-container-bg-dark">
+                className="w-full text-left px-4 py-2 text-sm text-gray-800 dark:text-gray-50 hover:bg-gray-50 dark:hover:bg-gray-800/50">
                   {t('share_menu_pdf')}
               </button>
             </li>
             <li>
               <button
                 onClick={handleJsonDownload}
-                className="w-full text-left px-4 py-2 text-sm text-text-main-light dark:text-text-main-dark hover:bg-container-bg-light dark:hover:bg-container-bg-dark">
+                className="w-full text-left px-4 py-2 text-sm text-gray-800 dark:text-gray-50 hover:bg-gray-50 dark:hover:bg-gray-800/50">
                   {t('share_menu_json')}
               </button>
             </li>

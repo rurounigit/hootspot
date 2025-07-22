@@ -61,17 +61,17 @@ const RebuttalGenerator: React.FC<RebuttalGeneratorProps> = ({
     };
 
     return (
-        <div className="mt-8 pt-6 border-t border-divider-light dark:border-divider-dark">
-            <h3 className="text-lg font-semibold text-text-label-light dark:text-text-label-dark mb-2">
+        <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-600">
+            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 {t('rebuttal_title')}
             </h3>
-            <p className="text-sm text-text-subtle-light dark:text-text-subtle-dark mb-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                 {t('rebuttal_description')}
             </p>
             <button
                 onClick={handleGenerate}
                 disabled={isGenerating || isTranslating || !isProviderConfigured}
-                className="flex items-center justify-center px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-button-disabled-bg-light dark:disabled:bg-button-disabled-bg-dark"
+                className="flex items-center justify-center px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400 dark:disabled:bg-gray-600"
             >
                 {isGenerating ? (
                     <>
@@ -87,15 +87,15 @@ const RebuttalGenerator: React.FC<RebuttalGeneratorProps> = ({
             </button>
 
             {error && (
-                <div className="my-4 p-4 bg-error-bg-light border border-error-border-light text-error-text-light dark:bg-error-bg-dark dark:text-error-text-dark dark:border-error-border-dark rounded-md shadow-md" role="alert">
+                <div className="my-4 p-4 bg-red-100 border border-red-300 text-red-700 dark:bg-red-900/50 dark:text-red-300 dark:border-red-500 rounded-md shadow-md" role="alert">
                     <strong className="font-bold">{t('error_prefix')}</strong>
                     <span>{error}</span>
                 </div>
             )}
 
             {rebuttalForDisplay && !isGenerating && (
-                <div className="mt-4 p-4 bg-panel-bg-light dark:bg-panel-bg-dark rounded-md shadow border border-panel-border-light dark:border-panel-border-dark">
-                    <p className="whitespace-pre-wrap text-text-main-light dark:text-text-main-dark">{rebuttalForDisplay}</p>
+                <div className="mt-4 p-4 bg-white dark:bg-gray-800 rounded-md shadow border border-gray-200 dark:border-gray-700">
+                    <p className="whitespace-pre-wrap text-gray-800 dark:text-gray-50">{rebuttalForDisplay}</p>
                 </div>
             )}
         </div>

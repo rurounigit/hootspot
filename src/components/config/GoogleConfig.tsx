@@ -29,24 +29,24 @@ const GoogleConfig: React.FC<GoogleConfigProps> = ({
 
   return (
     <>
-      <div className="mb-4 p-4 bg-info-bg-light border border-info-border-light rounded-md dark:bg-info-bg-dark dark:border-info-border-dark">
+      <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-md dark:bg-blue-900 dark:border-blue-700">
         <div className="flex items-start">
-          <InfoIcon className="w-5 h-5 mr-2 text-link-light dark:text-link-dark flex-shrink-0 mt-0.5" />
+          <InfoIcon className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm text-info-text-light dark:text-info-text-dark">{t('config_api_key_info')}</p>
-            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-sm font-medium inline-flex items-center text-link-light hover:text-link-hover-light dark:text-link-dark dark:hover:text-link-hover-dark">
+            <p className="text-sm text-blue-800 dark:text-blue-300">{t('config_api_key_info')}</p>
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-sm font-medium inline-flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
               {t('config_get_api_key')} <ExternalLinkIcon className="w-4 h-4 ml-1" />
             </a>
           </div>
         </div>
       </div>
       <div className="mb-4">
-        <label htmlFor="apiKey" className="block text-sm font-medium text-text-label-light dark:text-text-label-dark mb-1">{t('config_api_key_label')}</label>
-        <input type="password" id="apiKey" value={apiKeyInput} onChange={(e) => onApiKeyInputChange(e.target.value)} placeholder={t('config_api_key_placeholder')} className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-input-bg-light border-input-border-light text-input-text-light dark:bg-input-bg-dark dark:border-input-border-dark dark:text-input-text-dark" />
+        <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('config_api_key_label')}</label>
+        <input type="password" id="apiKey" value={apiKeyInput} onChange={(e) => onApiKeyInputChange(e.target.value)} placeholder={t('config_api_key_placeholder')} className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-50" />
       </div>
       <div className="mb-6">
-        <label htmlFor="modelSelector" className="block text-sm font-medium text-text-label-light dark:text-text-label-dark mb-1">{t('config_model_label')}</label>
-        <select id="modelSelector" value={selectedModel} onChange={(e) => onModelChange(e.target.value)} disabled={areModelsLoading || allModelsEmpty} className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 dark:disabled:bg-gray-600 bg-input-bg-light border-input-border-light text-input-text-light dark:bg-input-bg-dark dark:border-input-border-dark dark:text-input-text-dark">
+        <label htmlFor="modelSelector" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('config_model_label')}</label>
+        <select id="modelSelector" value={selectedModel} onChange={(e) => onModelChange(e.target.value)} disabled={areModelsLoading || allModelsEmpty} className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 dark:disabled:bg-gray-600 bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-50">
           {areModelsLoading && <option>{t('config_model_loading')}</option>}
           {modelsError && <option>{t('config_model_error')}</option>}
           {!areModelsLoading && !modelsError && allModelsEmpty && <option>Enter API Key to see models</option>}
@@ -55,7 +55,7 @@ const GoogleConfig: React.FC<GoogleConfigProps> = ({
               {models.stable.length > 0 && ( <optgroup label={t('config_model_stable_group')}> {models.stable.map(model => ( <option key={model.name} value={model.name}> {model.displayName} </option>))} </optgroup> )}
           </>)}
         </select>
-        {modelsError && <p className="text-xs text-error-text-light dark:text-error-text-dark mt-1">{modelsError}</p>}
+        {modelsError && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{modelsError}</p>}
       </div>
     </>
   );

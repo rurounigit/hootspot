@@ -72,7 +72,7 @@ const AnalysisReport: React.FC<AnalysisReportProps> = ({
   return (
     <div className="mt-4">
       <div className="flex items-center mb-4">
-        <h2 className="text-lg font-semibold text-text-main-light dark:text-text-main-dark pb-0">{t('report_title')}</h2>
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-50 pb-0">{t('report_title')}</h2>
         {hasFindings && (
            <ShareMenu
               analysis={analysis}
@@ -87,14 +87,14 @@ const AnalysisReport: React.FC<AnalysisReportProps> = ({
         )}
       </div>
 
-      <div className="bg-info-bg-light dark:bg-info-bg-dark border border-info-border-light dark:border-info-border-dark p-4 rounded-md shadow-sm mb-6">
-        <h3 className="text-lg font-semibold text-info-text-light dark:text-info-text-dark mb-1">{t('report_summary_title')}</h3>
-        <p className="text-info-text-light dark:text-info-text-dark">{analysis.analysis_summary}</p>
+      <div className="bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 p-4 rounded-md shadow-sm mb-6">
+        <h3 className="text-lg font-semibold text-blue-800 dark:text-blue-300 mb-1">{t('report_summary_title')}</h3>
+        <p className="text-blue-800 dark:text-blue-300">{analysis.analysis_summary}</p>
       </div>
 
       {hasFindings && (
         <div className="mb-6">
-          <h3 className="text-lg font-semibold text-text-label-light dark:text-text-label-dark mb-4">{t('report_profile_title')}</h3>
+          <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">{t('report_profile_title')}</h3>
           <ManipulationBubbleChart
             data={bubbleChartData}
             onDimensionsChange={setChartDimensions}
@@ -106,8 +106,8 @@ const AnalysisReport: React.FC<AnalysisReportProps> = ({
 
       {sourceText && hasFindings && (
         <div className="mb-6">
-          <h3 className="text-lg font-semibold text-text-label-light dark:text-text-label-dark mb-4">{t('report_highlighted_text_title')}</h3>
-          <div className="bg-container-bg-light dark:bg-container-bg-dark p-4 border border-container-border-light dark:border-container-border-dark rounded-lg shadow-sm max-h-96 overflow-y-auto">
+          <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">{t('report_highlighted_text_title')}</h3>
+          <div className="bg-gray-50 dark:bg-gray-800/50 p-4 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm max-h-96 overflow-y-auto">
             <HighlightedText text={sourceText} matches={finalHighlights} patternColorMap={patternColorMap} />
           </div>
         </div>
@@ -115,25 +115,25 @@ const AnalysisReport: React.FC<AnalysisReportProps> = ({
 
       {hasFindings ? (
         <div>
-          <h3 className="text-lg font-semibold text-text-label-light dark:text-text-label-dark mb-3">{t('report_detected_patterns_title')}</h3>
+          <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-3">{t('report_detected_patterns_title')}</h3>
           <div className="space-y-4">
             {indexedFindings.map((finding) => {
               const color = patternColorMap.get(finding.pattern_name) || '#e5e7eb';
               return (
-                <div key={finding.displayIndex} id={`finding-card-${finding.displayIndex}`} className={`bg-panel-bg-light dark:bg-panel-bg-dark border rounded-lg shadow-md overflow-hidden`} style={{borderColor: color}}>
+                <div key={finding.displayIndex} id={`finding-card-${finding.displayIndex}`} className={`bg-white dark:bg-gray-800 border rounded-lg shadow-md overflow-hidden`} style={{borderColor: color}}>
                   <div className={`p-4 border-b`} style={{ backgroundColor: color, borderColor: color }}>
-                    <h4 className={`text-l font-bold text-button-text-light uppercase`}>{finding.display_name}</h4>
+                    <h4 className={`text-l font-bold text-white uppercase`}>{finding.display_name}</h4>
                   </div>
                   <div className="p-4 space-y-3">
-                    <div><h5 className="font-semibold text-text-subtle-light dark:text-text-subtle-dark mb-1">{t('report_quote_label')}</h5><blockquote className={`italic p-3 rounded-md border-l-4`} style={{ backgroundColor: `${color}40`, borderColor: color }}><p className="text-text-main-light dark:text-text-main-dark">"{finding.specific_quote}"</p></blockquote></div>
-                    <div><h5 className="font-semibold text-text-subtle-light dark:text-text-subtle-dark mb-1">{t('report_explanation_label')}</h5><p className="text-text-label-light dark:text-text-main-dark">{finding.explanation}</p></div>
+                    <div><h5 className="font-semibold text-gray-600 dark:text-gray-400 mb-1">{t('report_quote_label')}</h5><blockquote className={`italic p-3 rounded-md border-l-4`} style={{ backgroundColor: `${color}40`, borderColor: color }}><p className="text-gray-800 dark:text-gray-50">"{finding.specific_quote}"</p></blockquote></div>
+                    <div><h5 className="font-semibold text-gray-600 dark:text-gray-400 mb-1">{t('report_explanation_label')}</h5><p className="text-gray-700 dark:text-gray-50">{finding.explanation}</p></div>
                   </div>
                 </div>
               );
             })}
           </div>
         </div>
-      ) : (<div className="text-center py-8 px-4 bg-success-bg-light dark:bg-success-bg-dark border border-success-border-light dark:border-success-border-dark rounded-lg"><InfoIcon className="mx-auto h-12 w-12 text-success-text-light dark:text-success-text-dark mb-2"/><p className="text-lg font-medium text-success-text-light dark:text-success-text-dark">{t('report_no_patterns_detected')}</p></div>)}
+      ) : (<div className="text-center py-8 px-4 bg-green-50 dark:bg-green-900/50 border border-green-200 dark:border-green-500 rounded-lg"><InfoIcon className="mx-auto h-12 w-12 text-green-600 dark:text-green-400 mb-2"/><p className="text-lg font-medium text-green-600 dark:text-green-400">{t('report_no_patterns_detected')}</p></div>)}
 
       {hasFindings && sourceText && (
         <RebuttalGenerator
