@@ -14,7 +14,7 @@ export const wrapSvgText = (text: string, availableWidth: number, fontSize: numb
   if (!text || !context || availableWidth <= 0) return [];
 
   context.font = `bold ${fontSize}px system-ui, sans-serif`;
-  const words = text.split(/\s+/);
+  const words = text.split(' ');
   const lines: string[] = [];
   let currentLine = "";
 
