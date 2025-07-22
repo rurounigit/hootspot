@@ -1,8 +1,6 @@
-// src/hooks/useAnalysisReportData.ts
 import { useMemo } from 'react';
 import { GeminiAnalysisResponse, GeminiFinding } from '../types/api';
 
-// Helper functions moved from the component
 const generateDistantColor = (index: number, saturation: number = 0.7, lightness: number = 0.6) => {
     const goldenAngle = 137.5;
     const hue = (index * goldenAngle) % 360;
@@ -13,7 +11,6 @@ function escapeRegex(string: string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-// The new custom hook
 export const useAnalysisReportData = (
   analysis: GeminiAnalysisResponse,
   sourceText: string | null,
@@ -79,38 +76,40 @@ export const useAnalysisReportData = (
         const quote = finding.specific_quote;
         if (!quote || typeof quote !== 'string' || quote.trim() === '') return;
 
-        const escapedQuote = escapeRegex(quote);
-        const regex = new RegExp(escapedQuote, 'g');
+        // FIX: Make matching more robust by slightly cleaning the quote
+        const cleanedQuote = quote.trim().replace(/[\s.,;:"“”'‘’`]+$/g, "");
+        const escapedQuote = escapeRegex(cleanedQuote);
+        const regex = new RegExp(escapedQuote, 'gi'); // Use 'i' for case-insensitive matching
         let match;
 
         while ((match = regex.exec(sourceText))) {
-          const key = `${match.index}-${match.index + quote.length}`;
-          const existing = matchesByPosition.get(key);
+            // Find the original full quote based on the cleaned match
+            const fullMatch = sourceText.substring(match.index, match.index + match[0].length);
 
-          if (existing) {
-            if (!existing.findings.some(f => f.pattern_name === finding.pattern_name && f.specific_quote === finding.specific_quote)) {
-              existing.findings.push(finding);
+            const key = `${match.index}-${match.index + fullMatch.length}`;
+            const existing = matchesByPosition.get(key);
+
+            if (existing) {
+              if (!existing.findings.some(f => f.pattern_name === finding.pattern_name && f.specific_quote === finding.specific_quote)) {
+                existing.findings.push(finding);
+              }
+            } else {
+              matchesByPosition.set(key, {
+                start: match.index,
+                end: match.index + fullMatch.length,
+                findings: [finding]
+              });
             }
-          } else {
-            matchesByPosition.set(key, {
-              start: match.index,
-              end: match.index + quote.length,
-              findings: [finding]
-            });
-          }
         }
       });
     }
 
     const sortedMatches = Array.from(matchesByPosition.values()).sort((a, b) => a.start - b.start);
-
     const mergedHighlights: typeof sortedMatches = [];
     if (sortedMatches.length > 0) {
       let currentHighlight = { ...sortedMatches[0] };
-
       for (let i = 1; i < sortedMatches.length; i++) {
         const nextMatch = sortedMatches[i];
-
         if (nextMatch.start < currentHighlight.end) {
           nextMatch.findings.forEach(findingToAdd => {
             if (!currentHighlight.findings.some(existing => existing.pattern_name === findingToAdd.pattern_name && existing.specific_quote === findingToAdd.specific_quote)) {
@@ -125,7 +124,6 @@ export const useAnalysisReportData = (
       }
       mergedHighlights.push(currentHighlight);
     }
-
     return mergedHighlights;
   }, [indexedFindings, sourceText, hasFindings]);
 

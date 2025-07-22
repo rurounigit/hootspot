@@ -243,14 +243,14 @@ const App: React.FC = () => {
           )}
         </main>
         <footer className="mt-auto pt-6 text-center text-sm text-gray-600 dark:text-gray-400">
-          <p>
+          <div>
             {t('app_footer_copyright', { year: new Date().getFullYear() })}
             <Tooltip content={t('app_footer_responsibility')}>
               <span className="ml-2 underline decoration-dotted cursor-pointer">
                 {t('app_footer_disclaimer_label')}
               </span>
             </Tooltip>
-          </p>
+          </div>
         </footer>
       </div>
     </div>

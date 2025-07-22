@@ -8,13 +8,7 @@ const context = canvas.getContext('2d');
 const LINE_HEIGHT = 1.1; // Standard line height for multi-line text.
 
 /**
- * Wraps text to fit within a specific width using a language-agnostic,
- * character-based breaking algorithm for oversized words.
- *
- * @param text The text to wrap.
- * @param availableWidth The maximum pixel width for any line.
- * @param fontSize The font size to use for measurement.
- * @returns An array of strings, where each string is a correctly wrapped line.
+ * Wraps text to fit within a specific width.
  */
 export const wrapSvgText = (text: string, availableWidth: number, fontSize: number): string[] => {
   if (!text || !context || availableWidth <= 0) return [];
@@ -22,57 +16,29 @@ export const wrapSvgText = (text: string, availableWidth: number, fontSize: numb
   context.font = `bold ${fontSize}px system-ui, sans-serif`;
 
   const lines: string[] = [];
-  let currentLine = '';
   const words = text.split(' ');
+  let currentLine = words[0] || '';
 
-  for (const word of words) {
-    const testLine = currentLine ? `${currentLine} ${word}` : word;
-    const testLineWidth = context.measureText(testLine).width;
+  // Start loop from the second word
+  for (let i = 1; i < words.length; i++) {
+    const word = words[i];
+    const testLine = `${currentLine} ${word}`;
+    const testWidth = context.measureText(testLine).width;
 
-    if (testLineWidth <= availableWidth) {
-      currentLine = testLine;
+    if (testWidth > availableWidth) {
+      lines.push(currentLine);
+      currentLine = word;
     } else {
-      if (currentLine) {
-        lines.push(currentLine);
-      }
-
-      const wordWidth = context.measureText(word).width;
-
-      if (wordWidth <= availableWidth) {
-        currentLine = word;
-      } else {
-        let tempWord = '';
-        for (let i = 0; i < word.length; i++) {
-          const char = word[i];
-          const nextTempWord = tempWord + char;
-          if (context.measureText(nextTempWord + '-').width <= availableWidth) {
-            tempWord = nextTempWord;
-          } else {
-            lines.push(tempWord + '-');
-            tempWord = char;
-          }
-        }
-        currentLine = tempWord;
-      }
+      currentLine = testLine;
     }
   }
-
-  if (currentLine) {
-    lines.push(currentLine);
-  }
-
+  lines.push(currentLine); // Push the last constructed line
   return lines;
 };
 
 
 /**
- * Calculates the optimal font size for a text to fit inside a circle using binary search
- * and a geometrically-aware validation check.
- *
- * @param text The text to be fitted.
- * @param radius The radius of the containing circle.
- * @param options An object containing padding and font size constraints.
- * @returns An object containing the optimal `fontSize` and the `lines` of wrapped text.
+ * Calculates the optimal font size for a text to fit inside a circle.
  */
 export const calculateOptimalFontSize = (
   text: string,
@@ -84,12 +50,10 @@ export const calculateOptimalFontSize = (
   }
 ): { fontSize: number; lines: string[] } => {
   const { minFont, maxFontSize, paddingFactor } = options;
-  // FIX: Added a null check for 'context' to satisfy the compiler.
   if (!text || radius <= 0 || !context) return { fontSize: minFont, lines: [] };
 
   let low = minFont;
   let high = maxFontSize;
-
   let bestFit = { fontSize: minFont, lines: wrapSvgText(text, radius * 2 * paddingFactor, minFont) };
 
   while (low <= high) {

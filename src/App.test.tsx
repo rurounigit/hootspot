@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import App from './App';
+import { LanguageProvider } from './i18n';
 
 // Mock all custom hooks to control the data flow into the App component
 vi.mock('./hooks/useConfig', () => ({
@@ -42,9 +43,13 @@ vi.mock('./hooks/useTranslationManager', () => ({
     })
 }));
 
+const renderWithProvider = (component: React.ReactElement) => {
+    return render(<LanguageProvider>{component}</LanguageProvider>);
+}
+
 describe('App Component', () => {
   it('renders the main layout components', () => {
-    render(<App />);
+    renderWithProvider(<App />);
 
     // Check for major components by their titles or roles
     expect(screen.getByText('app_title')).toBeInTheDocument();

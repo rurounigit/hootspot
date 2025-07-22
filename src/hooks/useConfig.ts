@@ -1,4 +1,3 @@
-// src/hooks/useConfig.ts
 import { useState, useEffect, useCallback } from 'react';
 import {
   API_KEY_STORAGE_KEY,
@@ -16,6 +15,7 @@ import { DEFAULT_MAX_CHAR_LIMIT } from '../constants';
 
 export const useConfig = () => {
   const [serviceProvider, setServiceProvider] = useState<'google' | 'local'>(() => (localStorage.getItem(SERVICE_PROVIDER_KEY) as 'google' | 'local') || 'google');
+  // FIX: Initialize both apiKey and apiKeyInput from localStorage directly.
   const [apiKey, setApiKey] = useState<string | null>(() => localStorage.getItem(API_KEY_STORAGE_KEY));
   const [apiKeyInput, setApiKeyInput] = useState<string>(() => localStorage.getItem(API_KEY_STORAGE_KEY) || '');
   const [debouncedApiKey, setDebouncedApiKey] = useState<string | null>(apiKey);
@@ -26,11 +26,11 @@ export const useConfig = () => {
   const [isNightMode, setIsNightMode] = useState<boolean>(() => localStorage.getItem(NIGHT_MODE_STORAGE_KEY) === 'true');
   const [includeRebuttalInJson, setIncludeRebuttalInJson] = useState<boolean>(() => localStorage.getItem(INCLUDE_REBUTTAL_JSON_KEY) === 'true');
   const [includeRebuttalInPdf, setIncludeRebuttalInPdf] = useState<boolean>(() => localStorage.getItem(INCLUDE_REBUTTAL_PDF_KEY) === 'true');
-  const [isConfigCollapsed, setIsConfigCollapsed] = useState(() => !!(localStorage.getItem(API_KEY_STORAGE_KEY) || localStorage.getItem(LM_STUDIO_URL_KEY)));
+  // FIX: The source of truth for 'isConfigCollapsed' should be whether the relevant keys are actually saved.
+  const [isConfigCollapsed, setIsConfigCollapsed] = useState(() => !!(localStorage.getItem(API_KEY_STORAGE_KEY) || (localStorage.getItem(LM_STUDIO_URL_KEY) && localStorage.getItem(LM_STUDIO_MODEL_KEY))));
 
   const isCurrentProviderConfigured = (serviceProvider === 'google' && !!apiKeyInput.trim()) || (serviceProvider === 'local' && !!lmStudioUrl.trim() && !!lmStudioModel.trim());
 
-  // ADDED: localStorage data migration logic
   useEffect(() => {
     const oldApiKey = localStorage.getItem('athenaAIApiKey');
     if (oldApiKey) {
@@ -50,16 +50,22 @@ export const useConfig = () => {
   }, []);
 
   useEffect(() => {
-    const handler = setTimeout(() => { setDebouncedApiKey(apiKeyInput.trim()); }, 500);
+    const handler = setTimeout(() => {
+        const trimmedKey = apiKeyInput.trim();
+        setDebouncedApiKey(trimmedKey);
+        // FIX: The main apiKey state should also be updated on debounce, not in a separate effect.
+        if (serviceProvider === 'google') {
+            setApiKey(trimmedKey);
+        }
+    }, 500);
     return () => clearTimeout(handler);
-  }, [apiKeyInput]);
+  }, [apiKeyInput, serviceProvider]);
 
   useEffect(() => { localStorage.setItem(SERVICE_PROVIDER_KEY, serviceProvider); }, [serviceProvider]);
   useEffect(() => { localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel); }, [selectedModel]);
   useEffect(() => { localStorage.setItem(NIGHT_MODE_STORAGE_KEY, String(isNightMode)); document.documentElement.classList.toggle('dark', isNightMode); }, [isNightMode]);
   useEffect(() => { localStorage.setItem(INCLUDE_REBUTTAL_JSON_KEY, String(includeRebuttalInJson)); }, [includeRebuttalInJson]);
   useEffect(() => { localStorage.setItem(INCLUDE_REBUTTAL_PDF_KEY, String(includeRebuttalInPdf)); }, [includeRebuttalInPdf]);
-  useEffect(() => { if (serviceProvider === 'google') setApiKey(apiKeyInput); }, [apiKeyInput, serviceProvider]);
   useEffect(() => { localStorage.setItem(LM_STUDIO_URL_KEY, lmStudioUrl) }, [lmStudioUrl]);
   useEffect(() => { localStorage.setItem(LM_STUDIO_MODEL_KEY, lmStudioModel) }, [lmStudioModel]);
 

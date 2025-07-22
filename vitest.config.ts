@@ -10,5 +10,10 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts', // A setup file for global mocks
     css: true,
+    coverage: {
+      provider: 'v8', // or 'istanbul'
+      reporter: ['text', 'json', 'html'], // Generate multiple reports
+      all: true, // Include all files, not just tested ones
+    },
   },
 });
