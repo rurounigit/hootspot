@@ -17,7 +17,7 @@ export const useTranslationManager = (
     if (!rebuttal || !apiKey || serviceProvider === 'local') return;
     if (language === rebuttal.lang) return;
     // The key condition: if we already have this translation, don't fetch it again.
-    if (translatedRebuttals[language]) return;
+    if (translatedRebuttals[language] !== undefined) return;
 
     setIsTranslatingRebuttal(true);
     setError(null);
@@ -25,14 +25,13 @@ export const useTranslationManager = (
       .then(translated => setTranslatedRebuttals(prev => ({ ...prev, [language]: translated })))
       .catch(err => setError(err.message))
       .finally(() => setIsTranslatingRebuttal(false));
-    // FIX: Remove translatedRebuttals from the dependency array to prevent an infinite loop.
-  }, [language, rebuttal, apiKey, selectedModel, t, serviceProvider]);
+  }, [language, rebuttal, apiKey, selectedModel, t, serviceProvider, translatedRebuttals]);
 
   const handleRebuttalUpdate = (newRebuttal: string) => {
     const canonicalRebuttal = { text: newRebuttal, lang: language };
     setRebuttal(canonicalRebuttal);
-    // FIX: Pre-populate the cache with the original language version.
-    setTranslatedRebuttals({ [language]: newRebuttal });
+    // Pre-populate the cache with the original language version.
+    setTranslatedRebuttals(prev => ({ ...prev, [language]: newRebuttal }));
   };
 
   const displayedRebuttal = translatedRebuttals[language] || null;

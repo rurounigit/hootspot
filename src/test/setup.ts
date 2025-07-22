@@ -1,6 +1,10 @@
 import { vi } from 'vitest';
 import '@testing-library/jest-dom';
 
+// Mock the global URL object for jsdom
+global.URL.createObjectURL = vi.fn(() => 'blob:http://localhost:3000/mock-blob');
+global.URL.revokeObjectURL = vi.fn();
+
 // Mock the global chrome API
 const chromeMock = {
   runtime: {

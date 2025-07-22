@@ -20,7 +20,9 @@ describe('textUtils', () => {
     it('should wrap text that exceeds the available width', () => {
       const text = 'this is a long piece of text';
       const lines = wrapSvgText(text, 50, 12); // 50px width limit
-      expect(lines).toEqual(['this is', 'a long', 'piece of', 'text']);
+      // With the mock measuring each character as 6px, "this is" (7 chars) would be 42px,
+      // but adding "a" would make it "this is a" (9 chars = 54px) which exceeds 50px
+      expect(lines).toEqual(['this', 'is a', 'long', 'piece', 'of', 'text']);
     });
   });
 

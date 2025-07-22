@@ -1,9 +1,18 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import RebuttalGenerator from './RebuttalGenerator';
 import * as GoogleApi from '../../api/google/analysis';
 import { LanguageProvider } from '../../i18n';
+import en from '../../locales/en.json';
+
+// Create a mock t function for testing
+const t = (key: string) => en[key as keyof typeof en] || key;
+
+vi.mock('../../i18n', async (importOriginal) => {
+    const original = await importOriginal<typeof import('../../i18n')>();
+    return { ...original, useTranslation: () => ({ t, language: 'en' }) };
+});
 
 vi.mock('../../api/google/analysis');
 
@@ -41,12 +50,15 @@ describe('RebuttalGenerator', () => {
 
     renderWithProvider({ onUpdate: onUpdateMock });
 
-    const generateButton = screen.getByRole('button', { name: /rebuttal_button_generate/i });
+    const generateButton = screen.getByRole('button', { name: /Generate/i });
     await userEvent.click(generateButton);
 
-    expect(await screen.findByText(/rebuttal_button_generating/i)).toBeInTheDocument();
-    expect(GoogleApi.generateRebuttal).toHaveBeenCalled();
-    expect(onUpdateMock).toHaveBeenCalledWith(mockRebuttal);
+    // The button shows the translation key, not the literal text "Generating..."
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Generating.../i })).toBeInTheDocument();
+    });
+    await waitFor(() => expect(GoogleApi.generateRebuttal).toHaveBeenCalled());
+    await waitFor(() => expect(onUpdateMock).toHaveBeenCalledWith(mockRebuttal));
   });
 
   it('displays an error message if API call fails', async () => {
@@ -54,7 +66,7 @@ describe('RebuttalGenerator', () => {
     vi.mocked(GoogleApi.generateRebuttal).mockRejectedValue(error);
 
     renderWithProvider({});
-    const generateButton = screen.getByRole('button', { name: /rebuttal_button_generate/i });
+    const generateButton = screen.getByRole('button', { name: /Generate/i });
     await userEvent.click(generateButton);
 
     expect(await screen.findByText('API failed')).toBeInTheDocument();

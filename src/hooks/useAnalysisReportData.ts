@@ -71,37 +71,40 @@ export const useAnalysisReportData = (
   const finalHighlights = useMemo(() => {
     const matchesByPosition = new Map<string, { start: number; end: number; findings: (GeminiFinding & { displayIndex: number })[] }>();
 
-    if (hasFindings && sourceText) {
-      indexedFindings.forEach(finding => {
-        const quote = finding.specific_quote;
-        if (!quote || typeof quote !== 'string' || quote.trim() === '') return;
+     if (hasFindings && sourceText) {
+       indexedFindings.forEach(finding => {
+         const quote = finding.specific_quote;
+         if (!quote || typeof quote !== 'string' || quote.trim() === '') return; // Skip empty quotes
 
-        // FIX: Make matching more robust by slightly cleaning the quote
-        const cleanedQuote = quote.trim().replace(/[\s.,;:"“”'‘’`]+$/g, "");
-        const escapedQuote = escapeRegex(cleanedQuote);
-        const regex = new RegExp(escapedQuote, 'gi'); // Use 'i' for case-insensitive matching
-        let match;
+         // Use a cleaned version for robust matching, but preserve original for boundary detection
+         const cleanedQuoteForRegex = quote.trim().replace(/[\s.,;:"“”'‘’`]+$/g, "");
+         const escapedQuote = escapeRegex(cleanedQuoteForRegex);
+         const regex = new RegExp(escapedQuote, 'gi');
+         let match;
 
-        while ((match = regex.exec(sourceText))) {
-            // Find the original full quote based on the cleaned match
-            const fullMatch = sourceText.substring(match.index, match.index + match[0].length);
+         while ((match = regex.exec(sourceText))) {
+             // Find the original full quote based on the cleaned match
+             const fullMatch = sourceText.substring(match.index, match.index + match[0].length);
 
-            const key = `${match.index}-${match.index + fullMatch.length}`;
-            const existing = matchesByPosition.get(key);
+             // Find the exact end of the quote in the source text
+             const quoteEnd = match.index + fullMatch.length;
 
-            if (existing) {
-              if (!existing.findings.some(f => f.pattern_name === finding.pattern_name && f.specific_quote === finding.specific_quote)) {
-                existing.findings.push(finding);
-              }
-            } else {
-              matchesByPosition.set(key, {
-                start: match.index,
-                end: match.index + fullMatch.length,
-                findings: [finding]
-              });
-            }
-        }
-      });
+             const key = `${match.index}-${quoteEnd}`;
+             const existing = matchesByPosition.get(key);
+
+             if (existing) {
+               if (!existing.findings.some(f => f.displayIndex === finding.displayIndex)) {
+                 existing.findings.push(finding);
+               }
+             } else {
+                 matchesByPosition.set(key, {
+                     start: match.index,
+                     end: quoteEnd,
+                     findings: [finding],
+                 });
+             }
+         }
+       });
     }
 
     const sortedMatches = Array.from(matchesByPosition.values()).sort((a, b) => a.start - b.start);

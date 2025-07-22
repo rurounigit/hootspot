@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Define the mock at the top level
-const chromeMock = {
-  runtime: {
-    onInstalled: { addListener: vi.fn() },
-    onMessage: { addListener: vi.fn() },
-    sendMessage: vi.fn(),
-    getPlatformInfo: vi.fn().mockResolvedValue({ os: 'linux' }),
-  },
+ const chromeMock = {
+   runtime: {
+     onInstalled: { addListener: vi.fn() },
+     onMessage: { addListener: vi.fn() },
+     sendMessage: vi.fn(),
+     getPlatformInfo: vi.fn().mockResolvedValue({ os: 'linux' }),
+   },
   contextMenus: {
     create: vi.fn(),
     removeAll: vi.fn((callback) => callback()),

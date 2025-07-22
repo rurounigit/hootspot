@@ -4,6 +4,12 @@ import userEvent from '@testing-library/user-event';
 import ShareMenu from './ShareMenu';
 import * as PdfHook from '../../hooks/usePdfGenerator';
 import { LanguageProvider } from '../../i18n';
+import en from '../../locales/en.json';
+
+vi.mock('../../i18n', async (importOriginal) => {
+    const original = await importOriginal<typeof import('../../i18n')>();
+    return { ...original, useTranslation: () => ({ t: (key: string) => en[key as keyof typeof en] || key }) };
+});
 
 // Mock the hook and chrome API
 vi.mock('../../hooks/usePdfGenerator');
@@ -41,30 +47,30 @@ describe('ShareMenu', () => {
     renderWithProvider({});
     expect(screen.queryByRole('list')).not.toBeInTheDocument();
 
-    const shareButton = screen.getByRole('button', { name: /share_menu_tooltip/i });
+    const shareButton = screen.getByRole('button', { name: /Share or Download Report/i });
     await userEvent.click(shareButton);
 
     expect(screen.getByRole('list')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'share_menu_pdf' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Download PDF/i })).toBeInTheDocument();
   });
 
   it('calls generatePdf when the PDF download button is clicked', async () => {
     renderWithProvider({});
-    const shareButton = screen.getByRole('button', { name: /share_menu_tooltip/i });
+    const shareButton = screen.getByRole('button', { name: /Share or Download Report/i });
     await userEvent.click(shareButton);
 
-    const pdfButton = screen.getByRole('button', { name: 'share_menu_pdf' });
+    const pdfButton = screen.getByRole('button', { name: /Download PDF/i });
     await userEvent.click(pdfButton);
 
     expect(generatePdfMock).toHaveBeenCalled();
   });
 
   it('triggers a JSON download when the JSON download button is clicked', async () => {
-    renderWithProvider({});
-    const shareButton = screen.getByRole('button', { name: /share_menu_tooltip/i });
+    renderWithProvider({}); // No props needed for this test
+    const shareButton = screen.getByRole('button', { name: /Share or Download Report/i });
     await userEvent.click(shareButton);
 
-    const jsonButton = screen.getByRole('button', { name: 'share_menu_json' });
+    const jsonButton = screen.getByRole('button', { name: /Download JSON/i });
     await userEvent.click(jsonButton);
 
     // Correctly assert against the globally mocked chrome object from setup.ts

@@ -125,7 +125,10 @@ describe('useTranslationManager Hook', () => {
 
     currentLanguage = 'es';
     rerender();
-    expect(result.current.displayedRebuttal).toBe(spanishTranslation);
+    await waitFor(() => {
+      expect(result.current.displayedRebuttal).toBe(spanishTranslation);
+    });
+    // The translation is cached, so it should only be called once
     expect(GoogleTranslationApi.translateText).toHaveBeenCalledTimes(1);
   });
 });

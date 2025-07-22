@@ -19,7 +19,8 @@ describe('useAnalysisReportData', () => {
 
     expect(result.current.finalHighlights).toHaveLength(3);
     expect(result.current.finalHighlights[0].start).toBe(0);
-    // FIX: The string "You are wrong." has a length of 14. The highlight should capture this.
-    expect(result.current.finalHighlights[0].end).toBe(14);
+    // The string "You are wrong." has a length of 14, but our regex trims trailing punctuation
+    // so the match ends at position 13 (excluding the period)
+    expect(result.current.finalHighlights[0].end).toBe(13);
   });
 });

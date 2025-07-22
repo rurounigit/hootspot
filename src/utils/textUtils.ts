@@ -14,25 +14,25 @@ export const wrapSvgText = (text: string, availableWidth: number, fontSize: numb
   if (!text || !context || availableWidth <= 0) return [];
 
   context.font = `bold ${fontSize}px system-ui, sans-serif`;
-
+  const words = text.split(/\s+/);
   const lines: string[] = [];
-  const words = text.split(' ');
-  let currentLine = words[0] || '';
+  let currentLine = "";
 
-  // Start loop from the second word
-  for (let i = 1; i < words.length; i++) {
-    const word = words[i];
-    const testLine = `${currentLine} ${word}`;
-    const testWidth = context.measureText(testLine).width;
+  for (const word of words) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    const { width } = context.measureText(testLine);
 
-    if (testWidth > availableWidth) {
+    if (width > availableWidth && currentLine) {
       lines.push(currentLine);
       currentLine = word;
     } else {
       currentLine = testLine;
     }
   }
-  lines.push(currentLine); // Push the last constructed line
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
   return lines;
 };
 
