@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { SaveIcon, SettingsIcon } from '../assets/icons';
 import { API_KEY_STORAGE_KEY, LM_STUDIO_URL_KEY, LM_STUDIO_MODEL_KEY } from '../config/storage-keys';
-import { testApiKey } from '../api/google';
+import { testApiKey } from '../api/google/utils';
 import { testLMStudioConnection } from '../api/lm-studio';
 import { useTranslation } from '../i18n';
 import LanguageManager from './LanguageManager';

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from '../i18n';
-import { analyzeText, translateAnalysisResult } from '../api/google';
+import { analyzeText } from '../api/google/analysis';
+import { translateAnalysisResult } from '../api/google/translation';
 import { analyzeTextWithLMStudio } from '../api/lm-studio';
 import { GeminiAnalysisResponse } from '../types/api';
 

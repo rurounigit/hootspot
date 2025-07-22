@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from '../i18n';
-import { translateText } from '../api/google';
+import { translateText } from '../api/google/translation';
 
 export const useTranslationManager = (
   apiKey: string | null,

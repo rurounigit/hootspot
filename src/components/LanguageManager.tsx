@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useTranslation } from '../i18n';
-import { translateUI } from '../api/google';
+import { translateUI } from '../api/google/translation';
 import { AddIcon } from '../assets/icons';
 import { defaultLanguages } from '../i18n';
 

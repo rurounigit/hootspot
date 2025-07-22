@@ -1,7 +1,7 @@
 // src/components/analysis/RebuttalGenerator.tsx
 
 import React, { useState } from 'react';
-import { generateRebuttal } from '../../api/google';
+import { generateRebuttal } from '../../api/google/analysis';
 import { generateRebuttalWithLMStudio } from '../../api/lm-studio';
 import { GeminiAnalysisResponse } from '../../types/api';
 import { useTranslation } from '../../i18n';
