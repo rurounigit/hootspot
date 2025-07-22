@@ -1,8 +1,8 @@
 {
   "app_title": "HootSpot",
   "app_subtitle": "",
-  "app_footer_copyright": "© {year} HootSpot KI Text-Analysator. ",
-  "app_footer_responsibility": "Der Benutzer ist für alle Kosten der Google Gemini API verantwortlich.",
+  "app_footer_copyright": "© {year} HootSpot. ",
+  "app_footer_responsibility": "Dieses Tool ist für Bildungs- und Analysezwecke gedacht. Die Analyse wird von einer KI generiert und ist möglicherweise nicht immer vollkommen genau oder vollständig. Der Benutzer trägt alle Kosten der Google Gemini-API.",
   "error_prefix": "Fehler: ",
   "error_no_api_key_for_results": "Bitte richten Sie Ihren API-Schlüssel ein, um die Analyseergebnisse anzuzeigen.",
   "info_enter_text_to_analyze": "Fügen Sie oben Text ein und klicken Sie auf \"Analysieren\", um die Einblicke der KI zu sehen. Sie können auch das Kontextmenü (Text auswählen und rechtsklicken) oder die Tastaturkürzel  verwenden (Text auswählen und Tastenkombination Alt/⌥+Shift+A), um Text zu analysieren.",
