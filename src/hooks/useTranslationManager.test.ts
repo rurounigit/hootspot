@@ -19,12 +19,12 @@ describe('useTranslationManager Hook', () => {
   const defaultProps = {
     apiKey: 'test-key',
     selectedModel: 'gemini-pro',
-    serviceProvider: 'google' as 'google' | 'local',
+    serviceProvider: 'google' as const,
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    currentLanguage = 'en'; // Reset language before each test
+    currentLanguage = 'en';
   });
 
   it('should initialize with default values', () => {
@@ -103,32 +103,35 @@ describe('useTranslationManager Hook', () => {
     expect(result.current.displayedRebuttal).toBe(null);
   });
 
-  it('should use a cached translation if one is available', async () => {
+  it('should use a cached translation if one is available and not re-fetch', async () => {
     const spanishTranslation = 'Una refutación.';
     vi.mocked(GoogleTranslationApi.translateText).mockResolvedValue(spanishTranslation);
 
     const { result, rerender } = renderHook(() => useTranslationManager(defaultProps.apiKey, defaultProps.selectedModel, defaultProps.serviceProvider));
 
+    // Step 1: Generate initial rebuttal. No API call yet.
     act(() => {
-        result.current.handleRebuttalUpdate('A rebuttal.');
+      result.current.handleRebuttalUpdate('A rebuttal.');
     });
+    expect(GoogleTranslationApi.translateText).not.toHaveBeenCalled();
 
+    // Step 2: Switch to Spanish. This triggers the first and ONLY API call.
     currentLanguage = 'es';
     rerender();
+
     await waitFor(() => expect(result.current.displayedRebuttal).toBe(spanishTranslation));
     expect(GoogleTranslationApi.translateText).toHaveBeenCalledTimes(1);
 
+    // Step 3: Switch back to English. This should be instant and from the cache.
     currentLanguage = 'en';
     rerender();
     expect(result.current.displayedRebuttal).toBe('A rebuttal.');
-    expect(GoogleTranslationApi.translateText).toHaveBeenCalledTimes(1);
+    expect(GoogleTranslationApi.translateText).toHaveBeenCalledTimes(1); // Count must remain 1.
 
+    // Step 4: Switch back to Spanish. This must also come from the cache.
     currentLanguage = 'es';
     rerender();
-    await waitFor(() => {
-      expect(result.current.displayedRebuttal).toBe(spanishTranslation);
-    });
-    // The translation is cached, so it should only be called once
-    expect(GoogleTranslationApi.translateText).toHaveBeenCalledTimes(1);
+    expect(result.current.displayedRebuttal).toBe(spanishTranslation);
+    expect(GoogleTranslationApi.translateText).toHaveBeenCalledTimes(1); // Count MUST still be 1.
   });
 });

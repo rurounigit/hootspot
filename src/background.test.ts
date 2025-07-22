@@ -1,16 +1,17 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+/// <reference types="vitest/globals" />
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// Define the mock at the top level
- const chromeMock = {
-   runtime: {
-     onInstalled: { addListener: vi.fn() },
-     onMessage: { addListener: vi.fn() },
-     sendMessage: vi.fn(),
-     getPlatformInfo: vi.fn().mockResolvedValue({ os: 'linux' }),
-   },
+// Define the complete mock for the chrome API that background.ts uses.
+const chromeMock = {
+  runtime: {
+    onInstalled: { addListener: vi.fn() },
+    onMessage: { addListener: vi.fn() },
+    sendMessage: vi.fn(),
+    getPlatformInfo: vi.fn().mockResolvedValue({ os: 'linux' }),
+  },
   contextMenus: {
     create: vi.fn(),
-    removeAll: vi.fn((callback) => callback()),
+    removeAll: vi.fn((callback) => callback && callback()),
     onClicked: { addListener: vi.fn() },
   },
   sidePanel: {
@@ -31,20 +32,23 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
   },
 };
 
-// Stub the global `chrome` object
+// Stub the global `chrome` object before any tests run.
 vi.stubGlobal('chrome', chromeMock);
 
-// Now, import the script that uses `chrome`
-import './background';
-
 describe('Chrome Extension Background Script', () => {
-    beforeEach(() => {
-        // Clear mock history before each test to ensure isolation
+    // Before each test, reset modules to allow re-importing background.ts
+    // and dynamically import it to ensure mocks are applied first.
+    beforeEach(async () => {
+        vi.resetModules();
+        await import('./background');
+    });
+
+    // After each test, clear mocks for isolation.
+    afterEach(() => {
         vi.clearAllMocks();
     });
 
     it('should attach all necessary listeners when the script is imported', () => {
-        // Since the script runs on import, the listeners should have been added.
         expect(chrome.runtime.onInstalled.addListener).toHaveBeenCalledTimes(1);
         expect(chrome.contextMenus.onClicked.addListener).toHaveBeenCalledTimes(1);
         expect(chrome.commands.onCommand.addListener).toHaveBeenCalledTimes(1);

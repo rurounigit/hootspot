@@ -13,6 +13,7 @@ vi.mock('./hooks/useConfig', () => ({
     setIsConfigCollapsed: vi.fn(),
     isNightMode: false,
     setIsNightMode: vi.fn(),
+    maxCharLimit: 6000,
   }),
 }));
 vi.mock('./hooks/useModels', () => ({
