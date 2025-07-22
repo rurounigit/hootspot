@@ -1,3 +1,4 @@
+// src/hooks/useConfig.ts
 import { useState, useEffect, useCallback } from 'react';
 import {
   API_KEY_STORAGE_KEY,
@@ -28,6 +29,25 @@ export const useConfig = () => {
   const [isConfigCollapsed, setIsConfigCollapsed] = useState(() => !!(localStorage.getItem(API_KEY_STORAGE_KEY) || localStorage.getItem(LM_STUDIO_URL_KEY)));
 
   const isCurrentProviderConfigured = (serviceProvider === 'google' && !!apiKeyInput.trim()) || (serviceProvider === 'local' && !!lmStudioUrl.trim() && !!lmStudioModel.trim());
+
+  // ADDED: localStorage data migration logic
+  useEffect(() => {
+    const oldApiKey = localStorage.getItem('athenaAIApiKey');
+    if (oldApiKey) {
+      localStorage.setItem(API_KEY_STORAGE_KEY, oldApiKey);
+      localStorage.removeItem('athenaAIApiKey');
+    }
+    const oldModel = localStorage.getItem('athenaAISelectedModel');
+    if (oldModel) {
+        localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, oldModel);
+        localStorage.removeItem('athenaAISelectedModel');
+    }
+    const oldMaxChar = localStorage.getItem('athenaAIMaxCharLimit');
+    if(oldMaxChar) {
+        localStorage.setItem(MAX_CHAR_LIMIT_STORAGE_KEY, oldMaxChar);
+        localStorage.removeItem('athenaAIMaxCharLimit');
+    }
+  }, []);
 
   useEffect(() => {
     const handler = setTimeout(() => { setDebouncedApiKey(apiKeyInput.trim()); }, 500);

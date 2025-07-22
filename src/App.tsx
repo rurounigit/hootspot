@@ -1,7 +1,7 @@
 // src/App.tsx
 
 import React, { useEffect, useRef } from 'react';
-import ApiKeyManager from './components/ApiKeyManager';
+import ConfigurationManager from './components/ConfigurationManager';
 import TextAnalyzer from './components/TextAnalyzer';
 import AnalysisReport from './components/analysis/AnalysisReport';
 import LanguageSwitcher from './components/LanguageSwitcher';
@@ -153,7 +153,7 @@ const App: React.FC = () => {
         </header>
 
         <main className="flex-grow">
-          <ApiKeyManager
+          <ConfigurationManager
             serviceProvider={serviceProvider}
             onServiceProviderChange={setServiceProvider}
             apiKeyInput={apiKeyInput}

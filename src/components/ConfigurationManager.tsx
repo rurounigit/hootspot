@@ -1,5 +1,4 @@
-// src/components/ApiKeyManager.tsx
-
+// src/components/ConfigurationManager.tsx
 import React, { useState, useEffect } from 'react';
 import { SaveIcon, SettingsIcon } from '../assets/icons';
 import { API_KEY_STORAGE_KEY, LM_STUDIO_URL_KEY, LM_STUDIO_MODEL_KEY } from '../config/storage-keys';
@@ -12,7 +11,7 @@ import GoogleConfig from './config/GoogleConfig';
 import LMStudioConfig from './config/LMStudioConfig';
 import GeneralSettings from './config/GeneralSettings';
 
-interface ApiKeyManagerProps {
+interface ConfigurationManagerProps {
   serviceProvider: 'google' | 'local';
   onServiceProviderChange: (provider: 'google' | 'local') => void;
   apiKeyInput: string;
@@ -39,8 +38,7 @@ interface ApiKeyManagerProps {
   isCollapsed: boolean;
   onToggleCollapse: () => void;
 }
-
-const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
+const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
   serviceProvider,
   onServiceProviderChange,
   apiKeyInput,
@@ -203,4 +201,4 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
   );
 };
 
-export default ApiKeyManager;
+export default ConfigurationManager;

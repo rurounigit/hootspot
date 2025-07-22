@@ -1,8 +1,8 @@
+// src/i18n.tsx
 import React, { createContext, useState, useContext, useEffect, useCallback, ReactNode } from 'react';
-import { CUSTOM_LANGUAGES_KEY } from './config/storage-keys';
+import { CUSTOM_LANGUAGES_KEY, LANGUAGE_KEY } from './config/storage-keys';
 
-// Define default languages
-export const defaultLanguages = { // Add 'export'
+export const defaultLanguages = {
   en: 'en',
   de: 'de',
   fr: 'fr',
@@ -12,33 +12,45 @@ export const defaultLanguages = { // Add 'export'
 export type LanguageCode = string;
 export type LanguagePack = Record<LanguageCode, string>;
 
-// Define the shape of the context
 interface LanguageContextType {
   language: LanguageCode;
   availableLanguages: LanguagePack;
   setLanguage: (language: LanguageCode) => void;
   addLanguage: (code: LanguageCode, name: string, translations: Record<string, string>) => void;
-  deleteLanguage: (languageCode: LanguageCode) => void; // Add this line
+  deleteLanguage: (languageCode: LanguageCode) => void;
   t: (key: string, replacements?: Record<string, string | number>) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-// Define the provider component
 interface LanguageProviderProps {
   children: ReactNode;
 }
 
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
+  // ADDED: A one-time migration effect for language settings.
+  useEffect(() => {
+    const oldLang = localStorage.getItem('athena-ai-language');
+    if (oldLang) {
+      localStorage.setItem(LANGUAGE_KEY, oldLang);
+      localStorage.removeItem('athena-ai-language');
+    }
+    const oldCustomLangs = localStorage.getItem('athenaAICustomLanguages');
+    if (oldCustomLangs) {
+      localStorage.setItem(CUSTOM_LANGUAGES_KEY, oldCustomLangs);
+      localStorage.removeItem('athenaAICustomLanguages');
+    }
+  }, []);
+
   const [availableLanguages, setAvailableLanguages] = useState<LanguagePack>(defaultLanguages);
   const [language, setLanguageState] = useState<LanguageCode>(() => {
-    const storedLang = localStorage.getItem('athena-ai-language') as LanguageCode;
+    // UPDATED: Reads from the new storage key.
+    const storedLang = localStorage.getItem(LANGUAGE_KEY) as LanguageCode;
     return storedLang || 'en';
   });
   const [translations, setTranslations] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    // Load custom languages from localStorage on initial load
     const customLanguagesStr = localStorage.getItem(CUSTOM_LANGUAGES_KEY);
     if (customLanguagesStr) {
       try {
@@ -53,11 +65,10 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   useEffect(() => {
     const loadTranslations = async () => {
       try {
-        // Check if it's a default language
         if (Object.keys(defaultLanguages).includes(language)) {
           const module = await import(`./locales/${language}.json`);
           setTranslations(module.default);
-        } else { // It's a custom language from localStorage
+        } else {
           const customTranslationsStr = localStorage.getItem(`translation_${language}`);
           if (customTranslationsStr) {
             setTranslations(JSON.parse(customTranslationsStr));
@@ -67,7 +78,6 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
         }
       } catch (error) {
         console.error(`Could not load translations for ${language}:`, error);
-        // Fallback to English if the selected language file fails
         try {
           const fallbackModule = await import('./locales/en.json');
           setTranslations(fallbackModule.default);
@@ -81,45 +91,37 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   }, [language]);
 
   const setLanguage = (lang: LanguageCode) => {
-    localStorage.setItem('athena-ai-language', lang);
+    // UPDATED: Writes to the new storage key.
+    localStorage.setItem(LANGUAGE_KEY, lang);
     setLanguageState(lang);
   };
 
   const addLanguage = (code: LanguageCode, name: string, newTranslations: Record<string, string>) => {
-    // Update available languages state
     const updatedLanguages = { ...availableLanguages, [code]: name };
     setAvailableLanguages(updatedLanguages);
 
-    // Save the new list of custom languages to localStorage
     const customLanguages = { ...updatedLanguages };
     Object.keys(defaultLanguages).forEach(key => delete customLanguages[key as keyof typeof customLanguages]);
     localStorage.setItem(CUSTOM_LANGUAGES_KEY, JSON.stringify(customLanguages));
 
-    // Save the new translation file to localStorage
     localStorage.setItem(`translation_${code}`, JSON.stringify(newTranslations));
-
-    // Optionally, switch to the new language
     setLanguage(code);
   };
 
   const deleteLanguage = (codeToDelete: LanguageCode) => {
-    // Prevent deleting default languages
     if (Object.keys(defaultLanguages).includes(codeToDelete)) {
       console.error("Cannot delete a default language.");
       return;
     }
 
-    // If deleting the currently active language, switch to English first
     if (language === codeToDelete) {
       setLanguage('en');
     }
 
-    // Update available languages state
     const updatedLanguages = { ...availableLanguages };
     delete updatedLanguages[codeToDelete];
     setAvailableLanguages(updatedLanguages);
 
-    // Remove from localStorage
     const customLanguagesStr = localStorage.getItem(CUSTOM_LANGUAGES_KEY);
     if (customLanguagesStr) {
       const customLanguages = JSON.parse(customLanguagesStr);
@@ -148,7 +150,6 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   );
 };
 
-// Custom hook to use the translation context
 export const useTranslation = (): LanguageContextType => {
   const context = useContext(LanguageContext);
   if (context === undefined) {

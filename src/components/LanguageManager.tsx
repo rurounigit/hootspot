@@ -54,7 +54,6 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({ apiKey }) => {
   );
 
   return (
-    // UPDATED SECTION: Added dark mode classes to inputs and lists for consistency.
     <div className="mt-4 pt-4 border-t border-divider-light dark:border-divider-dark">
       <h3 className="text-lg font-semibold text-text-label-light dark:text-text-label-dark mb-4">{t('lang_manager_title')}</h3>
       <p className="text-sm text-text-subtle-light dark:text-text-subtle-dark mb-4">
