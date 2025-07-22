@@ -2,6 +2,7 @@
   "app_title": "HootSpot",
   "app_subtitle": "",
   "app_footer_copyright": "© {year} HootSpot. ",
+  "app_footer_disclaimer_label": "Haftungsausschluss",
   "app_footer_responsibility": "Dieses Tool ist für Bildungs- und Analysezwecke gedacht. Die Analyse wird von einer KI generiert und ist möglicherweise nicht immer vollkommen genau oder vollständig. Der Benutzer trägt alle Kosten der Google Gemini-API.",
   "error_prefix": "Fehler: ",
   "error_no_api_key_for_results": "Bitte richten Sie Ihren API-Schlüssel ein, um die Analyseergebnisse anzuzeigen.",

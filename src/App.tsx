@@ -11,6 +11,7 @@ import { useConfig } from './hooks/useConfig';
 import { useAnalysis } from './hooks/useAnalysis';
 import { useTranslationManager } from './hooks/useTranslationManager';
 import { HootSpotLogoIcon, SunIcon, MoonIcon } from './assets/icons';
+import Tooltip from './components/common/Tooltip';
 
 const App: React.FC = () => {
   const { t } = useTranslation();
@@ -242,8 +243,14 @@ const App: React.FC = () => {
           )}
         </main>
         <footer className="mt-auto pt-6 text-center text-sm text-text-subtle-light dark:text-text-subtle-dark">
-          <p>{t('app_footer_copyright', { year: new Date().getFullYear() })}</p>
-          <p>{t('app_footer_responsibility')}</p>
+          <p>
+            {t('app_footer_copyright', { year: new Date().getFullYear() })}
+            <Tooltip content={t('app_footer_responsibility')}>
+              <span className="ml-2 underline decoration-dotted cursor-pointer">
+                {t('app_footer_disclaimer_label')}
+              </span>
+            </Tooltip>
+          </p>
         </footer>
       </div>
     </div>
