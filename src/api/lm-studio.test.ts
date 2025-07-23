@@ -1,4 +1,4 @@
-import { testLMStudioConnection, analyzeTextWithLMStudio } from './lm-studio';
+import { testLMStudioConnection, analyzeTextWithLMStudio, generateRebuttalWithLMStudio } from './lm-studio';
 import { GeminiAnalysisResponse } from '../types/api';
 
 // Mock the fetch function
@@ -23,6 +23,11 @@ const mockT = vi.fn((key: string, replacements?: Record<string, string | number>
   }
   return key;
 });
+
+const mockAnalysis: GeminiAnalysisResponse = {
+    analysis_summary: "A summary.",
+    findings: [],
+};
 
 describe('testLMStudioConnection', () => {
   beforeEach(() => {
@@ -136,4 +141,47 @@ describe('analyzeTextWithLMStudio', () => {
     const result = await analyzeTextWithLMStudio('text', 'http://localhost:1234', 'model', mockT);
     expect(result).toEqual(mockResponse);
   });
+});
+
+describe('generateRebuttalWithLMStudio', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('throws an error if serverUrl or modelName is missing', async () => {
+        await expect(generateRebuttalWithLMStudio('text', mockAnalysis, '', 'model', 'en', mockT)).rejects.toThrow('error_local_server_config_missing');
+        await expect(generateRebuttalWithLMStudio('text', mockAnalysis, 'http://localhost:1234', '', 'en', mockT)).rejects.toThrow('error_local_server_config_missing');
+    });
+
+    it('throws an error if source text is missing', async () => {
+        await expect(generateRebuttalWithLMStudio('', mockAnalysis, 'http://localhost:1234', 'model', 'en', mockT)).rejects.toThrow('Source text and analysis are required to generate a rebuttal.');
+    });
+
+    it('throws an error on a non-ok fetch response', async () => {
+        (fetch as any).mockResolvedValueOnce({
+            ok: false,
+            json: vi.fn().mockResolvedValue({ error: { message: 'Server error' } }),
+        });
+        await expect(generateRebuttalWithLMStudio('text', mockAnalysis, 'http://localhost:1234', 'model', 'en', mockT)).rejects.toThrow('Model model not loaded: Server error');
+    });
+
+    it('throws an error if the response content is missing', async () => {
+        (fetch as any).mockResolvedValueOnce({
+            ok: true,
+            json: vi.fn().mockResolvedValue({ choices: [{ message: {} }] }), // Missing content
+        });
+        await expect(generateRebuttalWithLMStudio('text', mockAnalysis, 'http://localhost:1234', 'model', 'en', mockT)).rejects.toThrow('Unexpected JSON structure');
+    });
+
+    it('returns the rebuttal text on a successful call', async () => {
+        const rebuttalText = 'This is a successful rebuttal.';
+        (fetch as any).mockResolvedValueOnce({
+            ok: true,
+            json: vi.fn().mockResolvedValue({ choices: [{ message: { content: `  ${rebuttalText}  ` } }] }),
+        });
+
+        const result = await generateRebuttalWithLMStudio('text', mockAnalysis, 'http://localhost:1234', 'model', 'en', mockT);
+        expect(result).toBe(rebuttalText);
+        expect(fetch).toHaveBeenCalled();
+    });
 });
