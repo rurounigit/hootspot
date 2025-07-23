@@ -230,11 +230,6 @@ const App: React.FC = () => {
                />
             )}
           </div>
-          {!isBusy && !error && !analysisResult && currentTextAnalyzed && !isCurrentProviderConfigured && (
-            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-300 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-400 rounded-md shadow-md">
-                {t('analyzer_no_api_key_warning')}
-            </div>
-          )}
           {!isBusy && !error && !analysisResult && !currentTextAnalyzed && isCurrentProviderConfigured && (
             <div className="mt-4 p-6 bg-white border border-gray-200 text-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 rounded-lg shadow-md text-center">
                 <p className="text-lg">{t('info_enter_text_to_analyze')}</p>
