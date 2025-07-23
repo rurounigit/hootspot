@@ -1,3 +1,5 @@
+// src/hooks/useAnalysisReportData.ts
+
 import { useMemo } from 'react';
 import { GeminiAnalysisResponse, GeminiFinding } from '../types/api';
 
@@ -74,20 +76,18 @@ export const useAnalysisReportData = (
      if (hasFindings && sourceText) {
        indexedFindings.forEach(finding => {
          const quote = finding.specific_quote;
-         if (!quote || typeof quote !== 'string' || quote.trim() === '') return; // Skip empty quotes
+         if (!quote || typeof quote !== 'string' || quote.trim() === '') return;
 
-         // Use a cleaned version for robust matching, but preserve original for boundary detection
          const cleanedQuoteForRegex = quote.trim().replace(/[\s.,;:"“”'‘’`]+$/g, "");
          const escapedQuote = escapeRegex(cleanedQuoteForRegex);
          const regex = new RegExp(escapedQuote, 'gi');
          let match;
 
          while ((match = regex.exec(sourceText))) {
-             // Find the original full quote based on the cleaned match
-             const fullMatch = sourceText.substring(match.index, match.index + match[0].length);
-
-             // Find the exact end of the quote in the source text
-             const quoteEnd = match.index + fullMatch.length;
+             // FIX: The end position must be calculated based on the length of the actual
+             // match found in the source text (`match[0]`), not the cleaned quote.
+             // This preserves trailing punctuation in the highlight.
+             const quoteEnd = match.index + match[0].length;
 
              const key = `${match.index}-${quoteEnd}`;
              const existing = matchesByPosition.get(key);

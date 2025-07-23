@@ -1,6 +1,8 @@
+// vitest.config.ts
 /// <reference types="vitest" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import path from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -14,6 +16,11 @@ export default defineConfig({
       provider: 'v8', // or 'istanbul'
       reporter: ['text', 'json', 'html'], // Generate multiple reports
       all: true, // Include all files, not just tested ones
+    },
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
     },
   },
 });
