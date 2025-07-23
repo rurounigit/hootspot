@@ -75,4 +75,15 @@ describe('ConfigurationManager', () => {
     expect(await screen.findByText('Successfully connected to LM Studio server!')).toBeInTheDocument();
     expect(onToggleCollapseMock).toHaveBeenCalled();
   });
+  it('shows an error message on failed Google API save', async () => {
+    renderWithProvider({ apiKeyInput: 'bad-key' });
+    // Mock the API to reject the promise
+    vi.mocked(GoogleApi.testApiKey).mockRejectedValue(new Error('Invalid API key'));
+
+    const saveButton = await screen.findByRole('button', { name: /Save & Test/i });
+    await userEvent.click(saveButton);
+
+    // Assert that the error message is now displayed to the user
+    expect(await screen.findByText('Invalid API key')).toBeInTheDocument();
+});
 });

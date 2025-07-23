@@ -77,9 +77,81 @@ describe('Chrome Extension Background Script', () => {
         expect(sendResponse).toHaveBeenCalledWith({ text: 'initial text', autoAnalyze: false });
     });
 
-     it('should handle PDF downloads', () => {
+    it('should handle PDF downloads', () => {
         const request = { type: 'DOWNLOAD_PDF', url: 'blob:url', filename: 'report.pdf' };
         onMessageCallback(request, {} as chrome.runtime.MessageSender, vi.fn());
         expect(chrome.downloads.download).toHaveBeenCalledWith(expect.objectContaining({ filename: 'report.pdf' }));
     });
+
+    it('should handle the "Copy to HootSpot" context menu click', async () => {
+        // Arrange
+        const mockInfo: chrome.contextMenus.OnClickData = {
+          menuItemId: 'HOOTSPOT_CONTEXT_MENU_COPY', // Use the "COPY" ID
+          selectionText: 'text to be copied',
+          pageUrl: 'http://example.com',
+          editable: false
+      };
+        const sendResponse = vi.fn();
+
+        // Act: Simulate the user right-clicking and choosing "Copy text to HootSpot"
+        await onClickedCallback(mockInfo, mockTab);
+        // Act: Simulate the app asking for the data
+        onMessageCallback({ type: 'PULL_INITIAL_TEXT' }, {} as chrome.runtime.MessageSender, sendResponse);
+
+        // Assert
+        expect(chrome.sidePanel.open).toHaveBeenCalledWith({ windowId: 123 });
+        // Assert that autoAnalyze is FALSE for this action
+        expect(sendResponse).toHaveBeenCalledWith({ text: 'text to be copied', autoAnalyze: false });
+    });
+
+
+    it('should handle the "copy-to-hootspot" keyboard command', async () => {
+        // Arrange
+        (chrome.scripting.executeScript as Mock).mockResolvedValue([{ result: 'text from shortcut' }]);
+        const sendResponse = vi.fn();
+
+        // Act
+        await onCommandCallback('copy-to-hootspot', mockTab); // Use the "copy-to-hootspot" command
+        onMessageCallback({ type: 'PULL_INITIAL_TEXT' }, {} as chrome.runtime.MessageSender, sendResponse);
+
+        // Assert
+        expect(chrome.sidePanel.open).toHaveBeenCalledWith({ windowId: 123 });
+        expect(sendResponse).toHaveBeenCalledWith({ text: 'text from shortcut', autoAnalyze: false });
+    });
+
+    it('should handle the "add-to-hootspot" keyboard command', async () => {
+        // Act
+        (chrome.scripting.executeScript as Mock).mockResolvedValue([{ result: 'text to append' }]);
+        await onCommandCallback('add-to-hootspot', mockTab);
+
+        // Assert
+        expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
+            expect.objectContaining({ type: 'APPEND_TEXT_TO_PANEL', text: 'text to append' }),
+            expect.any(Function)
+        );
+    });
+    it('should handle the "Add to HootSpot" context menu click', async () => {
+        // Arrange
+        const mockInfo: chrome.contextMenus.OnClickData = {
+          menuItemId: 'HOOTSPOT_CONTEXT_MENU_ADD', // Use the "ADD" ID
+          selectionText: 'text to be added',
+          pageUrl: 'http://example.com',
+          editable: false
+        };
+
+        // Act: Simulate the click
+        await onClickedCallback(mockInfo, mockTab);
+
+        // Assert: Verify the correct message is sent to the app
+        // Note: We are checking the direct sendMessage call here, not the pull mechanism,
+        // to test the "APPEND" message type.
+        expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: 'APPEND_TEXT_TO_PANEL', // This is the key difference
+            text: 'text to be added'
+          }),
+          expect.any(Function)
+        );
+    });
+
 });

@@ -25,8 +25,8 @@ const mockAnalysisResult: GeminiAnalysisResponse = {
 };
 
 describe('useAnalysis Hook', () => {
+  // Define a complete set of default props for the hook
   const defaultProps = {
-    serviceProvider: 'google' as 'google' | 'local',
     apiKey: 'test-key',
     lmStudioUrl: 'http://localhost:1234',
     lmStudioModel: 'test-model',
@@ -41,7 +41,15 @@ describe('useAnalysis Hook', () => {
 
   it('should handle successful analysis with Google provider', async () => {
     vi.mocked(GoogleApi.analyzeText).mockResolvedValue(mockAnalysisResult);
-    const { result } = renderHook(() => useAnalysis(defaultProps.serviceProvider, defaultProps.apiKey, defaultProps.lmStudioUrl, defaultProps.lmStudioModel, defaultProps.selectedModel, defaultProps.isCurrentProviderConfigured, defaultProps.setIsConfigCollapsed));
+    const { result } = renderHook(() => useAnalysis(
+      'google', // serviceProvider
+      defaultProps.apiKey,
+      defaultProps.lmStudioUrl,
+      defaultProps.lmStudioModel,
+      defaultProps.selectedModel,
+      defaultProps.isCurrentProviderConfigured,
+      defaultProps.setIsConfigCollapsed
+    ));
 
     await act(async () => {
       result.current.handleAnalyzeText('Some text');
@@ -54,9 +62,18 @@ describe('useAnalysis Hook', () => {
     expect(GoogleApi.analyzeText).toHaveBeenCalledWith('test-key', 'Some text', 'gemini-pro');
   });
 
+  // --- NEW TEST CASE FOR LM STUDIO PROVIDER ---
   it('should handle successful analysis with LM Studio provider', async () => {
     vi.mocked(LMStudioApi.analyzeTextWithLMStudio).mockResolvedValue(mockAnalysisResult);
-    const { result } = renderHook(() => useAnalysis('local', defaultProps.apiKey, defaultProps.lmStudioUrl, defaultProps.lmStudioModel, defaultProps.selectedModel, defaultProps.isCurrentProviderConfigured, defaultProps.setIsConfigCollapsed));
+    const { result } = renderHook(() => useAnalysis(
+      'local', // serviceProvider is 'local'
+      defaultProps.apiKey,
+      defaultProps.lmStudioUrl,
+      defaultProps.lmStudioModel,
+      defaultProps.selectedModel,
+      defaultProps.isCurrentProviderConfigured,
+      defaultProps.setIsConfigCollapsed
+    ));
 
     await act(async () => {
       result.current.handleAnalyzeText('Some local text');
@@ -64,13 +81,22 @@ describe('useAnalysis Hook', () => {
 
     expect(result.current.analysisResult).toEqual(mockAnalysisResult);
     expect(LMStudioApi.analyzeTextWithLMStudio).toHaveBeenCalledWith('Some local text', 'http://localhost:1234', 'test-model', expect.any(Function));
+    expect(GoogleApi.analyzeText).not.toHaveBeenCalled(); // Ensure the Google API was not called
     expect(GoogleTranslationApi.translateAnalysisResult).not.toHaveBeenCalled();
   });
 
   it('should set an error if analysis fails', async () => {
     const errorMessage = 'API Error';
     vi.mocked(GoogleApi.analyzeText).mockRejectedValue(new Error(errorMessage));
-    const { result } = renderHook(() => useAnalysis(defaultProps.serviceProvider, defaultProps.apiKey, defaultProps.lmStudioUrl, defaultProps.lmStudioModel, defaultProps.selectedModel, defaultProps.isCurrentProviderConfigured, defaultProps.setIsConfigCollapsed));
+    const { result } = renderHook(() => useAnalysis(
+      'google', // serviceProvider
+      defaultProps.apiKey,
+      defaultProps.lmStudioUrl,
+      defaultProps.lmStudioModel,
+      defaultProps.selectedModel,
+      defaultProps.isCurrentProviderConfigured,
+      defaultProps.setIsConfigCollapsed
+    ));
 
     await act(async () => {
       result.current.handleAnalyzeText('Some text');
@@ -80,9 +106,18 @@ describe('useAnalysis Hook', () => {
     expect(result.current.analysisResult).toBe(null);
   });
 
+  // --- NEW TEST CASE FOR UNCONFIGURED PROVIDER ---
   it('should expand config and not call API if provider is not configured', async () => {
     const setIsConfigCollapsedMock = vi.fn();
-    const { result } = renderHook(() => useAnalysis(defaultProps.serviceProvider, defaultProps.apiKey, defaultProps.lmStudioUrl, defaultProps.lmStudioModel, defaultProps.selectedModel, false, setIsConfigCollapsedMock));
+    const { result } = renderHook(() => useAnalysis(
+      'google', // serviceProvider
+      defaultProps.apiKey,
+      defaultProps.lmStudioUrl,
+      defaultProps.lmStudioModel,
+      defaultProps.selectedModel,
+      false, // isCurrentProviderConfigured is false
+      setIsConfigCollapsedMock // Pass the mock function
+    ));
 
     await act(async () => {
         result.current.handleAnalyzeText('Some text');
@@ -90,10 +125,19 @@ describe('useAnalysis Hook', () => {
 
     expect(setIsConfigCollapsedMock).toHaveBeenCalledWith(false);
     expect(GoogleApi.analyzeText).not.toHaveBeenCalled();
+    expect(LMStudioApi.analyzeTextWithLMStudio).not.toHaveBeenCalled();
   });
 
   it('should correctly load and parse a valid JSON file', async () => {
-    const { result } = renderHook(() => useAnalysis(defaultProps.serviceProvider, defaultProps.apiKey, defaultProps.lmStudioUrl, defaultProps.lmStudioModel, defaultProps.selectedModel, defaultProps.isCurrentProviderConfigured, defaultProps.setIsConfigCollapsed));
+    const { result } = renderHook(() => useAnalysis(
+      'google', // serviceProvider
+      defaultProps.apiKey,
+      defaultProps.lmStudioUrl,
+      defaultProps.lmStudioModel,
+      defaultProps.selectedModel,
+      defaultProps.isCurrentProviderConfigured,
+      defaultProps.setIsConfigCollapsed
+    ));
     const jsonData = {
       reportId: '123',
       sourceText: 'Loaded from JSON',

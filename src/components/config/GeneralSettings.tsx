@@ -47,9 +47,37 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
         <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{t('config_max_chars_info')}</p>
       </div>
       <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600 space-y-3">
-        <div className="flex items-center justify-between"><label htmlFor="nightModeToggle" className="text-sm font-medium text-gray-700 dark:text-gray-300"> {t('config_night_mode')} </label><button onClick={() => onNightModeChange(!isNightMode)} className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${ isNightMode ? 'bg-blue-600' : 'bg-gray-300' }`} ><span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${ isNightMode ? 'translate-x-6' : 'translate-x-1' }`} /></button></div>
-        <div className="flex items-center justify-between"><label htmlFor="rebuttalJsonToggle" className="text-sm font-medium text-gray-700 dark:text-gray-300"> {t('config_include_rebuttal_json')} </label><button onClick={() => onIncludeRebuttalInJsonChange(!includeRebuttalInJson)} className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${ includeRebuttalInJson ? 'bg-blue-600' : 'bg-gray-300' }`} ><span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${ includeRebuttalInJson ? 'translate-x-6' : 'translate-x-1' }`} /></button></div>
-        <div className="flex items-center justify-between"><label htmlFor="rebuttalPdfToggle" className="text-sm font-medium text-gray-700 dark:text-gray-300"> {t('config_include_rebuttal_pdf')} </label><button onClick={() => onIncludeRebuttalInPdfChange(!includeRebuttalInPdf)} className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${ includeRebuttalInPdf ? 'bg-blue-600' : 'bg-gray-300' }`} ><span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${ includeRebuttalInPdf ? 'translate-x-6' : 'translate-x-1' }`} /></button></div>
+        {/* --- FIX APPLIED BELOW --- */}
+        <div className="flex items-center justify-between">
+          <label id="nightModeLabel" className="text-sm font-medium text-gray-700 dark:text-gray-300"> {t('config_night_mode')} </label>
+          <button
+            onClick={() => onNightModeChange(!isNightMode)}
+            aria-labelledby="nightModeLabel" // Links the label to the button for accessibility
+            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${ isNightMode ? 'bg-blue-600' : 'bg-gray-300' }`}
+          >
+            <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${ isNightMode ? 'translate-x-6' : 'translate-x-1' }`} />
+          </button>
+        </div>
+        <div className="flex items-center justify-between">
+          <label id="rebuttalJsonLabel" className="text-sm font-medium text-gray-700 dark:text-gray-300"> {t('config_include_rebuttal_json')} </label>
+          <button
+            onClick={() => onIncludeRebuttalInJsonChange(!includeRebuttalInJson)}
+            aria-labelledby="rebuttalJsonLabel" // Links the label to the button
+            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${ includeRebuttalInJson ? 'bg-blue-600' : 'bg-gray-300' }`}
+          >
+            <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${ includeRebuttalInJson ? 'translate-x-6' : 'translate-x-1' }`} />
+          </button>
+        </div>
+        <div className="flex items-center justify-between">
+          <label id="rebuttalPdfLabel" className="text-sm font-medium text-gray-700 dark:text-gray-300"> {t('config_include_rebuttal_pdf')} </label>
+          <button
+            onClick={() => onIncludeRebuttalInPdfChange(!includeRebuttalInPdf)}
+            aria-labelledby="rebuttalPdfLabel" // Links the label to the button
+            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${ includeRebuttalInPdf ? 'bg-blue-600' : 'bg-gray-300' }`}
+          >
+            <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${ includeRebuttalInPdf ? 'translate-x-6' : 'translate-x-1' }`} />
+          </button>
+        </div>
       </div>
     </>
   );
