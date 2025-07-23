@@ -1,4 +1,3 @@
-// src/api/google/analysis.ts
 import { GoogleGenAI } from "@google/genai";
 import { GEMINI_MODEL_NAME, SYSTEM_PROMPT, REBUTTAL_SYSTEM_PROMPT } from "../../config/api-prompts";
 import { GeminiAnalysisResponse, GeminiFinding } from "../../types/api";
@@ -20,9 +19,10 @@ export const analyzeText = async (
     }
 
     const ai = new GoogleGenAI({ apiKey });
+    const model = ai.models;
 
     try {
-      const fullResponse = await ai.models.generateContent({
+      const result = await model.generateContent({
         model: modelName || GEMINI_MODEL_NAME,
         contents: [
           { role: "user", parts: [{ text: `Please analyze the following text: ${textToAnalyze}` }] }
@@ -36,14 +36,14 @@ export const analyzeText = async (
         },
       });
 
-      const rawText = fullResponse.text ?? '';
+      const rawText = result.text ?? '';
       const jsonStr = extractJson(rawText);
       let parsedData;
 
       try {
         parsedData = JSON.parse(jsonStr);
       } catch (e) {
-        parsedData = await repairAndParseJson(apiKey, jsonStr, modelName);
+        parsedData = await repairAndParseJson(apiKey, jsonStr, modelName || GEMINI_MODEL_NAME);
       }
 
       if (typeof parsedData.analysis_summary === 'string' && Array.isArray(parsedData.findings)) {
@@ -96,23 +96,24 @@ export const generateRebuttal = async (
   }
 
   const ai = new GoogleGenAI({ apiKey });
+  const model = ai.models;
 
-  const prompt = REBUTTAL_SYSTEM_PROMPT
+  const fullPrompt = REBUTTAL_SYSTEM_PROMPT
     .replace('{analysisJson}', JSON.stringify(analysis, null, 2))
     .replace('{sourceText}', sourceText)
     .replace('{languageCode}', languageCode);
 
   try {
-    const response = await ai.models.generateContent({
-      model: modelName,
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      config: {
-        temperature: 0.7,
-        maxOutputTokens: 8192,
-      },
+    const result = await model.generateContent({
+        model: modelName,
+        contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
+        config: {
+            temperature: 0.7,
+            maxOutputTokens: 8192,
+        },
     });
 
-    return (response.text ?? '').trim();
+    return (result.text ?? '').trim();
   } catch (error: any) {
     console.error("Error generating rebuttal:", error);
     if (error.message && error.message.includes("SAFETY")) {
