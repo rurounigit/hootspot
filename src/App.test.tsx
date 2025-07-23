@@ -1,5 +1,7 @@
+// src/App.test.tsx
 import { render, screen, fireEvent } from '@testing-library/react';
 import { useConfig } from './hooks/useConfig';
+import { LanguageProvider } from './i18n';
 import App from './App';
 
 // Mock the useConfig hook
@@ -34,7 +36,8 @@ vi.mock('./hooks/useConfig', () => ({
 // Mock the useModels hook
 vi.mock('./hooks/useModels', () => ({
   useModels: vi.fn(() => ({
-    models: [],
+    // FIX: 'models' should be an object with 'preview' and 'stable' arrays.
+    models: { preview: [], stable: [] },
     isLoading: false,
     error: null,
   })),
@@ -83,7 +86,11 @@ vi.mock('webextension-polyfill', () => ({
 
 describe('App', () => {
   it('handles the PULL_INITIAL_TEXT message correctly', () => {
-    render(<App />);
+    render(
+      <LanguageProvider>
+        <App />
+      </LanguageProvider>
+    );
     // The test will pass if the component renders without errors.
     // The specific logic for handling PULL_INITIAL_TEXT is tested in the useConfig hook.
   });

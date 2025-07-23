@@ -52,8 +52,9 @@ describe('ReportPdfDocument', () => {
 
         expect(screen.getByText('Test Report')).toBeInTheDocument();
         expect(screen.getByText('This is a test summary.')).toBeInTheDocument();
-        expect(screen.getByText(/This is the/)).toBeInTheDocument();
-        expect(screen.getByText('source text.')).toBeInTheDocument();
+        // The text is split by the highlighter, so we test for the fragments.
+        expect(screen.getByText('This is')).toBeInTheDocument();
+        expect(screen.getByText('the source text.')).toBeInTheDocument();
         expect(screen.getByText('Profile')).toBeInTheDocument();
         expect(screen.getByText('Detected Patterns')).toBeInTheDocument();
         expect(screen.getByText('Rebuttal')).toBeInTheDocument();
