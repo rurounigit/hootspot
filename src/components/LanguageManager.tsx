@@ -8,9 +8,10 @@ import { defaultLanguages } from '../i18n';
 
 interface LanguageManagerProps {
   apiKey: string | null;
+  modelsError: string | null; // FIX: Add prop to receive API key validation status
 }
 
-const LanguageManager: React.FC<LanguageManagerProps> = ({ apiKey }) => {
+const LanguageManager: React.FC<LanguageManagerProps> = ({ apiKey, modelsError }) => {
   const { t, addLanguage, deleteLanguage, availableLanguages } = useTranslation();
   const [newLangCode, setNewLangCode] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
@@ -69,15 +70,13 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({ apiKey }) => {
             onChange={(e) => setNewLangCode(e.target.value)}
             placeholder={t('lang_manager_code_placeholder')}
             maxLength={5}
-            // CHANGE: Added dark mode classes to match the API key input field style.
             className="mt-1 w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-50"
             disabled={isTranslating}
           />
         </div>
         <button
           onClick={handleAddLanguage}
-          disabled={isTranslating || !apiKey}
-          // CHANGE: Using semantic button colors. Note: Indigo is not in the theme, so this is a custom one-off color.
+          disabled={isTranslating || !apiKey || !!modelsError} // FIX: Also disable if there is a modelsError from the parent
           className="w-full flex items-center justify-center px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400 dark:disabled:bg-gray-600"
         >
           {isTranslating ? (
@@ -96,12 +95,10 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({ apiKey }) => {
           <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-3">{t('lang_manager_custom_languages_title')}</h3>
           <ul className="space-y-2">
             {customLanguages.map(([code, name]) => (
-              // CHANGE: Added dark mode background to the list item.
               <li key={code} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-md">
                 <span className="text-sm font-medium text-gray-800 dark:text-gray-50">{name}</span>
                 <button
                   onClick={() => handleDeleteLanguage(code, name)}
-                  // CHANGE: Added dark mode classes for the delete button.
                   className="px-3 py-1 text-sm font-semibold rounded-md bg-red-100 text-red-700 border border-red-300 hover:bg-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-500 dark:hover:bg-red-900/60"
                   aria-label={`Delete ${name}`}
                 >

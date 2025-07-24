@@ -189,14 +189,14 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
             onIncludeRebuttalInPdfChange={onIncludeRebuttalInPdfChange}
           />
 
-          <button onClick={handleSave} disabled={isTesting || !isFormValid()} aria-label="save-and-test-configuration" className="mt-6 w-full flex items-center justify-center px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400 dark:disabled:bg-gray-600">
+          <button onClick={handleSave} disabled={isTesting || !isFormValid() || (isGoogleProvider && !!modelsError)} aria-label="save-and-test-configuration" className="mt-6 w-full flex items-center justify-center px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400 dark:disabled:bg-gray-600">
             {isTesting ? ( <div className="spinner w-5 h-5 border-t-white mr-2"></div> ) : ( <SaveIcon className="w-5 h-5 mr-2" /> )}
             {isTesting ? t('config_button_saving') : t('config_button_save_test')}
           </button>
 
           {testStatus && ( <div className={`mt-4 p-3 rounded-md text-sm ${testStatus.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-500' : 'bg-red-100 text-red-700 border border-red-300 dark:bg-red-900/50 dark:text-red-300 dark:border-red-500'}`}> {testStatus.message} </div> )}
 
-          <LanguageManager apiKey={apiKeyInput} />
+          <LanguageManager apiKey={apiKeyInput} modelsError={modelsError} />
         </>
       )}
        {isCollapsed && isCurrentProviderConfigured && ( <p className="text-sm text-green-600 dark:text-green-400">{t('config_is_configured')}</p> )}

@@ -20,13 +20,14 @@ export const useModels = (apiKey: string | null) => {
     // If there's no API key, reset the state and do nothing.
     if (!apiKey) {
       setModels({ preview: [], stable: [] });
-      setIsLoading(false); // Ensure loading is turned off if key is cleared
+      setIsLoading(false);
+      setError(null); // FIX: Explicitly clear error when API key is removed.
       return;
     }
 
     const loadModels = async () => {
       setIsLoading(true);
-      setError(null);
+      setError(null); // FIX: Ensure previous errors are cleared on every new attempt.
       try {
         // fetchModels will now return the { preview: [], stable: [] } object
         const fetchedModels = await fetchModels(apiKey);
