@@ -1,3 +1,5 @@
+// src/hooks/useConfig.ts
+
 import { useState, useEffect, useCallback } from 'react';
 import {
   API_KEY_STORAGE_KEY,
@@ -15,35 +17,47 @@ import { DEFAULT_MAX_CHAR_LIMIT } from '../constants';
 
 export const useConfig = () => {
   const [serviceProvider, setServiceProvider] = useState<'google' | 'local'>(() => (localStorage.getItem(SERVICE_PROVIDER_KEY) as 'google' | 'local') || 'google');
-
-  // FIX: Initialize inputs from localStorage but allow them to be changed without saving immediately.
   const [apiKeyInput, setApiKeyInput] = useState<string>(() => localStorage.getItem(API_KEY_STORAGE_KEY) || '');
   const [lmStudioUrl, setLmStudioUrl] = useState<string>(() => localStorage.getItem(LM_STUDIO_URL_KEY) || '');
   const [lmStudioModel, setLmStudioModel] = useState<string>(() => localStorage.getItem(LM_STUDIO_MODEL_KEY) || '');
 
-  // FIX: The "active" apiKey is now only the one from localStorage. Debounced key is for model fetching.
   const [apiKey, setApiKey] = useState<string | null>(() => localStorage.getItem(API_KEY_STORAGE_KEY));
   const [debouncedApiKey, setDebouncedApiKey] = useState<string>(apiKeyInput);
-
   const [selectedModel, setSelectedModel] = useState<string>(() => localStorage.getItem(SELECTED_MODEL_STORAGE_KEY) || GEMINI_MODEL_NAME);
   const [maxCharLimit, setMaxCharLimit] = useState<number>(DEFAULT_MAX_CHAR_LIMIT);
   const [isNightMode, setIsNightMode] = useState<boolean>(() => localStorage.getItem(NIGHT_MODE_STORAGE_KEY) === 'true');
   const [includeRebuttalInJson, setIncludeRebuttalInJson] = useState<boolean>(() => localStorage.getItem(INCLUDE_REBUTTAL_JSON_KEY) === 'true');
   const [includeRebuttalInPdf, setIncludeRebuttalInPdf] = useState<boolean>(() => localStorage.getItem(INCLUDE_REBUTTAL_PDF_KEY) === 'true');
 
-  // --- START OF MAJOR FIX ---
-  // The source of truth for "is configured" is now ONLY what is in localStorage.
-  const isGoogleConfigured = !!localStorage.getItem(API_KEY_STORAGE_KEY);
-  const isLocalConfigured = !!localStorage.getItem(LM_STUDIO_URL_KEY) && !!localStorage.getItem(LM_STUDIO_MODEL_KEY);
+  // --- START OF "DIRTY FLAG" IMPLEMENTATION ---
+  const [isConfigDirty, setIsConfigDirty] = useState(false);
 
-  // This determines if the "Analyze" button should be enabled.
-  const isCurrentProviderConfigured = (serviceProvider === 'google' && isGoogleConfigured) || (serviceProvider === 'local' && isLocalConfigured);
+  useEffect(() => {
+    // Check if the current input value differs from the saved value in localStorage.
+    if (serviceProvider === 'google') {
+      const savedApiKey = localStorage.getItem(API_KEY_STORAGE_KEY) || '';
+      setIsConfigDirty(apiKeyInput !== savedApiKey);
+    } else { // 'local' provider
+      const savedUrl = localStorage.getItem(LM_STUDIO_URL_KEY) || '';
+      const savedModel = localStorage.getItem(LM_STUDIO_MODEL_KEY) || '';
+      setIsConfigDirty(lmStudioUrl !== savedUrl || lmStudioModel !== savedModel);
+    }
+  }, [apiKeyInput, lmStudioUrl, lmStudioModel, serviceProvider]);
 
-  // This determines if the config section should be collapsed by default.
-  const [isConfigCollapsed, setIsConfigCollapsed] = useState(isCurrentProviderConfigured);
-  // --- END OF MAJOR FIX ---
+  // Check if a valid configuration is currently stored in localStorage.
+  const isGoogleConfiguredInStorage = !!localStorage.getItem(API_KEY_STORAGE_KEY);
+  const isLocalConfiguredInStorage = !!localStorage.getItem(LM_STUDIO_URL_KEY) && !!localStorage.getItem(LM_STUDIO_MODEL_KEY);
 
-  // Migration effect remains the same.
+  // The final, reliable flag. The app is "ready to analyze" only if the active provider has a stored config AND it's not dirty.
+  const isReadyToAnalyze = ((serviceProvider === 'google' && isGoogleConfiguredInStorage) || (serviceProvider === 'local' && isLocalConfiguredInStorage)) && !isConfigDirty;
+
+  // This is used just to determine if the panel should start collapsed.
+  const isAConfiguredProviderStored = isGoogleConfiguredInStorage || isLocalConfiguredInStorage;
+  const [isConfigCollapsed, setIsConfigCollapsed] = useState(isAConfiguredProviderStored);
+  // --- END OF "DIRTY FLAG" IMPLEMENTATION ---
+
+
+  // Migration effects remain the same
   useEffect(() => {
     const oldApiKey = localStorage.getItem('athenaAIApiKey');
     if (oldApiKey) {
@@ -62,7 +76,7 @@ export const useConfig = () => {
     }
   }, []);
 
-  // Debounce effect for fetching models remains. It does not save the key.
+  // Debounce effect for fetching models remains.
   useEffect(() => {
     const handler = setTimeout(() => {
         setDebouncedApiKey(apiKeyInput.trim());
@@ -70,15 +84,18 @@ export const useConfig = () => {
     return () => clearTimeout(handler);
   }, [apiKeyInput]);
 
-  // FIX: Remove automatic saving useEffects for provider, model, lmstudio url/model.
-  // These will now be saved explicitly in ConfigurationManager on successful test.
+  // Persistent settings that can be changed live.
   useEffect(() => { localStorage.setItem(NIGHT_MODE_STORAGE_KEY, String(isNightMode)); document.documentElement.classList.toggle('dark', isNightMode); }, [isNightMode]);
   useEffect(() => { localStorage.setItem(INCLUDE_REBUTTAL_JSON_KEY, String(includeRebuttalInJson)); }, [includeRebuttalInJson]);
   useEffect(() => { localStorage.setItem(INCLUDE_REBUTTAL_PDF_KEY, String(includeRebuttalInPdf)); }, [includeRebuttalInPdf]);
 
   useEffect(() => {
     // When the service provider changes, update the active API key from storage.
-    setApiKey(localStorage.getItem(API_KEY_STORAGE_KEY));
+    if (serviceProvider === 'google') {
+        setApiKey(localStorage.getItem(API_KEY_STORAGE_KEY));
+    } else {
+        setApiKey(null);
+    }
   }, [serviceProvider]);
 
   useEffect(() => {
@@ -114,7 +131,8 @@ export const useConfig = () => {
     setIncludeRebuttalInPdf,
     isConfigCollapsed,
     setIsConfigCollapsed,
-    isCurrentProviderConfigured, // This is now the reliable flag for the rest of the app
+    isCurrentProviderConfigured: isReadyToAnalyze, // This is the new reliable flag for the rest of the app.
+    isConfigDirty, // Pass this down for UI feedback
     handleMaxCharLimitSave,
   };
 };

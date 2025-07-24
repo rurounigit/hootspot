@@ -37,6 +37,7 @@ interface ConfigurationManagerProps {
   isCurrentProviderConfigured: boolean;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
+  isConfigDirty: boolean; // Add the new prop
 }
 const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
   serviceProvider,
@@ -64,36 +65,31 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
   isCurrentProviderConfigured,
   isCollapsed,
   onToggleCollapse,
+  isConfigDirty, // Destructure the new prop
 }) => {
   const { t } = useTranslation();
   const [isTesting, setIsTesting] = useState(false);
   const [testStatus, setTestStatus] = useState<{message: string, type: 'success' | 'error' } | null>(null);
+
+  // This flag is now only for the collapsed view message.
+  const isAConfigStored = !!localStorage.getItem(API_KEY_STORAGE_KEY) || (!!localStorage.getItem(LM_STUDIO_URL_KEY) && !!localStorage.getItem(LM_STUDIO_MODEL_KEY));
 
   useEffect(() => {
     if (isCollapsed) {
         setTestStatus(null);
         return;
     }
-    // This effect now only provides immediate feedback about the form state, it doesn't control app logic.
     if (serviceProvider === 'google') {
-        if (!apiKeyInput.trim()) {
-            setTestStatus({ message: t('error_api_key_empty'), type: 'error' });
-        } else if (!modelsError) { // Clear status if key is valid so far
-            setTestStatus(null);
-        }
+        if (!apiKeyInput.trim()) setTestStatus({ message: t('error_api_key_empty'), type: 'error' });
+        else if (!modelsError) setTestStatus(null);
     } else {
-        if (!lmStudioUrl.trim() || !lmStudioModel.trim()) {
-            setTestStatus({ message: t('error_local_server_config_missing'), type: 'error' });
-        } else {
-            setTestStatus(null);
-        }
+        if (!lmStudioUrl.trim() || !lmStudioModel.trim()) setTestStatus({ message: t('error_local_server_config_missing'), type: 'error' });
+        else setTestStatus(null);
     }
   }, [isCollapsed, serviceProvider, apiKeyInput, lmStudioUrl, lmStudioModel, t, modelsError]);
 
   const isFormValid = () => {
-    if (serviceProvider === 'google') {
-      return apiKeyInput.trim() !== '';
-    }
+    if (serviceProvider === 'google') return apiKeyInput.trim() !== '';
     return lmStudioUrl.trim() !== '' && lmStudioModel.trim() !== '';
   };
 
@@ -106,29 +102,23 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
       if (serviceProvider === 'google') {
         const trimmedApiKey = apiKeyInput.trim();
         await testApiKey(trimmedApiKey, t, selectedModel);
-        // --- FIX: Save all related settings ONLY on success ---
         localStorage.setItem(API_KEY_STORAGE_KEY, trimmedApiKey);
         localStorage.setItem(SERVICE_PROVIDER_KEY, 'google');
         localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel);
-        // Clear out old local config to avoid confusion
         localStorage.removeItem(LM_STUDIO_URL_KEY);
         localStorage.removeItem(LM_STUDIO_MODEL_KEY);
         setTestStatus({ message: t('success_api_key_saved'), type: 'success' });
-      } else { // serviceProvider is 'local'
+      } else {
         const trimmedUrl = lmStudioUrl.trim();
         const trimmedModel = lmStudioModel.trim();
         await testLMStudioConnection(trimmedUrl, trimmedModel, t);
-        // --- FIX: Save all related settings ONLY on success ---
         localStorage.setItem(LM_STUDIO_URL_KEY, trimmedUrl);
         localStorage.setItem(LM_STUDIO_MODEL_KEY, trimmedModel);
         localStorage.setItem(SERVICE_PROVIDER_KEY, 'local');
-        // Clear out old Google config
         localStorage.removeItem(API_KEY_STORAGE_KEY);
         setTestStatus({ message: t('success_local_connection'), type: 'success' });
       }
       onConfigured(true);
-      // We must reload the window to ensure the useConfig hook re-initializes with the new localStorage values
-      // This is a simple and robust way to guarantee the entire app state is consistent.
       window.location.reload();
     } catch (err: any) {
       onConfigured(false);
@@ -151,6 +141,13 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
 
       {!isCollapsed && (
         <>
+          {/* FIX: Show warning if the configuration is dirty */}
+          {isConfigDirty && isAConfigStored && (
+            <div className="mb-4 p-3 rounded-md text-sm bg-yellow-50 text-yellow-800 border border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-400">
+                {t('config_status_unsaved', { defaultValue: 'You have unsaved changes. The app will use the last valid configuration until you save.' })}
+            </div>
+          )}
+
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('config_provider_title')}</label>
             <div className="flex rounded-md shadow-sm">
@@ -203,10 +200,18 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
           <LanguageManager apiKey={apiKeyInput} modelsError={modelsError} />
         </>
       )}
-       {isCollapsed && isCurrentProviderConfigured && ( <p className="text-sm text-green-600 dark:text-green-400">{t('config_is_configured')}</p> )}
-       {isCollapsed && !isCurrentProviderConfigured && ( <p className="text-sm text-red-600 dark:text-red-400">{t('config_not_configured')}</p> )}
+
+       {/* FIX: Show clear status messages in the collapsed view */}
+       {isCollapsed && isConfigDirty && (
+        <p className="text-sm text-yellow-600 dark:text-yellow-400">{t('config_status_unsaved', { defaultValue: 'Unsaved changes' })}</p>
+       )}
+       {isCollapsed && !isConfigDirty && isAConfigStored && (
+         <p className="text-sm text-green-600 dark:text-green-400">{t('config_is_configured')}</p>
+       )}
+       {isCollapsed && !isConfigDirty && !isAConfigStored && (
+         <p className="text-sm text-red-600 dark:text-red-400">{t('config_not_configured')}</p>
+       )}
     </div>
   );
 };
-
 export default ConfigurationManager;
