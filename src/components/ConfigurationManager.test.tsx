@@ -70,12 +70,10 @@ describe('ConfigurationManager', () => {
         );
     };
 
-    // --- Start of Corrected Block ---
     beforeEach(() => {
         vi.clearAllMocks();
         const store: { [key: string]: string } = {};
 
-        // Spy on Storage.prototype and use `any` for parameters
         vi.spyOn(Storage.prototype, 'setItem').mockImplementation((key: any, value: any) => {
             store[key] = value;
         });
@@ -84,7 +82,6 @@ describe('ConfigurationManager', () => {
             delete store[key];
         });
     });
-    // --- End of Corrected Block ---
 
     it('shows a success message and collapses on successful Google API save', async () => {
         const onToggleCollapseMock = vi.fn();
@@ -157,5 +154,28 @@ describe('ConfigurationManager', () => {
         const saveButton = screen.getByRole('button', { name: /Save & Test Configuration/i });
         expect(saveButton).toBeDisabled();
         expect(await screen.findByText('Local server URL and model name cannot be empty.')).toBeInTheDocument();
+    });
+
+    it('disables save button if there is a modelsError for Google provider', () => {
+        renderWithProvider({
+            serviceProvider: 'google',
+            apiKeyInput: 'some-key',
+            modelsError: 'Invalid API key',
+        });
+
+        const saveButton = screen.getByRole('button', { name: /Save & Test Configuration/i });
+        expect(saveButton).toBeDisabled();
+    });
+
+    it('enables save button if there is a modelsError but the provider is local', () => {
+        renderWithProvider({
+            serviceProvider: 'local',
+            lmStudioUrl: 'http://test',
+            lmStudioModel: 'model',
+            modelsError: 'This error is irrelevant for local provider',
+        });
+
+        const saveButton = screen.getByRole('button', { name: /Save & Test Configuration/i });
+        expect(saveButton).not.toBeDisabled();
     });
 });

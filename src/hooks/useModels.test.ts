@@ -63,7 +63,7 @@ describe('useModels Hook', () => {
     expect(result.current.models).toEqual({ preview: [], stable: [] });
   });
 
-  it('should reset state when API key is removed', async () => {
+  it('should reset state when a valid API key is removed', async () => {
     vi.mocked(Api.fetchModels).mockResolvedValue(mockModels);
     const { result, rerender } = renderHook(({ apiKey }) => useModels(apiKey), {
         initialProps: { apiKey: 'valid-key' as string | null }
@@ -71,6 +71,7 @@ describe('useModels Hook', () => {
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.models).toEqual(mockModels);
+    expect(result.current.error).toBe(null);
 
     // Rerender the hook with a null API key
     rerender({ apiKey: null });
@@ -79,5 +80,28 @@ describe('useModels Hook', () => {
     expect(result.current.models).toEqual({ preview: [], stable: [] });
     expect(result.current.isLoading).toBe(false);
     expect(result.current.error).toBe(null);
+  });
+
+  // NEW: This test explicitly verifies that an error state is cleared when the key is removed.
+  it('should reset state, including errors, when an invalid API key is removed', async () => {
+    const errorMessage = 'Invalid API Key';
+    vi.mocked(Api.fetchModels).mockRejectedValue(new Error(errorMessage));
+
+    const { result, rerender } = renderHook(({ apiKey }) => useModels(apiKey), {
+        initialProps: { apiKey: 'invalid-key' as string | null }
+    });
+
+    // Wait for the hook to enter its error state
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.models).toEqual({ preview: [], stable: [] });
+    expect(result.current.error).toBe(errorMessage);
+
+    // Rerender the hook with a null API key, simulating the user clearing the input
+    rerender({ apiKey: null });
+
+    // The error should be cleared and the state should be fully reset
+    expect(result.current.models).toEqual({ preview: [], stable: [] });
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.error).toBe(null); // The most important assertion for this test
   });
 });

@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import LanguageManager from './LanguageManager';
-import { LanguageProvider, useTranslation } from '../i18n';
+import { LanguageProvider } from '../i18n';
 import * as GoogleTranslationApi from '@/api/google/translation';
 
 // Mock the API and other modules
@@ -46,13 +46,19 @@ describe('LanguageManager', () => {
   };
 
   it('disables the "Add" button when the API key is not provided', () => {
-    renderWithProvider({ apiKey: null });
+    renderWithProvider({ apiKey: null, modelsError: null });
+    const addButton = screen.getByRole('button', { name: /lang_manager_button_add/i });
+    expect(addButton).toBeDisabled();
+  });
+
+  it('disables the "Add" button when modelsError is provided', () => {
+    renderWithProvider({ apiKey: 'valid-key', modelsError: 'Some API error' });
     const addButton = screen.getByRole('button', { name: /lang_manager_button_add/i });
     expect(addButton).toBeDisabled();
   });
 
   it('displays an error when attempting to add an empty language code', async () => {
-    renderWithProvider({ apiKey: 'valid-key' }); // Button is enabled
+    renderWithProvider({ apiKey: 'valid-key', modelsError: null });
     const addButton = screen.getByRole('button', { name: /lang_manager_button_add/i });
     await user.click(addButton);
     expect(await screen.findByText('lang_manager_error_empty')).toBeInTheDocument();
@@ -66,7 +72,7 @@ describe('LanguageManager', () => {
         default: { lang_manager_title: 'original_title' }
     }));
 
-    renderWithProvider({ apiKey: 'valid-key' });
+    renderWithProvider({ apiKey: 'valid-key', modelsError: null });
 
     const input = screen.getByPlaceholderText('lang_manager_code_placeholder');
     await user.type(input, 'fr');
@@ -83,9 +89,11 @@ describe('LanguageManager', () => {
   });
 
   it('calls deleteLanguage when the delete button is clicked and confirmed', async () => {
-    renderWithProvider({ apiKey: 'valid-key' });
+    renderWithProvider({ apiKey: 'valid-key', modelsError: null });
 
-    const deleteButton = screen.getByRole('button', { name: /Delete it/i });
+    // Use a more specific selector
+    const customLangItem = screen.getByText('it').closest('li');
+    const deleteButton = customLangItem!.querySelector('button') as HTMLButtonElement;
     await user.click(deleteButton);
 
     expect(window.confirm).toHaveBeenCalledWith('Are you sure?');
@@ -94,7 +102,7 @@ describe('LanguageManager', () => {
 
   it('displays an error message if translation API fails', async () => {
     vi.mocked(GoogleTranslationApi.translateUI).mockRejectedValue(new Error('API Failure'));
-    renderWithProvider({ apiKey: 'valid-key' });
+    renderWithProvider({ apiKey: 'valid-key', modelsError: null });
 
     const input = screen.getByPlaceholderText('lang_manager_code_placeholder');
     await user.type(input, 'es');
