@@ -26,11 +26,11 @@ export const useAnalysis = (
   const [translatedResults, setTranslatedResults] = useState<Record<string, GeminiAnalysisResponse>>({});
   const [isTranslating, setIsTranslating] = useState(false);
   const analysisReportRef = useRef<HTMLDivElement>(null);
-  const previousIsConfigured = useRef(isCurrentProviderConfigured);
 
   const handleAnalyzeText = useCallback(async (text: string) => {
     if (!isCurrentProviderConfigured) {
       setIsConfigCollapsed(false);
+      setError(t('error_provider_not_configured'));
       return;
     }
     setIsLoading(true);
@@ -57,13 +57,7 @@ export const useAnalysis = (
       }
     } catch (err: any) {
       const errorMessage = (err as Error).message || "An unknown error occurred during analysis.";
-      const configErrorKeys = ['error_local_server_config_missing', 'error_api_key_empty', 'error_api_key_not_configured'];
-
-      if (configErrorKeys.includes(errorMessage)) {
-        setIsConfigCollapsed(false);
-      } else {
-        setError(errorMessage);
-      }
+      setError(errorMessage);
       setAnalysisResult(null);
     } finally {
       setIsLoading(false);
@@ -71,16 +65,13 @@ export const useAnalysis = (
   }, [isCurrentProviderConfigured, serviceProvider, lmStudioUrl, lmStudioModel, apiKey, selectedModel, language, t, setIsConfigCollapsed]);
 
   useEffect(() => {
-    // FIX: This effect now only runs if a pending analysis exists AND the configuration was *already*
-    // considered valid in the previous render cycle. This prevents it from firing immediately
-    // when a user simply corrects a "dirty" config without clicking "Save".
-    if (pendingAnalysis && isCurrentProviderConfigured && previousIsConfigured.current) {
+    // This effect now correctly and simply triggers an analysis whenever
+    // a pending analysis is set by the parent component.
+    if (pendingAnalysis) {
       handleAnalyzeText(pendingAnalysis.text);
       setPendingAnalysis(null);
     }
-    // Update the ref for the next render.
-    previousIsConfigured.current = isCurrentProviderConfigured;
-  }, [pendingAnalysis, isCurrentProviderConfigured, handleAnalyzeText]);
+  }, [pendingAnalysis, handleAnalyzeText]);
 
 
   useEffect(() => {

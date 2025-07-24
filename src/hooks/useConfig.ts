@@ -29,11 +29,10 @@ export const useConfig = () => {
   const [includeRebuttalInJson, setIncludeRebuttalInJson] = useState<boolean>(() => localStorage.getItem(INCLUDE_REBUTTAL_JSON_KEY) === 'true');
   const [includeRebuttalInPdf, setIncludeRebuttalInPdf] = useState<boolean>(() => localStorage.getItem(INCLUDE_REBUTTAL_PDF_KEY) === 'true');
 
-  // --- START OF "DIRTY FLAG" IMPLEMENTATION ---
+  // --- "DIRTY FLAG" IMPLEMENTATION ---
   const [isConfigDirty, setIsConfigDirty] = useState(false);
 
   useEffect(() => {
-    // Check if the current input value differs from the saved value in localStorage.
     if (serviceProvider === 'google') {
       const savedApiKey = localStorage.getItem(API_KEY_STORAGE_KEY) || '';
       setIsConfigDirty(apiKeyInput !== savedApiKey);
@@ -44,20 +43,13 @@ export const useConfig = () => {
     }
   }, [apiKeyInput, lmStudioUrl, lmStudioModel, serviceProvider]);
 
-  // Check if a valid configuration is currently stored in localStorage.
   const isGoogleConfiguredInStorage = !!localStorage.getItem(API_KEY_STORAGE_KEY);
   const isLocalConfiguredInStorage = !!localStorage.getItem(LM_STUDIO_URL_KEY) && !!localStorage.getItem(LM_STUDIO_MODEL_KEY);
-
-  // The final, reliable flag. The app is "ready to analyze" only if the active provider has a stored config AND it's not dirty.
   const isReadyToAnalyze = ((serviceProvider === 'google' && isGoogleConfiguredInStorage) || (serviceProvider === 'local' && isLocalConfiguredInStorage)) && !isConfigDirty;
 
-  // This is used just to determine if the panel should start collapsed.
   const isAConfiguredProviderStored = isGoogleConfiguredInStorage || isLocalConfiguredInStorage;
   const [isConfigCollapsed, setIsConfigCollapsed] = useState(isAConfiguredProviderStored);
-  // --- END OF "DIRTY FLAG" IMPLEMENTATION ---
 
-
-  // Migration effects remain the same
   useEffect(() => {
     const oldApiKey = localStorage.getItem('athenaAIApiKey');
     if (oldApiKey) {
@@ -76,26 +68,20 @@ export const useConfig = () => {
     }
   }, []);
 
-  // Debounce effect for fetching models remains.
   useEffect(() => {
-    const handler = setTimeout(() => {
-        setDebouncedApiKey(apiKeyInput.trim());
-    }, 500);
+    const handler = setTimeout(() => { setDebouncedApiKey(apiKeyInput.trim()); }, 500);
     return () => clearTimeout(handler);
   }, [apiKeyInput]);
 
-  // Persistent settings that can be changed live.
+  useEffect(() => { localStorage.setItem(SERVICE_PROVIDER_KEY, serviceProvider); }, [serviceProvider]);
+  useEffect(() => { localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel); }, [selectedModel]);
   useEffect(() => { localStorage.setItem(NIGHT_MODE_STORAGE_KEY, String(isNightMode)); document.documentElement.classList.toggle('dark', isNightMode); }, [isNightMode]);
   useEffect(() => { localStorage.setItem(INCLUDE_REBUTTAL_JSON_KEY, String(includeRebuttalInJson)); }, [includeRebuttalInJson]);
   useEffect(() => { localStorage.setItem(INCLUDE_REBUTTAL_PDF_KEY, String(includeRebuttalInPdf)); }, [includeRebuttalInPdf]);
 
   useEffect(() => {
-    // When the service provider changes, update the active API key from storage.
-    if (serviceProvider === 'google') {
-        setApiKey(localStorage.getItem(API_KEY_STORAGE_KEY));
-    } else {
-        setApiKey(null);
-    }
+    if (serviceProvider === 'google') { setApiKey(localStorage.getItem(API_KEY_STORAGE_KEY)); }
+    else { setApiKey(null); }
   }, [serviceProvider]);
 
   useEffect(() => {
@@ -107,6 +93,17 @@ export const useConfig = () => {
     localStorage.setItem(MAX_CHAR_LIMIT_STORAGE_KEY, newLimit.toString());
     setMaxCharLimit(newLimit);
   }, []);
+
+  const handleConfigSave = useCallback(() => {
+    if (serviceProvider === 'google') {
+      localStorage.setItem(API_KEY_STORAGE_KEY, apiKeyInput);
+    } else {
+      localStorage.setItem(LM_STUDIO_URL_KEY, lmStudioUrl);
+      localStorage.setItem(LM_STUDIO_MODEL_KEY, lmStudioModel);
+    }
+    // After saving, the config is no longer dirty
+    setIsConfigDirty(false);
+  }, [serviceProvider, apiKeyInput, lmStudioUrl, lmStudioModel]);
 
   return {
     serviceProvider,
@@ -131,8 +128,9 @@ export const useConfig = () => {
     setIncludeRebuttalInPdf,
     isConfigCollapsed,
     setIsConfigCollapsed,
-    isCurrentProviderConfigured: isReadyToAnalyze, // This is the new reliable flag for the rest of the app.
-    isConfigDirty, // Pass this down for UI feedback
+    isCurrentProviderConfigured: isReadyToAnalyze,
+    isConfigDirty,
     handleMaxCharLimitSave,
+    handleConfigSave, // Expose the new save handler
   };
 };

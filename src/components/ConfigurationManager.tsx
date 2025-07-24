@@ -1,7 +1,6 @@
 // src/components/ConfigurationManager.tsx
 import React, { useState, useEffect } from 'react';
 import { SaveIcon, SettingsIcon } from '../assets/icons';
-import { API_KEY_STORAGE_KEY, LM_STUDIO_URL_KEY, LM_STUDIO_MODEL_KEY, SERVICE_PROVIDER_KEY, SELECTED_MODEL_STORAGE_KEY } from '../config/storage-keys';
 import { testApiKey } from '../api/google/utils';
 import { testLMStudioConnection } from '../api/lm-studio';
 import { useTranslation } from '../i18n';
@@ -38,6 +37,7 @@ interface ConfigurationManagerProps {
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   isConfigDirty: boolean;
+  handleConfigSave: () => void;
 }
 const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
   serviceProvider,
@@ -66,27 +66,29 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
   isCollapsed,
   onToggleCollapse,
   isConfigDirty,
+  handleConfigSave,
 }) => {
   const { t } = useTranslation();
   const [isTesting, setIsTesting] = useState(false);
   const [testStatus, setTestStatus] = useState<{message: string, type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
-    if (isCollapsed) {
+    if (isCollapsed || !isConfigDirty) {
         setTestStatus(null);
         return;
     }
     if (serviceProvider === 'google') {
         if (!apiKeyInput.trim()) setTestStatus({ message: t('error_api_key_empty'), type: 'error' });
-        else if (!modelsError) setTestStatus(null);
+        else if (modelsError) setTestStatus({ message: modelsError, type: 'error' });
+        else setTestStatus(null);
     } else {
         if (!lmStudioUrl.trim() || !lmStudioModel.trim()) setTestStatus({ message: t('error_local_server_config_missing'), type: 'error' });
         else setTestStatus(null);
     }
-  }, [isCollapsed, serviceProvider, apiKeyInput, lmStudioUrl, lmStudioModel, t, modelsError]);
+  }, [isCollapsed, serviceProvider, apiKeyInput, lmStudioUrl, lmStudioModel, t, modelsError, isConfigDirty]);
 
   const isFormValid = () => {
-    if (serviceProvider === 'google') return apiKeyInput.trim() !== '';
+    if (serviceProvider === 'google') return apiKeyInput.trim() !== '' && !modelsError;
     return lmStudioUrl.trim() !== '' && lmStudioModel.trim() !== '';
   };
 
@@ -97,25 +99,19 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
     setTestStatus(null);
     try {
       if (serviceProvider === 'google') {
-        const trimmedApiKey = apiKeyInput.trim();
-        await testApiKey(trimmedApiKey, t, selectedModel);
-        localStorage.setItem(API_KEY_STORAGE_KEY, trimmedApiKey);
-        localStorage.setItem(SERVICE_PROVIDER_KEY, 'google');
-        localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel);
-        // FIX: REMOVED localStorage.removeItem for the other provider's keys
+        await testApiKey(apiKeyInput.trim(), t, selectedModel);
         setTestStatus({ message: t('success_api_key_saved'), type: 'success' });
       } else {
-        const trimmedUrl = lmStudioUrl.trim();
-        const trimmedModel = lmStudioModel.trim();
-        await testLMStudioConnection(trimmedUrl, trimmedModel, t);
-        localStorage.setItem(LM_STUDIO_URL_KEY, trimmedUrl);
-        localStorage.setItem(LM_STUDIO_MODEL_KEY, trimmedModel);
-        localStorage.setItem(SERVICE_PROVIDER_KEY, 'local');
-        // FIX: REMOVED localStorage.removeItem for the other provider's keys
+        await testLMStudioConnection(lmStudioUrl.trim(), lmStudioModel.trim(), t);
         setTestStatus({ message: t('success_local_connection'), type: 'success' });
       }
+      handleConfigSave();
       onConfigured(true);
-      window.location.reload();
+      setTimeout(() => {
+        if (!isCollapsed) {
+          onToggleCollapse();
+        }
+      }, 1000);
     } catch (err: any) {
       onConfigured(false);
       setTestStatus({ message: (err as Error).message, type: 'error' });
@@ -196,7 +192,7 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
             onIncludeRebuttalInPdfChange={onIncludeRebuttalInPdfChange}
           />
 
-          <button onClick={handleSave} disabled={isTesting || !isFormValid() || (isGoogleProvider && !!modelsError)} aria-label="save-and-test-configuration" className="mt-6 w-full flex items-center justify-center px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400 dark:disabled:bg-gray-600">
+          <button onClick={handleSave} disabled={isTesting || !isFormValid()} aria-label="save-and-test-configuration" className="mt-6 w-full flex items-center justify-center px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400 dark:disabled:bg-gray-600">
             {isTesting ? ( <div className="spinner w-5 h-5 border-t-white mr-2"></div> ) : ( <SaveIcon className="w-5 h-5 mr-2" /> )}
             {isTesting ? t('config_button_saving') : t('config_button_save_test')}
           </button>

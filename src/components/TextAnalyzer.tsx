@@ -8,13 +8,12 @@ interface TextAnalyzerProps {
   text: string;
   onTextChange: (text: string) => void;
   onAnalyze: (text: string) => void;
-  onJsonLoad: (file: File) => void; // New prop for the JSON load handler
+  onJsonLoad: (file: File) => void;
   isLoading: boolean;
   maxCharLimit: number;
   hasApiKey: boolean;
 }
 
-// Wrap the component with forwardRef to allow the parent to get a ref to the textarea
 const TextAnalyzer = forwardRef<HTMLTextAreaElement, TextAnalyzerProps>(
   ({ text, onTextChange, onAnalyze, onJsonLoad, isLoading, maxCharLimit, hasApiKey }, ref) => {
     const { t } = useTranslation();
@@ -30,7 +29,6 @@ const TextAnalyzer = forwardRef<HTMLTextAreaElement, TextAnalyzerProps>(
           setShortcut(isMac ? '⌘⏎' : 'Ctrl+Enter');
         });
       } else {
-        // Fallback for non-chrome environments
         const isMac = /mac/i.test(navigator.platform);
         setShortcut(isMac ? '⌘⏎' : 'Ctrl+Enter');
       }
@@ -59,7 +57,6 @@ const TextAnalyzer = forwardRef<HTMLTextAreaElement, TextAnalyzerProps>(
       const file = e.target.files?.[0];
       if (file) {
         onJsonLoad(file);
-        // Reset the input so the same file can be loaded again if needed
         e.target.value = '';
       }
     };
@@ -76,7 +73,7 @@ const TextAnalyzer = forwardRef<HTMLTextAreaElement, TextAnalyzerProps>(
         )}
 
         <textarea
-          ref={ref} // Attach the forwarded ref here
+          ref={ref}
           value={text}
           onChange={(e) => onTextChange(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -99,8 +96,12 @@ const TextAnalyzer = forwardRef<HTMLTextAreaElement, TextAnalyzerProps>(
             ${exceedsLimit ? 'text-red-600 font-semibold' : 'text-gray-600 dark:text-gray-400'}
             ${charCount > maxCharLimit * 0.9 ? 'font-medium' : ''}
           `}>
-            {t('analyzer_chars_count', { count: charCount, limit: maxCharLimit })}
-            {exceedsLimit && ` ${t('analyzer_chars_over_limit', { over: charCount - maxCharLimit })}`}
+
+            {exceedsLimit && (
+              <span className="text-xs font-normal">
+                {t('analyzer_chars_count', { count: charCount, limit: maxCharLimit })}{` ${t('analyzer_chars_over_limit', { over: charCount - maxCharLimit })}`}
+              </span>
+            )}
           </p>
           <div className="flex items-center space-x-2">
             <button onClick={handleUploadClick} disabled={isLoading} className="px-3 py-2 bg-gray-500 text-white font-semibold rounded-md shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 disabled:bg-gray-400 dark:disabled:bg-gray-600" title={t('analyzer_button_load_json')}>

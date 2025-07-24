@@ -38,8 +38,9 @@ const App: React.FC = () => {
     isConfigCollapsed,
     setIsConfigCollapsed,
     isCurrentProviderConfigured,
-    isConfigDirty, // Get the new flag
+    isConfigDirty,
     handleMaxCharLimitSave,
+    handleConfigSave, // Get the new save handler
   } = useConfig();
 
   const { models, isLoading: areModelsLoading, error: modelsError } = useModels(serviceProvider === 'google' ? debouncedApiKey : null);
@@ -177,12 +178,15 @@ const App: React.FC = () => {
             includeRebuttalInPdf={includeRebuttalInPdf}
             onIncludeRebuttalInPdfChange={setIncludeRebuttalInPdf}
             onConfigured={(configured) => {
-                if (configured) setIsConfigCollapsed(true);
+                if (configured && textToAnalyze) {
+                  setPendingAnalysis({ text: textToAnalyze });
+                }
             }}
             isCurrentProviderConfigured={isCurrentProviderConfigured}
             isCollapsed={isConfigCollapsed}
             onToggleCollapse={() => setIsConfigCollapsed(!isConfigCollapsed)}
             isConfigDirty={isConfigDirty}
+            handleConfigSave={handleConfigSave} // Pass the new save handler
           />
           <TextAnalyzer
             ref={textareaRef}
