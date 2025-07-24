@@ -6,7 +6,7 @@
   "app_footer_responsibility": "Dieses Tool ist für Bildungs- und Analysezwecke gedacht. Die Analyse wird von einer KI generiert und ist möglicherweise nicht immer vollkommen genau oder vollständig. Der Benutzer trägt alle Kosten der Google Gemini-API.",
   "error_prefix": "Fehler: ",
   "error_no_api_key_for_results": "Bitte richten Sie Ihren API-Schlüssel ein, um die Analyseergebnisse anzuzeigen.",
-  "info_enter_text_to_analyze": "Fügen Sie oben Text ein und klicken Sie auf \"Analysieren\", um die Einblicke der KI zu sehen. Sie können auch das Kontextmenü (Text auswählen und rechtsklicken) oder die Tastaturkürzel  verwenden (Text auswählen und Tastenkombination Alt/⌥+Shift+A), um Text zu analysieren.",
+  "info_enter_text_to_analyze": "Fügen Sie oben Text ein und klicken Sie auf \"Analysieren\", um die Einblicke der KI zu sehen. Sie können auch das Kontextmenü (Text auswählen und rechtsklicken) oder die Tastaturkürzel verwenden (Text auswählen und Tastenkombination Alt/⌥+Shift+A), um Text zu analysieren.",
   "info_uncover_patterns": "HootSpot KI hilft Ihnen, versteckte psychologische und rhetorische Muster aufzudecken.",
   "config_title": "Konfiguration",
   "config_toggle_expand": "Einstellungen erweitern",
@@ -35,8 +35,10 @@
   "config_include_rebuttal_json": "Widerlegung in JSON einschließen",
   "config_include_rebuttal_pdf": "Widerlegung in PDF einschließen",
   "config_button_saving": "Teste & speichere...",
-  "config_is_configured": "Konfiguration ist eingerichtet. Erweitern, um Einstellungen zu ändern.",
-  "config_not_configured": "Konfiguration erforderlich. Bitte erweitern und einen Dienstanbieter einrichten.",
+  "config_status_configured": "{provider}-Anbieter ist konfiguriert und bereit.",
+  "config_status_unconfigured": "{provider}-Anbieter benötigt Konfiguration.",
+  "config_status_dirty": "Ungespeicherte Änderungen für {provider}-Anbieter.",
+  "config_status_unsaved": "Sie haben ungespeicherte Änderungen. Die Analyse ist deaktiviert, bis Sie speichern.",
   "analyzer_title": "Analysieren",
   "analyzer_instruction": "Finden Sie Muster von Informations-Manipulation.",
   "analyzer_no_api_key_warning": "Bitte vervollständigen Sie Ihre Konfiguration in den Einstellungen oben, um die Analyse zu ermöglichen.",
@@ -85,7 +87,7 @@
   "lang_manager_button_add": "Sprache hinzufügen & übersetzen",
   "lang_manager_button_translating": "Übersetze...",
   "lang_manager_error_empty": "Sprachcode darf nicht leer sein.",
-  "lang_manager_error_no_key": "API-Schlüssel muss festgelegt sein, um eine neue Sprache zu übersetzen.",
+  "lang_manager_error_no_key": "Eine gültige Konfiguration für den aktuellen Anbieter muss gespeichert sein, um eine neue Sprache zu übersetzen.",
   "lang_manager_error_generic": "Während der Übersetzung ist ein unbekannter Fehler aufgetreten.",
   "lang_manager_success": "Erfolgreich hinzugefügt und nach {langName} übersetzt!",
   "lang_manager_error_parse": "Übersetzung konnte nicht geparst werden: {message}",
@@ -115,5 +117,6 @@
   "rebuttal_button_generate": "Generieren",
   "rebuttal_button_generating": "Generiert...",
   "info_translating_rebuttal": "Übersetze Widerlegung...",
-  "error_rebuttal_translation_failed": "Widerlegung konnte nicht übersetzt werden: {message}"
+  "error_rebuttal_translation_failed": "Widerlegung konnte nicht übersetzt werden: {message}",
+  "error_provider_not_configured": "Der aktuelle Dienstanbieter ist nicht konfiguriert."
 }

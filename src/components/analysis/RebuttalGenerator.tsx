@@ -10,38 +10,36 @@ import { SparklesIcon } from '../../assets/icons';
 interface RebuttalGeneratorProps {
     analysis: GeminiAnalysisResponse;
     sourceText: string | null;
-    apiKey: string | null;
-    selectedModel: string;
     rebuttalForDisplay: string | null;
-    isTranslating: boolean; // Renamed to be more generic, but only used for display
+    isTranslating: boolean;
     onUpdate: (newRebuttal: string) => void;
     serviceProvider: 'google' | 'local';
+    apiKey: string | null;
+    selectedModel: string;
     lmStudioUrl: string;
     lmStudioModel: string;
+    isCurrentProviderConfigured: boolean; // Add the master flag
 }
 
 const RebuttalGenerator: React.FC<RebuttalGeneratorProps> = ({
     analysis,
     sourceText,
-    apiKey,
-    selectedModel,
     rebuttalForDisplay,
     isTranslating,
     onUpdate,
     serviceProvider,
+    apiKey,
+    selectedModel,
     lmStudioUrl,
     lmStudioModel,
+    isCurrentProviderConfigured, // Use the master flag
 }) => {
     const { t, language } = useTranslation();
     const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const isProviderConfigured =
-        (serviceProvider === 'google' && !!apiKey) ||
-        (serviceProvider === 'local' && !!lmStudioUrl && !!lmStudioModel);
-
     const handleGenerate = async () => {
-        if (!isProviderConfigured || !sourceText) return;
+        if (!isCurrentProviderConfigured || !sourceText) return;
         setIsGenerating(true);
         setError(null);
         try {
@@ -70,7 +68,7 @@ const RebuttalGenerator: React.FC<RebuttalGeneratorProps> = ({
             </p>
             <button
                 onClick={handleGenerate}
-                disabled={isGenerating || isTranslating || !isProviderConfigured}
+                disabled={isGenerating || isTranslating || !isCurrentProviderConfigured}
                 className="flex items-center justify-center px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400 dark:disabled:bg-gray-600"
             >
                 {isGenerating ? (

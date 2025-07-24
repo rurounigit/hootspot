@@ -35,8 +35,10 @@
   "config_include_rebuttal_json": "Include rebuttal in JSON",
   "config_include_rebuttal_pdf": "Include rebuttal in PDF",
   "config_button_saving": "Testing & Saving...",
-  "config_is_configured": "Configuration is set. Expand to change settings.",
-  "config_not_configured": "Configuration needed. Please expand and set up a service provider.",
+  "config_status_configured": "{provider} provider is configured and ready.",
+  "config_status_unconfigured": "{provider} provider needs configuration.",
+  "config_status_dirty": "Unsaved changes for {provider} provider.",
+  "config_status_unsaved": "You have unsaved changes. Analysis is disabled until you save.",
   "analyzer_title": "Analyze",
   "analyzer_instruction": "Find patterns of information manipulation.",
   "analyzer_no_api_key_warning": "Please complete your configuration in the settings above to enable analysis.",
@@ -85,7 +87,7 @@
   "lang_manager_button_add": "Add & Translate Language",
   "lang_manager_button_translating": "Translating...",
   "lang_manager_error_empty": "Language code cannot be empty.",
-  "lang_manager_error_no_key": "API Key must be set to translate a new language.",
+  "lang_manager_error_no_key": "A valid configuration for the current provider must be saved to translate a new language.",
   "lang_manager_error_generic": "An unknown error occurred during translation.",
   "lang_manager_success": "Successfully added and translated to {langName}!",
   "lang_manager_error_parse": "Failed to parse translation: {message}",
@@ -115,5 +117,6 @@
   "rebuttal_button_generate": "Generate",
   "rebuttal_button_generating": "Generating...",
   "info_translating_rebuttal": "Translating rebuttal...",
-  "error_rebuttal_translation_failed": "Failed to translate rebuttal: {message}"
+  "error_rebuttal_translation_failed": "Failed to translate rebuttal: {message}",
+  "error_provider_not_configured": "The current service provider is not configured."
 }

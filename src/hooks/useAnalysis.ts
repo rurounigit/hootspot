@@ -1,3 +1,5 @@
+// src/hooks/useAnalysis.ts
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from '../i18n';
 import { analyzeText } from '../api/google/analysis';
@@ -24,6 +26,7 @@ export const useAnalysis = (
   const [translatedResults, setTranslatedResults] = useState<Record<string, GeminiAnalysisResponse>>({});
   const [isTranslating, setIsTranslating] = useState(false);
   const analysisReportRef = useRef<HTMLDivElement>(null);
+  const previousIsConfigured = useRef(isCurrentProviderConfigured);
 
   const handleAnalyzeText = useCallback(async (text: string) => {
     if (!isCurrentProviderConfigured) {
@@ -68,11 +71,17 @@ export const useAnalysis = (
   }, [isCurrentProviderConfigured, serviceProvider, lmStudioUrl, lmStudioModel, apiKey, selectedModel, language, t, setIsConfigCollapsed]);
 
   useEffect(() => {
-    if (pendingAnalysis && isCurrentProviderConfigured) {
+    // FIX: This effect now only runs if a pending analysis exists AND the configuration was *already*
+    // considered valid in the previous render cycle. This prevents it from firing immediately
+    // when a user simply corrects a "dirty" config without clicking "Save".
+    if (pendingAnalysis && isCurrentProviderConfigured && previousIsConfigured.current) {
       handleAnalyzeText(pendingAnalysis.text);
       setPendingAnalysis(null);
     }
+    // Update the ref for the next render.
+    previousIsConfigured.current = isCurrentProviderConfigured;
   }, [pendingAnalysis, isCurrentProviderConfigured, handleAnalyzeText]);
+
 
   useEffect(() => {
     if (!analysisResult || language === 'en' || serviceProvider === 'local' || !apiKey) return;

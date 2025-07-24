@@ -37,7 +37,7 @@ interface ConfigurationManagerProps {
   isCurrentProviderConfigured: boolean;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
-  isConfigDirty: boolean; // Add the new prop
+  isConfigDirty: boolean;
 }
 const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
   serviceProvider,
@@ -65,14 +65,11 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
   isCurrentProviderConfigured,
   isCollapsed,
   onToggleCollapse,
-  isConfigDirty, // Destructure the new prop
+  isConfigDirty,
 }) => {
   const { t } = useTranslation();
   const [isTesting, setIsTesting] = useState(false);
   const [testStatus, setTestStatus] = useState<{message: string, type: 'success' | 'error' } | null>(null);
-
-  // This flag is now only for the collapsed view message.
-  const isAConfigStored = !!localStorage.getItem(API_KEY_STORAGE_KEY) || (!!localStorage.getItem(LM_STUDIO_URL_KEY) && !!localStorage.getItem(LM_STUDIO_MODEL_KEY));
 
   useEffect(() => {
     if (isCollapsed) {
@@ -105,8 +102,7 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
         localStorage.setItem(API_KEY_STORAGE_KEY, trimmedApiKey);
         localStorage.setItem(SERVICE_PROVIDER_KEY, 'google');
         localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel);
-        localStorage.removeItem(LM_STUDIO_URL_KEY);
-        localStorage.removeItem(LM_STUDIO_MODEL_KEY);
+        // FIX: REMOVED localStorage.removeItem for the other provider's keys
         setTestStatus({ message: t('success_api_key_saved'), type: 'success' });
       } else {
         const trimmedUrl = lmStudioUrl.trim();
@@ -115,7 +111,7 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
         localStorage.setItem(LM_STUDIO_URL_KEY, trimmedUrl);
         localStorage.setItem(LM_STUDIO_MODEL_KEY, trimmedModel);
         localStorage.setItem(SERVICE_PROVIDER_KEY, 'local');
-        localStorage.removeItem(API_KEY_STORAGE_KEY);
+        // FIX: REMOVED localStorage.removeItem for the other provider's keys
         setTestStatus({ message: t('success_local_connection'), type: 'success' });
       }
       onConfigured(true);
@@ -126,6 +122,17 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
     } finally {
       setIsTesting(false);
     }
+  };
+
+  const renderCollapsedStatus = () => {
+    const providerName = serviceProvider === 'google' ? 'Google' : 'Local';
+    if (isConfigDirty) {
+      return <p className="text-sm text-yellow-600 dark:text-yellow-400">{t('config_status_dirty', { provider: providerName })}</p>;
+    }
+    if (isCurrentProviderConfigured) {
+      return <p className="text-sm text-green-600 dark:text-green-400">{t('config_status_configured', { provider: providerName })}</p>;
+    }
+    return <p className="text-sm text-red-600 dark:text-red-400">{t('config_status_unconfigured', { provider: providerName })}</p>;
   };
 
   const isGoogleProvider = serviceProvider === 'google';
@@ -141,10 +148,9 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
 
       {!isCollapsed && (
         <>
-          {/* FIX: Show warning if the configuration is dirty */}
-          {isConfigDirty && isAConfigStored && (
+          {isConfigDirty && (
             <div className="mb-4 p-3 rounded-md text-sm bg-yellow-50 text-yellow-800 border border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-400">
-                {t('config_status_unsaved', { defaultValue: 'You have unsaved changes. The app will use the last valid configuration until you save.' })}
+                {t('config_status_unsaved')}
             </div>
           )}
 
@@ -197,20 +203,16 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
 
           {testStatus && ( <div className={`mt-4 p-3 rounded-md text-sm ${testStatus.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-500' : 'bg-red-100 text-red-700 border border-red-300 dark:bg-red-900/50 dark:text-red-300 dark:border-red-500'}`}> {testStatus.message} </div> )}
 
-          <LanguageManager apiKey={apiKeyInput} modelsError={modelsError} />
+          <LanguageManager
+            serviceProvider={serviceProvider}
+            apiKey={apiKeyInput}
+            lmStudioUrl={lmStudioUrl}
+            lmStudioModel={lmStudioModel}
+            isCurrentProviderConfigured={isCurrentProviderConfigured}
+          />
         </>
       )}
-
-       {/* FIX: Show clear status messages in the collapsed view */}
-       {isCollapsed && isConfigDirty && (
-        <p className="text-sm text-yellow-600 dark:text-yellow-400">{t('config_status_unsaved', { defaultValue: 'Unsaved changes' })}</p>
-       )}
-       {isCollapsed && !isConfigDirty && isAConfigStored && (
-         <p className="text-sm text-green-600 dark:text-green-400">{t('config_is_configured')}</p>
-       )}
-       {isCollapsed && !isConfigDirty && !isAConfigStored && (
-         <p className="text-sm text-red-600 dark:text-red-400">{t('config_not_configured')}</p>
-       )}
+       {isCollapsed && renderCollapsedStatus()}
     </div>
   );
 };

@@ -3,15 +3,25 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../i18n';
 import { translateUI } from '../api/google/translation';
+import { translateUIWithLMStudio } from '../api/lm-studio';
 import { AddIcon } from '../assets/icons';
 import { defaultLanguages } from '../i18n';
 
 interface LanguageManagerProps {
+  serviceProvider: 'google' | 'local';
   apiKey: string | null;
-  modelsError: string | null; // FIX: Add prop to receive API key validation status
+  lmStudioUrl: string;
+  lmStudioModel: string;
+  isCurrentProviderConfigured: boolean;
 }
 
-const LanguageManager: React.FC<LanguageManagerProps> = ({ apiKey, modelsError }) => {
+const LanguageManager: React.FC<LanguageManagerProps> = ({
+  serviceProvider,
+  apiKey,
+  lmStudioUrl,
+  lmStudioModel,
+  isCurrentProviderConfigured
+}) => {
   const { t, addLanguage, deleteLanguage, availableLanguages } = useTranslation();
   const [newLangCode, setNewLangCode] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
@@ -24,16 +34,27 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({ apiKey, modelsError }
       setError(t("lang_manager_error_empty"));
       return;
     }
-    if (!apiKey) {
-      setError(t("lang_manager_error_no_key"));
-      return;
+    if (!isCurrentProviderConfigured) {
+        setError(t("lang_manager_error_no_key")); // Generic message is okay here
+        return;
     }
+
     setIsTranslating(true);
     setError(null);
     setSuccess(null);
+
     try {
       const baseTranslations = await import('../locales/en.json');
-      const translatedJson = await translateUI(apiKey, code, JSON.stringify(baseTranslations.default), t);
+      let translatedJson: Record<string, string>;
+
+      if (serviceProvider === 'google' && apiKey) {
+        translatedJson = await translateUI(apiKey, code, JSON.stringify(baseTranslations.default), t);
+      } else if (serviceProvider === 'local') {
+        translatedJson = await translateUIWithLMStudio(lmStudioUrl, lmStudioModel, code, JSON.stringify(baseTranslations.default), t);
+      } else {
+        throw new Error(t("error_provider_not_configured"));
+      }
+
       addLanguage(code, code, translatedJson);
       setSuccess(t('lang_manager_success', { langName: code }));
       setNewLangCode('');
@@ -76,7 +97,7 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({ apiKey, modelsError }
         </div>
         <button
           onClick={handleAddLanguage}
-          disabled={isTranslating || !apiKey || !!modelsError} // FIX: Also disable if there is a modelsError from the parent
+          disabled={isTranslating || !isCurrentProviderConfigured}
           className="w-full flex items-center justify-center px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400 dark:disabled:bg-gray-600"
         >
           {isTranslating ? (

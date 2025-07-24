@@ -7,42 +7,43 @@ import ShareMenu from './ShareMenu';
 import ManipulationBubbleChart from './ManipulationBubbleChart';
 import RebuttalGenerator from './RebuttalGenerator';
 import HighlightedText from './HighlightedText';
-import { useAnalysisReportData } from '../../hooks/useAnalysisReportData'; // Import the new hook
+import { useAnalysisReportData } from '../../hooks/useAnalysisReportData';
 
 interface AnalysisReportProps {
   analysis: GeminiAnalysisResponse;
   sourceText: string | null;
-  apiKey: string | null;
-  selectedModel: string;
   rebuttal: string | null;
   isTranslatingRebuttal: boolean;
   onRebuttalUpdate: (newRebuttal: string) => void;
   includeRebuttalInJson: boolean;
   includeRebuttalInPdf: boolean;
   serviceProvider: 'google' | 'local';
+  apiKey: string | null;
+  selectedModel: string;
   lmStudioUrl: string;
   lmStudioModel: string;
+  isCurrentProviderConfigured: boolean; // Add prop
 }
 
 const AnalysisReport: React.FC<AnalysisReportProps> = ({
     analysis,
     sourceText,
-    apiKey,
-    selectedModel,
     rebuttal,
     isTranslatingRebuttal,
     onRebuttalUpdate,
     includeRebuttalInJson,
     includeRebuttalInPdf,
     serviceProvider,
+    apiKey,
+    selectedModel,
     lmStudioUrl,
     lmStudioModel,
+    isCurrentProviderConfigured, // Destructure prop
 }) => {
   const [chartDimensions, setChartDimensions] = useState({ width: 0, height: 0 });
   const [activeFindingId, setActiveFindingId] = useState<string | null>(null);
   const { t } = useTranslation();
 
-  // Call the new hook to get processed data
   const {
     hasFindings,
     patternColorMap,
@@ -139,14 +140,15 @@ const AnalysisReport: React.FC<AnalysisReportProps> = ({
         <RebuttalGenerator
           analysis={analysis}
           sourceText={sourceText}
-          apiKey={apiKey}
-          selectedModel={selectedModel}
           rebuttalForDisplay={rebuttal}
           isTranslating={isTranslatingRebuttal}
           onUpdate={onRebuttalUpdate}
           serviceProvider={serviceProvider}
+          apiKey={apiKey}
+          selectedModel={selectedModel}
           lmStudioUrl={lmStudioUrl}
           lmStudioModel={lmStudioModel}
+          isCurrentProviderConfigured={isCurrentProviderConfigured}
         />
       )}
     </div>

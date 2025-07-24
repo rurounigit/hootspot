@@ -38,6 +38,7 @@ const App: React.FC = () => {
     isConfigCollapsed,
     setIsConfigCollapsed,
     isCurrentProviderConfigured,
+    isConfigDirty, // Get the new flag
     handleMaxCharLimitSave,
   } = useConfig();
 
@@ -181,6 +182,7 @@ const App: React.FC = () => {
             isCurrentProviderConfigured={isCurrentProviderConfigured}
             isCollapsed={isConfigCollapsed}
             onToggleCollapse={() => setIsConfigCollapsed(!isConfigCollapsed)}
+            isConfigDirty={isConfigDirty}
           />
           <TextAnalyzer
             ref={textareaRef}
@@ -217,16 +219,17 @@ const App: React.FC = () => {
                <AnalysisReport
                     analysis={displayedAnalysis}
                     sourceText={currentTextAnalyzed}
-                    apiKey={apiKey}
-                    selectedModel={selectedModel}
                     rebuttal={displayedRebuttal}
                     isTranslatingRebuttal={isTranslatingRebuttal}
                     onRebuttalUpdate={handleRebuttalUpdate}
                     includeRebuttalInJson={includeRebuttalInJson}
                     includeRebuttalInPdf={includeRebuttalInPdf}
                     serviceProvider={serviceProvider}
+                    apiKey={apiKey}
+                    selectedModel={selectedModel}
                     lmStudioUrl={lmStudioUrl}
                     lmStudioModel={lmStudioModel}
+                    isCurrentProviderConfigured={isCurrentProviderConfigured}
                />
             )}
           </div>

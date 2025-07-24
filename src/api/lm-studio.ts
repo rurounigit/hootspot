@@ -1,6 +1,6 @@
 // src/api/lm-studio.ts
 
-import { SYSTEM_PROMPT, REBUTTAL_SYSTEM_PROMPT } from '../config/api-prompts';
+import { SYSTEM_PROMPT, REBUTTAL_SYSTEM_PROMPT, TRANSLATION_SYSTEM_PROMPT } from '../config/api-prompts';
 import { GeminiAnalysisResponse, GeminiFinding } from '../types/api';
 
 type TFunction = (key: string, replacements?: Record<string, string | number>) => string;
@@ -188,3 +188,54 @@ export const generateRebuttalWithLMStudio = async (
     }
 };
 
+export const translateUIWithLMStudio = async (
+    serverUrl: string,
+    modelName: string,
+    languageCode: string,
+    jsonToTranslate: string,
+    t: TFunction,
+): Promise<Record<string, string>> => {
+    if (!serverUrl || !modelName) {
+        throw new Error(t('error_local_server_config_missing'));
+    }
+
+    const prompt = TRANSLATION_SYSTEM_PROMPT
+        .replace('{languageCode}', languageCode)
+        .replace('{jsonToTranslate}', jsonToTranslate);
+
+    const payload = {
+        model: modelName,
+        messages: [ { role: "user", content: prompt } ],
+        temperature: 0.2,
+        max_tokens: 8192,
+    };
+
+    try {
+        const response = await fetch(`${serverUrl}/v1/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(t('error_local_model_not_loaded', { model: modelName, message: errorData.error?.message || response.statusText }));
+        }
+
+        const data = await response.json();
+        const content = data.choices[0]?.message?.content;
+        if (!content) {
+            throw new Error(t('error_unexpected_json_structure'));
+        }
+
+        const jsonStr = extractJson(content);
+        return JSON.parse(jsonStr);
+
+    } catch (error: any) {
+        if (error instanceof TypeError) {
+            throw new Error(t('error_local_server_connection', { url: serverUrl }));
+        }
+        console.error("Error translating UI with LM Studio:", error);
+        throw new Error(t('error_translation_failed', { message: error.message || 'Unknown API error' }));
+    }
+};

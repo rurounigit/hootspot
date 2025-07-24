@@ -35,8 +35,10 @@
   "config_include_rebuttal_json": "Inclure la réfutation dans le JSON",
   "config_include_rebuttal_pdf": "Inclure la réfutation dans le PDF",
   "config_button_saving": "Test & Sauvegarde...",
-  "config_is_configured": "La configuration est définie. Développez pour modifier les paramètres.",
-  "config_not_configured": "Configuration requise. Veuillez développer et configurer un fournisseur de services.",
+  "config_status_configured": "Le fournisseur {provider} est configuré et prêt.",
+  "config_status_unconfigured": "Le fournisseur {provider} nécessite une configuration.",
+  "config_status_dirty": "Modifications non enregistrées pour le fournisseur {provider}.",
+  "config_status_unsaved": "Vous avez des modifications non enregistrées. L'analyse est désactivée jusqu'à ce que vous enregistriez.",
   "analyzer_title": "Analyser",
   "analyzer_instruction": "Trouvez des motifs de manipulation d'informations.",
   "analyzer_no_api_key_warning": "Veuillez compléter votre configuration dans les paramètres ci-dessus pour activer l'analyse.",
@@ -85,7 +87,7 @@
   "lang_manager_button_add": "Ajouter & Traduire la langue",
   "lang_manager_button_translating": "Traduction...",
   "lang_manager_error_empty": "Le code de la langue ne peut pas être vide.",
-  "lang_manager_error_no_key": "La clé API doit être définie pour traduire une nouvelle langue.",
+  "lang_manager_error_no_key": "Une configuration valide pour le fournisseur actuel doit être enregistrée pour traduire une nouvelle langue.",
   "lang_manager_error_generic": "Une erreur inconnue est survenue lors de la traduction.",
   "lang_manager_success": "Ajouté et traduit avec succès en {langName} !",
   "lang_manager_error_parse": "Échec de l'analyse de la traduction : {message}",
@@ -115,5 +117,6 @@
   "rebuttal_button_generate": "Générer",
   "rebuttal_button_generating": "Génération en cours...",
   "info_translating_rebuttal": "Traduction de la réfutation...",
-  "error_rebuttal_translation_failed": "Échec de la traduction de la réfutation : {message}"
+  "error_rebuttal_translation_failed": "Échec de la traduction de la réfutation : {message}",
+  "error_provider_not_configured": "Le fournisseur de services actuel n'est pas configuré."
 }

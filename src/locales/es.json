@@ -35,8 +35,10 @@
   "config_include_rebuttal_json": "Incluir refutación en JSON",
   "config_include_rebuttal_pdf": "Incluir refutación en PDF",
   "config_button_saving": "Probando y Guardando...",
-  "config_is_configured": "La configuración está establecida. Expanda para cambiar los ajustes.",
-  "config_not_configured": "Se necesita configuración. Por favor, expanda y configure un proveedor de servicios.",
+  "config_status_configured": "El proveedor {provider} está configurado y listo.",
+  "config_status_unconfigured": "El proveedor {provider} necesita configuración.",
+  "config_status_dirty": "Cambios no guardados para el proveedor {provider}.",
+  "config_status_unsaved": "Tiene cambios no guardados. El análisis está deshabilitado hasta que guarde.",
   "analyzer_title": "Analizar",
   "analyzer_instruction": "Encuentre patrones de manipulación de información.",
   "analyzer_no_api_key_warning": "Por favor, complete su configuración en los ajustes de arriba para habilitar el análisis.",
@@ -85,7 +87,7 @@
   "lang_manager_button_add": "Añadir y Traducir Idioma",
   "lang_manager_button_translating": "Traduciendo...",
   "lang_manager_error_empty": "El código de idioma no puede estar vacío.",
-  "lang_manager_error_no_key": "La clave de API debe estar configurada para traducir un nuevo idioma.",
+  "lang_manager_error_no_key": "Debe guardarse una configuración válida para el proveedor actual para traducir un nuevo idioma.",
   "lang_manager_error_generic": "Ocurrió un error desconocido durante la traducción.",
   "lang_manager_success": "¡Añadido y traducido a {langName} con éxito!",
   "lang_manager_error_parse": "Fallo al procesar la traducción: {message}",
@@ -115,5 +117,6 @@
   "rebuttal_button_generate": "Generar",
   "rebuttal_button_generating": "Generando...",
   "info_translating_rebuttal": "Traduciendo refutación...",
-  "error_rebuttal_translation_failed": "Fallo al traducir la refutación: {message}"
+  "error_rebuttal_translation_failed": "Fallo al traducir la refutación: {message}",
+  "error_provider_not_configured": "El proveedor de servicios actual no está configurado."
 }
