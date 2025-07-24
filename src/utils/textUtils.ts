@@ -8,31 +8,68 @@ const context = canvas.getContext('2d');
 const LINE_HEIGHT = 1.1; // Standard line height for multi-line text.
 
 /**
- * Wraps text to fit within a specific width.
+ * Wraps text to fit within a specific width using a language-agnostic,
+ * character-based breaking algorithm for oversized words.
+ *
+ * @param text The text to wrap.
+ * @param availableWidth The maximum pixel width for any line.
+ * @param fontSize The font size to use for measurement.
+ * @returns An array of strings, where each string is a correctly wrapped line.
  */
 export const wrapSvgText = (text: string, availableWidth: number, fontSize: number): string[] => {
   if (!text || !context || availableWidth <= 0) return [];
 
   context.font = `bold ${fontSize}px system-ui, sans-serif`;
-  const words = text.split(' ');
+
   const lines: string[] = [];
-  let currentLine = "";
+  let currentLine = '';
+  const words = text.split(' ');
 
   for (const word of words) {
     const testLine = currentLine ? `${currentLine} ${word}` : word;
-    const { width } = context.measureText(testLine);
+    const testLineWidth = context.measureText(testLine).width;
 
-    if (width > availableWidth && currentLine) {
-      lines.push(currentLine);
-      currentLine = word;
-    } else {
+    if (testLineWidth <= availableWidth) {
+      // The current line plus the new word fits, so append it.
       currentLine = testLine;
+    } else {
+      // The line is full.
+      if (currentLine) {
+        lines.push(currentLine);
+      }
+
+      const wordWidth = context.measureText(word).width;
+
+      if (wordWidth <= availableWidth) {
+        // The new word can start on its own line.
+        currentLine = word;
+      } else {
+        // The word itself is too long and must be broken at the character level.
+        let tempWord = '';
+        for (let i = 0; i < word.length; i++) {
+          const char = word[i];
+          const nextTempWord = tempWord + char;
+          // Check if the substring plus a hyphen still fits.
+          if (context.measureText(nextTempWord + '-').width <= availableWidth) {
+            tempWord = nextTempWord;
+          } else {
+            // The character overflows, so push the previous fitting substring with a hyphen.
+            lines.push(tempWord + '-');
+            // Start the new tempWord with the current character.
+            tempWord = char;
+          }
+        }
+        // The remainder of the word becomes the new current line.
+        currentLine = tempWord;
+      }
     }
   }
 
+  // Add the final constructed line to the array.
   if (currentLine) {
     lines.push(currentLine);
   }
+
   return lines;
 };
 

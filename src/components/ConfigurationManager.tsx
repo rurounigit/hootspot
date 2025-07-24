@@ -90,13 +90,17 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
     }
   }, [isCollapsed, serviceProvider, apiKeyInput, lmStudioUrl, lmStudioModel, t]);
 
-  const handleSave = async () => {
-    if (serviceProvider === 'google' && !apiKeyInput.trim()) {
-      setTestStatus({ message: t('error_api_key_empty'), type: 'error' });
-      return;
+  const isFormValid = () => {
+    if (serviceProvider === 'google') {
+      return apiKeyInput.trim() !== '';
+    } else {
+      return lmStudioUrl.trim() !== '' && lmStudioModel.trim() !== '';
     }
-    if (serviceProvider === 'local' && (!lmStudioUrl.trim() || !lmStudioModel.trim())) {
-      setTestStatus({ message: t('error_local_server_config_missing'), type: 'error' });
+  };
+
+  const handleSave = async () => {
+    // The button is disabled if the form is invalid, so this check is a safeguard.
+    if (!isFormValid()) {
       return;
     }
 
@@ -185,7 +189,7 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
             onIncludeRebuttalInPdfChange={onIncludeRebuttalInPdfChange}
           />
 
-          <button onClick={handleSave} disabled={isTesting} className="mt-6 w-full flex items-center justify-center px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400 dark:disabled:bg-gray-600">
+          <button onClick={handleSave} disabled={isTesting || !isFormValid()} aria-label="save-and-test-configuration" className="mt-6 w-full flex items-center justify-center px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400 dark:disabled:bg-gray-600">
             {isTesting ? ( <div className="spinner w-5 h-5 border-t-white mr-2"></div> ) : ( <SaveIcon className="w-5 h-5 mr-2" /> )}
             {isTesting ? t('config_button_saving') : t('config_button_save_test')}
           </button>
