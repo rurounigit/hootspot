@@ -1,7 +1,7 @@
 // src/components/ConfigurationManager.tsx
 import React, { useState, useEffect } from 'react';
 import { SaveIcon, SettingsIcon } from '../assets/icons';
-import { API_KEY_STORAGE_KEY, LM_STUDIO_URL_KEY, LM_STUDIO_MODEL_KEY } from '../config/storage-keys';
+import { API_KEY_STORAGE_KEY, LM_STUDIO_URL_KEY, LM_STUDIO_MODEL_KEY, SERVICE_PROVIDER_KEY, SELECTED_MODEL_STORAGE_KEY } from '../config/storage-keys';
 import { testApiKey } from '../api/google/utils';
 import { testLMStudioConnection } from '../api/lm-studio';
 import { useTranslation } from '../i18n';
@@ -74,11 +74,11 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
         setTestStatus(null);
         return;
     }
-
+    // This effect now only provides immediate feedback about the form state, it doesn't control app logic.
     if (serviceProvider === 'google') {
         if (!apiKeyInput.trim()) {
             setTestStatus({ message: t('error_api_key_empty'), type: 'error' });
-        } else {
+        } else if (!modelsError) { // Clear status if key is valid so far
             setTestStatus(null);
         }
     } else {
@@ -88,21 +88,17 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
             setTestStatus(null);
         }
     }
-  }, [isCollapsed, serviceProvider, apiKeyInput, lmStudioUrl, lmStudioModel, t]);
+  }, [isCollapsed, serviceProvider, apiKeyInput, lmStudioUrl, lmStudioModel, t, modelsError]);
 
   const isFormValid = () => {
     if (serviceProvider === 'google') {
       return apiKeyInput.trim() !== '';
-    } else {
-      return lmStudioUrl.trim() !== '' && lmStudioModel.trim() !== '';
     }
+    return lmStudioUrl.trim() !== '' && lmStudioModel.trim() !== '';
   };
 
   const handleSave = async () => {
-    // The button is disabled if the form is invalid, so this check is a safeguard.
-    if (!isFormValid()) {
-      return;
-    }
+    if (!isFormValid()) return;
 
     setIsTesting(true);
     setTestStatus(null);
@@ -110,22 +106,30 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
       if (serviceProvider === 'google') {
         const trimmedApiKey = apiKeyInput.trim();
         await testApiKey(trimmedApiKey, t, selectedModel);
+        // --- FIX: Save all related settings ONLY on success ---
         localStorage.setItem(API_KEY_STORAGE_KEY, trimmedApiKey);
+        localStorage.setItem(SERVICE_PROVIDER_KEY, 'google');
+        localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel);
+        // Clear out old local config to avoid confusion
         localStorage.removeItem(LM_STUDIO_URL_KEY);
         localStorage.removeItem(LM_STUDIO_MODEL_KEY);
-        onConfigured(true);
         setTestStatus({ message: t('success_api_key_saved'), type: 'success' });
-      } else {
+      } else { // serviceProvider is 'local'
         const trimmedUrl = lmStudioUrl.trim();
         const trimmedModel = lmStudioModel.trim();
         await testLMStudioConnection(trimmedUrl, trimmedModel, t);
+        // --- FIX: Save all related settings ONLY on success ---
         localStorage.setItem(LM_STUDIO_URL_KEY, trimmedUrl);
         localStorage.setItem(LM_STUDIO_MODEL_KEY, trimmedModel);
+        localStorage.setItem(SERVICE_PROVIDER_KEY, 'local');
+        // Clear out old Google config
         localStorage.removeItem(API_KEY_STORAGE_KEY);
-        onConfigured(true);
         setTestStatus({ message: t('success_local_connection'), type: 'success' });
       }
-      onToggleCollapse();
+      onConfigured(true);
+      // We must reload the window to ensure the useConfig hook re-initializes with the new localStorage values
+      // This is a simple and robust way to guarantee the entire app state is consistent.
+      window.location.reload();
     } catch (err: any) {
       onConfigured(false);
       setTestStatus({ message: (err as Error).message, type: 'error' });
