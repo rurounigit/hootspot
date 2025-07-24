@@ -2,27 +2,21 @@
 
 import { SYSTEM_PROMPT, REBUTTAL_SYSTEM_PROMPT, TRANSLATION_SYSTEM_PROMPT } from '../config/api-prompts';
 import { GeminiAnalysisResponse, GeminiFinding } from '../types/api';
+import { LanguageCode } from '../i18n';
 
 type TFunction = (key: string, replacements?: Record<string, string | number>) => string;
 
-// This helper function aggressively extracts a JSON object from a string.
 function extractJson(str: string): string {
-    // First, try to find JSON within markdown fences.
     const fenceRegex = /```(?:json)?\s*([\s\S]*?)\s*```/s;
     const fenceMatch = str.match(fenceRegex);
     if (fenceMatch && fenceMatch[1]) {
         return fenceMatch[1].trim();
     }
-
-    // If no fences, find the first '{' and the last '}'
     const firstBrace = str.indexOf('{');
     const lastBrace = str.lastIndexOf('}');
-
     if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
-        // Return the original string if no valid JSON structure is found
         return str;
     }
-
     return str.substring(firstBrace, lastBrace + 1);
 }
 
@@ -72,7 +66,6 @@ export const analyzeTextWithLMStudio = async (
     if (!textToAnalyze.trim()) {
         return { analysis_summary: "No text provided for analysis.", findings: [] };
     }
-
     const payload = {
         model: modelName,
         messages: [
@@ -82,36 +75,23 @@ export const analyzeTextWithLMStudio = async (
         temperature: 0.2,
         max_tokens: 8192,
     };
-
     try {
         const response = await fetch(`${serverUrl}/v1/chat/completions`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
         });
-
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(t('error_local_model_not_loaded', { model: modelName, message: errorData.error?.message || response.statusText }));
         }
-
         const data = await response.json();
         const content = data.choices[0]?.message?.content;
         if (!content) {
             throw new Error(t('error_unexpected_json_structure'));
         }
-
         const jsonStr = extractJson(content);
-        let parsedData;
-
-        try {
-            parsedData = JSON.parse(jsonStr);
-        } catch (e) {
-            console.error("--- HootSpot LOCAL JSON PARSE FAILED ---");
-            console.error("Original malformed JSON from local model:", jsonStr);
-            throw new Error(t('error_json_parse', { message: (e as Error).message, response: jsonStr.substring(0, 100) }));
-        }
-
+        let parsedData = JSON.parse(jsonStr);
         if (typeof parsedData.analysis_summary === 'string' && Array.isArray(parsedData.findings)) {
             parsedData.findings.sort((a: GeminiFinding, b: GeminiFinding) => {
                 const indexA = textToAnalyze.indexOf(a.specific_quote);
@@ -133,13 +113,12 @@ export const analyzeTextWithLMStudio = async (
     }
 };
 
-
 export const generateRebuttalWithLMStudio = async (
     sourceText: string,
     analysis: GeminiAnalysisResponse,
     serverUrl: string,
     modelName: string,
-    languageCode: string,
+    languageCode: LanguageCode,
     t: TFunction
 ): Promise<string> => {
     if (!serverUrl || !modelName) {
@@ -148,31 +127,26 @@ export const generateRebuttalWithLMStudio = async (
     if (!sourceText || !analysis) {
         throw new Error("Source text and analysis are required to generate a rebuttal.");
     }
-
     const prompt = REBUTTAL_SYSTEM_PROMPT
         .replace('{analysisJson}', JSON.stringify(analysis, null, 2))
         .replace('{sourceText}', sourceText)
         .replace('{languageCode}', languageCode);
-
     const payload = {
         model: modelName,
         messages: [ { role: "user", content: prompt } ],
         temperature: 0.7,
         max_tokens: 8192,
     };
-
     try {
         const response = await fetch(`${serverUrl}/v1/chat/completions`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
         });
-
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(t('error_local_model_not_loaded', { model: modelName, message: errorData.error?.message || response.statusText }));
         }
-
         const data = await response.json();
         const content = data.choices[0]?.message?.content;
         if (!content) {
@@ -191,7 +165,7 @@ export const generateRebuttalWithLMStudio = async (
 export const translateUIWithLMStudio = async (
     serverUrl: string,
     modelName: string,
-    languageCode: string,
+    languageCode: LanguageCode,
     jsonToTranslate: string,
     t: TFunction,
 ): Promise<Record<string, string>> => {
@@ -199,16 +173,30 @@ export const translateUIWithLMStudio = async (
         throw new Error(t('error_local_server_config_missing'));
     }
 
-    const prompt = TRANSLATION_SYSTEM_PROMPT
-        .replace('{languageCode}', languageCode)
-        .replace('{jsonToTranslate}', jsonToTranslate);
+    // --- START OF THE CORRECT FIX ---
+    // Create a mapping from language code to the full, unambiguous language name.
+    const languageMap: { [key: string]: string } = {
+        it: 'Italian',
+        de: 'German',
+        fr: 'French',
+        es: 'Spanish',
+        en: 'English'
+    };
+
+    // Use the full language name in the prompt to avoid ambiguity.
+    const languageName = languageMap[languageCode] || languageCode;
+    const userPrompt = `Translate the following JSON values to ${languageName}:\n\n${jsonToTranslate}`;
 
     const payload = {
         model: modelName,
-        messages: [ { role: "user", content: prompt } ],
+        messages: [
+            { role: "system", content: TRANSLATION_SYSTEM_PROMPT },
+            { role: "user", content: userPrompt }
+        ],
         temperature: 0.2,
         max_tokens: 8192,
     };
+    // --- END OF THE CORRECT FIX ---
 
     try {
         const response = await fetch(`${serverUrl}/v1/chat/completions`, {

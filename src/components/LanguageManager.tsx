@@ -25,23 +25,16 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({
   const { t, addLanguage, deleteLanguage, availableLanguages } = useTranslation();
   const [newLangCode, setNewLangCode] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   const handleAddLanguage = async () => {
     const code = newLangCode.trim().toLowerCase();
-    if (!code) {
-      setError(t("lang_manager_error_empty"));
+    if (!code || !isCurrentProviderConfigured) {
+      // Early exit if no code is provided or the provider is not configured.
+      // Error messages are no longer displayed to the user.
       return;
-    }
-    if (!isCurrentProviderConfigured) {
-        setError(t("lang_manager_error_no_key")); // Generic message is okay here
-        return;
     }
 
     setIsTranslating(true);
-    setError(null);
-    setSuccess(null);
 
     try {
       const baseTranslations = await import('../locales/en.json');
@@ -52,14 +45,15 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({
       } else if (serviceProvider === 'local') {
         translatedJson = await translateUIWithLMStudio(lmStudioUrl, lmStudioModel, code, JSON.stringify(baseTranslations.default), t);
       } else {
-        throw new Error(t("error_provider_not_configured"));
+        // Silently throw an error if the provider is not configured
+        throw new Error("Translation provider not properly configured.");
       }
 
       addLanguage(code, code, translatedJson);
-      setSuccess(t('lang_manager_success', { langName: code }));
       setNewLangCode('');
     } catch (err: any) {
-      setError(err.message || t("lang_manager_error_generic"));
+      // Errors are now logged to the console instead of being shown in the UI.
+      console.error(err.message || "An unexpected error occurred during translation.");
     } finally {
       setIsTranslating(false);
     }
@@ -108,8 +102,6 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({
           {isTranslating ? t('lang_manager_button_translating') : t('lang_manager_button_add')}
         </button>
       </div>
-      {error && <p className="text-sm text-red-600 dark:text-red-400 mt-2">{error}</p>}
-      {success && <p className="text-sm text-green-600 dark:text-green-400 mt-2">{success}</p>}
 
       {customLanguages.length > 0 && (
         <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-600">
