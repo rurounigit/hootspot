@@ -1,136 +1,152 @@
 // src/hooks/useConfig.ts
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useTranslation } from '../i18n';
 import {
-  API_KEY_STORAGE_KEY,
-  MAX_CHAR_LIMIT_STORAGE_KEY,
-  SELECTED_MODEL_STORAGE_KEY,
-  NIGHT_MODE_STORAGE_KEY,
-  INCLUDE_REBUTTAL_JSON_KEY,
-  INCLUDE_REBUTTAL_PDF_KEY,
-  SERVICE_PROVIDER_KEY,
-  LM_STUDIO_URL_KEY,
-  LM_STUDIO_MODEL_KEY
+  API_KEY_STORAGE_KEY, MAX_CHAR_LIMIT_STORAGE_KEY, SELECTED_MODEL_STORAGE_KEY,
+  NIGHT_MODE_STORAGE_KEY, INCLUDE_REBUTTAL_JSON_KEY, INCLUDE_REBUTTAL_PDF_KEY,
+  SERVICE_PROVIDER_KEY, LM_STUDIO_URL_KEY, LM_STUDIO_MODEL_KEY
 } from '../config/storage-keys';
 import { GEMINI_MODEL_NAME } from '../config/api-prompts';
 import { DEFAULT_MAX_CHAR_LIMIT } from '../constants';
+import { testApiKey } from '../api/google/utils';
+import { testLMStudioConnection } from '../api/lm-studio';
 
 export const useConfig = () => {
+  const { t } = useTranslation();
+
+  // --- Core State ---
   const [serviceProvider, setServiceProvider] = useState<'google' | 'local'>(() => (localStorage.getItem(SERVICE_PROVIDER_KEY) as 'google' | 'local') || 'google');
   const [apiKeyInput, setApiKeyInput] = useState<string>(() => localStorage.getItem(API_KEY_STORAGE_KEY) || '');
   const [lmStudioUrl, setLmStudioUrl] = useState<string>(() => localStorage.getItem(LM_STUDIO_URL_KEY) || '');
   const [lmStudioModel, setLmStudioModel] = useState<string>(() => localStorage.getItem(LM_STUDIO_MODEL_KEY) || '');
-
-  const [apiKey, setApiKey] = useState<string | null>(() => localStorage.getItem(API_KEY_STORAGE_KEY));
-  const [debouncedApiKey, setDebouncedApiKey] = useState<string>(apiKeyInput);
   const [selectedModel, setSelectedModel] = useState<string>(() => localStorage.getItem(SELECTED_MODEL_STORAGE_KEY) || GEMINI_MODEL_NAME);
+
+  // --- Verification and Dirty State ---
+  const [isVerified, setIsVerified] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
+  const [testStatus, setTestStatus] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+  const isMounted = useRef(false);
+
+  // --- UI and Other Settings State ---
+  const [debouncedApiKey, setDebouncedApiKey] = useState<string>(apiKeyInput);
   const [maxCharLimit, setMaxCharLimit] = useState<number>(DEFAULT_MAX_CHAR_LIMIT);
   const [isNightMode, setIsNightMode] = useState<boolean>(() => localStorage.getItem(NIGHT_MODE_STORAGE_KEY) === 'true');
   const [includeRebuttalInJson, setIncludeRebuttalInJson] = useState<boolean>(() => localStorage.getItem(INCLUDE_REBUTTAL_JSON_KEY) === 'true');
   const [includeRebuttalInPdf, setIncludeRebuttalInPdf] = useState<boolean>(() => localStorage.getItem(INCLUDE_REBUTTAL_PDF_KEY) === 'true');
+  const [isConfigCollapsed, setIsConfigCollapsed] = useState(false);
 
-  // --- "DIRTY FLAG" IMPLEMENTATION ---
-  const [isConfigDirty, setIsConfigDirty] = useState(false);
 
+  // --- Effects ---
+
+  // On mount, check if a valid configuration already exists in storage.
   useEffect(() => {
-    if (serviceProvider === 'google') {
-      const savedApiKey = localStorage.getItem(API_KEY_STORAGE_KEY) || '';
-      setIsConfigDirty(apiKeyInput !== savedApiKey);
-    } else { // 'local' provider
-      const savedUrl = localStorage.getItem(LM_STUDIO_URL_KEY) || '';
-      const savedModel = localStorage.getItem(LM_STUDIO_MODEL_KEY) || '';
-      setIsConfigDirty(lmStudioUrl !== savedUrl || lmStudioModel !== savedModel);
+    const googleConfigured = !!localStorage.getItem(API_KEY_STORAGE_KEY);
+    const localConfigured = !!localStorage.getItem(LM_STUDIO_URL_KEY) && !!localStorage.getItem(LM_STUDIO_MODEL_KEY);
+
+    const providerInStorage = (localStorage.getItem(SERVICE_PROVIDER_KEY) as 'google' | 'local') || 'google';
+
+    const isInitiallyVerified = (providerInStorage === 'google' && googleConfigured) || (providerInStorage === 'local' && localConfigured);
+
+    setIsVerified(isInitiallyVerified);
+    setIsConfigCollapsed(isInitiallyVerified);
+    isMounted.current = true;
+  }, []);
+
+  // Any input change immediately invalidates the configuration until it's saved again.
+  useEffect(() => {
+    if (isMounted.current) {
+      setIsVerified(false);
+      setTestStatus(null);
     }
   }, [apiKeyInput, lmStudioUrl, lmStudioModel, serviceProvider]);
 
-  const isGoogleConfiguredInStorage = !!localStorage.getItem(API_KEY_STORAGE_KEY);
-  const isLocalConfiguredInStorage = !!localStorage.getItem(LM_STUDIO_URL_KEY) && !!localStorage.getItem(LM_STUDIO_MODEL_KEY);
-  const isReadyToAnalyze = ((serviceProvider === 'google' && isGoogleConfiguredInStorage) || (serviceProvider === 'local' && isLocalConfiguredInStorage)) && !isConfigDirty;
-
-  const isAConfiguredProviderStored = isGoogleConfiguredInStorage || isLocalConfiguredInStorage;
-  const [isConfigCollapsed, setIsConfigCollapsed] = useState(isAConfiguredProviderStored);
-
-  useEffect(() => {
-    const oldApiKey = localStorage.getItem('athenaAIApiKey');
-    if (oldApiKey) {
-      localStorage.setItem(API_KEY_STORAGE_KEY, oldApiKey);
-      localStorage.removeItem('athenaAIApiKey');
-    }
-    const oldModel = localStorage.getItem('athenaAISelectedModel');
-    if (oldModel) {
-        localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, oldModel);
-        localStorage.removeItem('athenaAISelectedModel');
-    }
-    const oldMaxChar = localStorage.getItem('athenaAIMaxCharLimit');
-    if(oldMaxChar) {
-        localStorage.setItem(MAX_CHAR_LIMIT_STORAGE_KEY, oldMaxChar);
-        localStorage.removeItem('athenaAIMaxCharLimit');
-    }
-  }, []);
 
   useEffect(() => {
     const handler = setTimeout(() => { setDebouncedApiKey(apiKeyInput.trim()); }, 500);
     return () => clearTimeout(handler);
   }, [apiKeyInput]);
 
-  useEffect(() => { localStorage.setItem(SERVICE_PROVIDER_KEY, serviceProvider); }, [serviceProvider]);
-  useEffect(() => { localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel); }, [selectedModel]);
-  useEffect(() => { localStorage.setItem(NIGHT_MODE_STORAGE_KEY, String(isNightMode)); document.documentElement.classList.toggle('dark', isNightMode); }, [isNightMode]);
-  useEffect(() => { localStorage.setItem(INCLUDE_REBUTTAL_JSON_KEY, String(includeRebuttalInJson)); }, [includeRebuttalInJson]);
-  useEffect(() => { localStorage.setItem(INCLUDE_REBUTTAL_PDF_KEY, String(includeRebuttalInPdf)); }, [includeRebuttalInPdf]);
-
-  useEffect(() => {
-    if (serviceProvider === 'google') { setApiKey(localStorage.getItem(API_KEY_STORAGE_KEY)); }
-    else { setApiKey(null); }
-  }, [serviceProvider]);
-
   useEffect(() => {
     const storedMaxCharLimit = localStorage.getItem(MAX_CHAR_LIMIT_STORAGE_KEY);
     if (storedMaxCharLimit) { setMaxCharLimit(parseInt(storedMaxCharLimit, 10) || DEFAULT_MAX_CHAR_LIMIT); }
-  }, []);
+    localStorage.setItem(NIGHT_MODE_STORAGE_KEY, String(isNightMode));
+    document.documentElement.classList.toggle('dark', isNightMode);
+  }, [isNightMode]);
+
+  useEffect(() => { localStorage.setItem(INCLUDE_REBUTTAL_JSON_KEY, String(includeRebuttalInJson)); }, [includeRebuttalInJson]);
+  useEffect(() => { localStorage.setItem(INCLUDE_REBUTTAL_PDF_KEY, String(includeRebuttalInPdf)); }, [includeRebuttalInPdf]);
+  useEffect(() => { localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel); }, [selectedModel]);
+  useEffect(() => { localStorage.setItem(SERVICE_PROVIDER_KEY, serviceProvider); }, [serviceProvider]);
+
+
+  // --- Handlers ---
 
   const handleMaxCharLimitSave = useCallback((newLimit: number) => {
     localStorage.setItem(MAX_CHAR_LIMIT_STORAGE_KEY, newLimit.toString());
     setMaxCharLimit(newLimit);
   }, []);
 
-  const handleConfigSave = useCallback(() => {
-    if (serviceProvider === 'google') {
-      localStorage.setItem(API_KEY_STORAGE_KEY, apiKeyInput);
-    } else {
-      localStorage.setItem(LM_STUDIO_URL_KEY, lmStudioUrl);
-      localStorage.setItem(LM_STUDIO_MODEL_KEY, lmStudioModel);
+  const saveAndTestConfig = useCallback(async () => {
+    setIsTesting(true);
+    setTestStatus(null);
+    setIsVerified(false);
+
+    try {
+      if (serviceProvider === 'google') {
+        const trimmedApiKey = apiKeyInput.trim();
+        await testApiKey(trimmedApiKey, t, selectedModel);
+        localStorage.setItem(API_KEY_STORAGE_KEY, trimmedApiKey);
+        setTestStatus({ message: t('success_api_key_saved'), type: 'success' });
+      } else {
+        const trimmedUrl = lmStudioUrl.trim();
+        const trimmedModel = lmStudioModel.trim();
+        await testLMStudioConnection(trimmedUrl, trimmedModel, t);
+        localStorage.setItem(LM_STUDIO_URL_KEY, trimmedUrl);
+        localStorage.setItem(LM_STUDIO_MODEL_KEY, trimmedModel);
+        setTestStatus({ message: t('success_local_connection'), type: 'success' });
+      }
+      setIsVerified(true);
+      setTimeout(() => setIsConfigCollapsed(true), 1200);
+
+    } catch (err: any) {
+      setTestStatus({ message: (err as Error).message, type: 'error' });
+      setIsVerified(false);
+    } finally {
+      setIsTesting(false);
     }
-    // After saving, the config is no longer dirty
-    setIsConfigDirty(false);
-  }, [serviceProvider, apiKeyInput, lmStudioUrl, lmStudioModel]);
+  }, [serviceProvider, apiKeyInput, lmStudioUrl, lmStudioModel, selectedModel, t]);
+
+  const hasUnsavedChanges = useMemo(() => {
+    if (serviceProvider === 'google') {
+      return apiKeyInput !== (localStorage.getItem(API_KEY_STORAGE_KEY) || '');
+    }
+    return lmStudioUrl !== (localStorage.getItem(LM_STUDIO_URL_KEY) || '') ||
+           lmStudioModel !== (localStorage.getItem(LM_STUDIO_MODEL_KEY) || '');
+  }, [apiKeyInput, lmStudioModel, lmStudioUrl, serviceProvider]);
 
   return {
-    serviceProvider,
-    setServiceProvider,
-    apiKey,
-    apiKeyInput,
-    setApiKeyInput,
+    // State and Setters
+    serviceProvider, setServiceProvider,
+    apiKeyInput, setApiKeyInput,
     debouncedApiKey,
-    selectedModel,
-    setSelectedModel,
-    lmStudioUrl,
-    setLmStudioUrl,
-    lmStudioModel,
-    setLmStudioModel,
-    maxCharLimit,
-    setMaxCharLimit,
-    isNightMode,
-    setIsNightMode,
-    includeRebuttalInJson,
-    setIncludeRebuttalInJson,
-    includeRebuttalInPdf,
-    setIncludeRebuttalInPdf,
-    isConfigCollapsed,
-    setIsConfigCollapsed,
-    isCurrentProviderConfigured: isReadyToAnalyze,
-    isConfigDirty,
+    selectedModel, setSelectedModel,
+    lmStudioUrl, setLmStudioUrl,
+    lmStudioModel, setLmStudioModel,
+    maxCharLimit, setMaxCharLimit,
+    isNightMode, setIsNightMode,
+    includeRebuttalInJson, setIncludeRebuttalInJson,
+    includeRebuttalInPdf, setIncludeRebuttalInPdf,
+    isConfigCollapsed, setIsConfigCollapsed,
+    isTesting, testStatus,
+
+    // The single source of truth for configuration validity
+    isCurrentProviderConfigured: isVerified,
+    // The flag for showing the "unsaved changes" warning
+    hasUnsavedChanges,
+
+    // Handlers
     handleMaxCharLimitSave,
-    handleConfigSave, // Expose the new save handler
+    saveAndTestConfig
   };
 };

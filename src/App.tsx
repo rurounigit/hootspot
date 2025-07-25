@@ -9,16 +9,15 @@ import { useTranslation } from './i18n';
 import { useModels } from './hooks/useModels';
 import { useConfig } from './hooks/useConfig';
 import { useAnalysis } from './hooks/useAnalysis';
-import { useTranslationManager } from './hooks/useTranslationManager';
 import { HootSpotLogoIcon, SunIcon, MoonIcon } from './assets/icons';
 import Tooltip from './components/common/Tooltip';
+import { useTranslationManager } from './hooks/useTranslationManager';
 
 const App: React.FC = () => {
   const { t } = useTranslation();
   const {
     serviceProvider,
     setServiceProvider,
-    apiKey,
     apiKeyInput,
     setApiKeyInput,
     debouncedApiKey,
@@ -38,9 +37,11 @@ const App: React.FC = () => {
     isConfigCollapsed,
     setIsConfigCollapsed,
     isCurrentProviderConfigured,
-    isConfigDirty,
+    hasUnsavedChanges,
+    isTesting,
+    testStatus,
+    saveAndTestConfig,
     handleMaxCharLimitSave,
-    handleConfigSave, // Get the new save handler
   } = useConfig();
 
   const { models, isLoading: areModelsLoading, error: modelsError } = useModels(serviceProvider === 'google' ? debouncedApiKey : null);
@@ -60,7 +61,7 @@ const App: React.FC = () => {
     displayedAnalysis,
   } = useAnalysis(
     serviceProvider,
-    apiKey,
+    apiKeyInput, // Pass the live input value
     lmStudioUrl,
     lmStudioModel,
     selectedModel,
@@ -74,7 +75,7 @@ const App: React.FC = () => {
     displayedRebuttal,
     translationError,
   } = useTranslationManager(
-    apiKey,
+    isCurrentProviderConfigured ? apiKeyInput : null, // Pass key only if configured
     selectedModel,
     serviceProvider
   );
@@ -98,7 +99,7 @@ const App: React.FC = () => {
         }
       } else if (request.type === 'APPEND_TEXT_TO_PANEL' && request.text) {
         lastAction.current = 'APPEND';
-        setTextToAnalyze(prevText => `${prevText}${prevText.trim() ? '\n\n' : ''}${request.text}`);
+        setTextToAnalyze(prevText => `${prevText.trim() ? '\n\n' : ''}${request.text}`);
       }
     };
     chrome.runtime.onMessage.addListener(messageListener);
@@ -177,16 +178,13 @@ const App: React.FC = () => {
             onIncludeRebuttalInJsonChange={setIncludeRebuttalInJson}
             includeRebuttalInPdf={includeRebuttalInPdf}
             onIncludeRebuttalInPdfChange={setIncludeRebuttalInPdf}
-            onConfigured={(configured) => {
-                if (configured && textToAnalyze) {
-                  setPendingAnalysis({ text: textToAnalyze });
-                }
-            }}
             isCurrentProviderConfigured={isCurrentProviderConfigured}
             isCollapsed={isConfigCollapsed}
             onToggleCollapse={() => setIsConfigCollapsed(!isConfigCollapsed)}
-            isConfigDirty={isConfigDirty}
-            handleConfigSave={handleConfigSave} // Pass the new save handler
+            hasUnsavedChanges={hasUnsavedChanges}
+            isTesting={isTesting}
+            testStatus={testStatus}
+            onSave={saveAndTestConfig}
           />
           <TextAnalyzer
             ref={textareaRef}
@@ -229,7 +227,7 @@ const App: React.FC = () => {
                     includeRebuttalInJson={includeRebuttalInJson}
                     includeRebuttalInPdf={includeRebuttalInPdf}
                     serviceProvider={serviceProvider}
-                    apiKey={apiKey}
+                    apiKey={apiKeyInput}
                     selectedModel={selectedModel}
                     lmStudioUrl={lmStudioUrl}
                     lmStudioModel={lmStudioModel}
