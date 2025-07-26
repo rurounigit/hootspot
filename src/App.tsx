@@ -41,7 +41,7 @@ const App: React.FC = () => {
   });
 
   const {
-    isLoading, error, analysisResult,
+    isLoading, error: analysisError, analysisResult,
     currentTextAnalyzed, textToAnalyze, setTextToAnalyze,
     setPendingAnalysis, isTranslating, handleAnalyzeText,
     handleJsonLoad, analysisReportRef, displayedAnalysis,
@@ -54,7 +54,14 @@ const App: React.FC = () => {
 
   const {
     isTranslatingRebuttal, handleRebuttalUpdate, displayedRebuttal, translationError,
-  } = useTranslationManager(apiKeyInput, serviceProvider);
+  } = useTranslationManager({
+      serviceProvider, localProviderType,
+      apiKey: apiKeyInput,
+      googleModel: selectedModel,
+      lmStudioConfig: { url: lmStudioUrl, model: lmStudioModel },
+      ollamaConfig: { url: ollamaUrl, model: ollamaModel },
+      isCurrentProviderConfigured,
+  });
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const textWasSetProgrammatically = useRef(false);
@@ -62,7 +69,6 @@ const App: React.FC = () => {
 
   useEffect(() => {
     let modelList, currentSelection, setSelection;
-
     if (serviceProvider === 'google') {
         modelList = [...models.stable, ...models.preview];
         currentSelection = selectedModel;
@@ -77,12 +83,10 @@ const App: React.FC = () => {
             setSelection = setOllamaModel;
         }
     }
-
     if (modelList.length > 0 && setSelection && !modelList.some(m => m.name === currentSelection)) {
       setSelection(modelList[0].name);
     }
   }, [models, serviceProvider, localProviderType, selectedModel, setSelectedModel, lmStudioModel, setLmStudioModel, ollamaModel, setOllamaModel]);
-
 
   useEffect(() => {
     const messageListener = (request: any) => {
@@ -99,7 +103,7 @@ const App: React.FC = () => {
         }
       } else if (request.type === 'APPEND_TEXT_TO_PANEL' && request.text) {
         lastAction.current = 'APPEND';
-        setTextToAnalyze(prevText => `${prevText.trim() ? '\n\n' : ''}${request.text}`);
+        setTextToAnalyze(prevText => `${prevText.trim() ? `${prevText}\n\n` : ''}${request.text}`);
       }
     };
     chrome.runtime.onMessage.addListener(messageListener);
@@ -134,14 +138,12 @@ const App: React.FC = () => {
     }
   }, [textToAnalyze]);
 
-  const combinedError = error || translationError;
+  const combinedError = analysisError || translationError;
   const isBusy = isLoading || areModelsLoading;
-  const activeLocalModel = localProviderType === 'lm-studio' ? lmStudioModel : ollamaModel;
-  const analysisModelForRebuttal = serviceProvider === 'google' ? selectedModel : activeLocalModel;
 
   return (
     <div className="relative flex flex-col h-screen bg-gray-100 dark:bg-gray-600">
-      <div className="absolute top-2 right-4 z-10 flex items-center space-x-2">
+      <div className="absolute top-2 right-4 z-20 flex items-center space-x-2">
         <button onClick={() => setIsNightMode(!isNightMode)} className="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full focus:outline-none" title={t('night_mode_toggle_tooltip')}>
           {isNightMode ? <SunIcon className="w-5 h-5 text-amber-500" /> : <MoonIcon className="w-5 h-5 text-gray-600" />}
         </button>
@@ -159,40 +161,22 @@ const App: React.FC = () => {
 
         <main className="flex-grow">
           <ConfigurationManager
-            serviceProvider={serviceProvider}
-            onServiceProviderChange={setServiceProvider}
-            localProviderType={localProviderType}
-            onLocalProviderTypeChange={setLocalProviderType}
-            apiKeyInput={apiKeyInput}
-            onApiKeyInputChange={setApiKeyInput}
-            lmStudioUrl={lmStudioUrl}
-            onLmStudioUrlChange={setLmStudioUrl}
-            lmStudioModel={lmStudioModel}
-            onLmStudioModelChange={setLmStudioModel}
-            ollamaUrl={ollamaUrl}
-            onOllamaUrlChange={setOllamaUrl}
-            ollamaModel={ollamaModel}
-            onOllamaModelChange={setOllamaModel}
-            models={models}
-            googleModel={selectedModel}
-            onGoogleModelChange={setSelectedModel}
-            areModelsLoading={areModelsLoading}
-            modelsError={modelsError}
-            onRefetchModels={refetchModels}
-            currentMaxCharLimit={maxCharLimit}
-            onMaxCharLimitSave={handleMaxCharLimitSave}
-            isNightMode={isNightMode}
-            onNightModeChange={setIsNightMode}
-            includeRebuttalInJson={includeRebuttalInJson}
-            onIncludeRebuttalInJsonChange={setIncludeRebuttalInJson}
-            includeRebuttalInPdf={includeRebuttalInPdf}
-            onIncludeRebuttalInPdfChange={setIncludeRebuttalInPdf}
+            serviceProvider={serviceProvider} onServiceProviderChange={setServiceProvider}
+            localProviderType={localProviderType} onLocalProviderTypeChange={setLocalProviderType}
+            apiKeyInput={apiKeyInput} onApiKeyInputChange={setApiKeyInput}
+            lmStudioUrl={lmStudioUrl} onLmStudioUrlChange={setLmStudioUrl}
+            lmStudioModel={lmStudioModel} onLmStudioModelChange={setLmStudioModel}
+            ollamaUrl={ollamaUrl} onOllamaUrlChange={setOllamaUrl}
+            ollamaModel={ollamaModel} onOllamaModelChange={setOllamaModel}
+            models={models} googleModel={selectedModel} onGoogleModelChange={setSelectedModel}
+            areModelsLoading={areModelsLoading} modelsError={modelsError} onRefetchModels={refetchModels}
+            currentMaxCharLimit={maxCharLimit} onMaxCharLimitSave={handleMaxCharLimitSave}
+            isNightMode={isNightMode} onNightModeChange={setIsNightMode}
+            includeRebuttalInJson={includeRebuttalInJson} onIncludeRebuttalInJsonChange={setIncludeRebuttalInJson}
+            includeRebuttalInPdf={includeRebuttalInPdf} onIncludeRebuttalInPdfChange={setIncludeRebuttalInPdf}
             isCurrentProviderConfigured={isCurrentProviderConfigured}
-            isCollapsed={isConfigCollapsed}
-            onToggleCollapse={() => setIsConfigCollapsed(!isConfigCollapsed)}
-            isTesting={isTesting}
-            testStatus={testStatus}
-            onSave={saveAndTestConfig}
+            isCollapsed={isConfigCollapsed} onToggleCollapse={() => setIsConfigCollapsed(!isConfigCollapsed)}
+            isTesting={isTesting} testStatus={testStatus} onSave={saveAndTestConfig}
           />
           <TextAnalyzer
             ref={textareaRef}
@@ -204,16 +188,10 @@ const App: React.FC = () => {
             onJsonLoad={handleJsonLoad}
             hasApiKey={isCurrentProviderConfigured}
           />
-          {(isLoading || isTranslating) && (
+          {(isLoading || isTranslating || isTranslatingRebuttal) && (
             <div className="my-4 p-3 rounded-md text-sm bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700 flex items-center justify-center">
               <div className="spinner w-5 h-5 border-t-blue-600 mr-2"></div>
-              {areModelsLoading ? t('config_model_loading') : (isLoading ? t('analyzer_button_analyzing') : t('info_translating_results'))}
-            </div>
-          )}
-          {isTranslatingRebuttal && (
-            <div className="my-4 p-3 rounded-md text-sm bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700 flex items-center justify-center">
-              <div className="spinner w-5 h-5 border-t-blue-600 mr-2"></div>
-              {t('info_translating_rebuttal')}
+              {areModelsLoading ? t('config_model_loading') : (isLoading ? t('analyzer_button_analyzing') : (isTranslating ? t('info_translating_results') : t('info_translating_rebuttal')))}
             </div>
           )}
           {combinedError && (
@@ -223,7 +201,7 @@ const App: React.FC = () => {
             </div>
           )}
           <div ref={analysisReportRef} className="mt-2">
-            {(!isLoading && !isTranslating && !error && displayedAnalysis) && (
+            {(!isLoading && !isTranslating && !analysisError && displayedAnalysis) && (
                <AnalysisReport
                     analysis={displayedAnalysis}
                     sourceText={currentTextAnalyzed}
@@ -242,7 +220,7 @@ const App: React.FC = () => {
                />
             )}
           </div>
-          {!isBusy && !error && !analysisResult && !currentTextAnalyzed && isCurrentProviderConfigured && (
+          {!isBusy && !combinedError && !analysisResult && !currentTextAnalyzed && isCurrentProviderConfigured && (
             <div className="mt-4 p-6 bg-white border border-gray-200 text-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 rounded-lg shadow-md text-center">
                 <p className="text-lg">{t('info_enter_text_to_analyze')}</p>
                 <p className="text-sm mt-2">{t('info_uncover_patterns')}</p>

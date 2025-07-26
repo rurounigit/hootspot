@@ -1,80 +1,78 @@
 // src/hooks/useTranslationManager.ts
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from '../i18n';
-import { translateText } from '../api/google/translation';
-import { generateRebuttalWithLMStudio } from '../api/lm-studio';
-import { generateRebuttalWithOllama } from '../api/ollama';
-import { GeminiAnalysisResponse } from '../types/api';
+import { translateText as translateWithGoogle } from '../api/google/translation';
+import { translateTextWithLMStudio } from '../api/lm-studio';
+import { translateTextWithOllama } from '../api/ollama';
 
+// Define a comprehensive config interface for the hook
+interface UseTranslationManagerConfig {
+  serviceProvider: 'google' | 'local';
+  localProviderType: 'lm-studio' | 'ollama';
+  apiKey: string | null;
+  googleModel: string;
+  lmStudioConfig: { url: string; model: string; };
+  ollamaConfig: { url: string; model: string; };
+  isCurrentProviderConfigured: boolean;
+}
 
-// The hook signature can be simplified. We don't need to pass all the configs down.
-// The RebuttalGenerator component will have access to them.
-export const useTranslationManager = (
-  apiKey: string | null,
-  serviceProvider: 'google' | 'local'
-) => {
+export const useTranslationManager = (config: UseTranslationManagerConfig) => {
   const { t, language } = useTranslation();
   const [rebuttal, setRebuttal] = useState<{ text: string; lang: string; } | null>(null);
   const [translatedRebuttals, setTranslatedRebuttals] = useState<Record<string, string>>({});
   const [isTranslatingRebuttal, setIsTranslatingRebuttal] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [translationError, setTranslationError] = useState<string | null>(null);
 
   const inflightRequests = useRef<Record<string, boolean>>({});
 
+  const translateRebuttal = useCallback(async (textToTranslate: string, targetLang: string) => {
+    if (!config.isCurrentProviderConfigured) return;
+
+    inflightRequests.current[targetLang] = true;
+    setTranslationError(null);
+    setIsTranslatingRebuttal(true);
+
+    try {
+      let translatedText: string;
+      if (config.serviceProvider === 'google') {
+        if (!config.apiKey) throw new Error(t('error_api_key_not_configured'));
+        translatedText = await translateWithGoogle(config.apiKey, textToTranslate, targetLang, config.googleModel, t);
+      } else { // Local provider
+        if (config.localProviderType === 'lm-studio') {
+          translatedText = await translateTextWithLMStudio(textToTranslate, config.lmStudioConfig.url, config.lmStudioConfig.model, targetLang, t);
+        } else { // Ollama
+          translatedText = await translateTextWithOllama(textToTranslate, config.ollamaConfig.url, config.ollamaConfig.model, targetLang, t);
+        }
+      }
+      setTranslatedRebuttals(prev => ({ ...prev, [targetLang]: translatedText }));
+    } catch (err: any) {
+      setTranslationError(err.message);
+    } finally {
+      setIsTranslatingRebuttal(false);
+      inflightRequests.current[targetLang] = false;
+    }
+  }, [config, t]);
+
+
   useEffect(() => {
-    // We only auto-translate rebuttals generated via the Google API
-    if (!rebuttal || !apiKey || serviceProvider !== 'google') return;
+    if (!rebuttal) return;
     if (language === rebuttal.lang) return;
     if (translatedRebuttals[language] !== undefined) return;
     if (inflightRequests.current[language]) return;
 
-    setIsTranslatingRebuttal(true);
-    setError(null);
-    inflightRequests.current[language] = true;
+    translateRebuttal(rebuttal.text, language);
+  }, [language, rebuttal, translatedRebuttals, translateRebuttal]);
 
-    // The selected model for translation should ideally be a fast one.
-    // We can hardcode the default model here or pass it down. For now, let's assume a default.
-    translateText(apiKey, rebuttal.text, language, 'models/gemini-2.5-flash-lite-preview-06-17', t)
-      .then(translated => {
-        setTranslatedRebuttals(prev => ({ ...prev, [language]: translated }));
-      })
-      .catch(err => setError(err.message))
-      .finally(() => {
-        setIsTranslatingRebuttal(false);
-        inflightRequests.current[language] = false;
-      });
-  }, [language, rebuttal, apiKey, t, serviceProvider, translatedRebuttals]);
 
   const handleRebuttalUpdate = (newRebuttal: string) => {
+    // When a new rebuttal is generated, it becomes the canonical version in the current language.
     const canonicalRebuttal = { text: newRebuttal, lang: language };
     setRebuttal(canonicalRebuttal);
+    // The cache is reset with only the new, just-generated text.
     setTranslatedRebuttals({ [language]: newRebuttal });
+    // All old in-flight requests are now obsolete.
     inflightRequests.current = {};
   };
-
-  const generateRebuttal = async (
-      analysis: GeminiAnalysisResponse,
-      sourceText: string,
-      localProviderType: 'lm-studio' | 'ollama',
-      lmStudioConfig: { url: string; model: string; },
-      ollamaConfig: { url: string; model: string; },
-      googleConfig: { model: string; }
-  ): Promise<string> => {
-      setError(null);
-      if (serviceProvider === 'google') {
-          if (!apiKey) throw new Error(t('error_api_key_not_configured'));
-          // Import `generateRebuttal` from google/analysis at the top
-          const { generateRebuttal: genGoogle } = await import('../api/google/analysis');
-          return genGoogle(apiKey, sourceText, analysis, googleConfig.model, language);
-      }
-      // Local provider
-      if (localProviderType === 'lm-studio') {
-          return generateRebuttalWithLMStudio(sourceText, analysis, lmStudioConfig.url, lmStudioConfig.model, language, t);
-      }
-      // Ollama
-      return generateRebuttalWithOllama(sourceText, analysis, ollamaConfig.url, ollamaConfig.model, language, t);
-  };
-
 
   const displayedRebuttal = translatedRebuttals[language] || null;
 
@@ -83,7 +81,6 @@ export const useTranslationManager = (
     displayedRebuttal,
     isTranslatingRebuttal,
     handleRebuttalUpdate,
-    generateRebuttal, // Expose the generator function
-    translationError: error,
+    translationError,
   };
 };

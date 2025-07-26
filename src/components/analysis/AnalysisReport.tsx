@@ -1,4 +1,5 @@
 // src/components/analysis/AnalysisReport.tsx
+
 import React, { useState } from 'react';
 import { GeminiAnalysisResponse } from '../../types/api';
 import { InfoIcon } from '../../assets/icons';
@@ -9,6 +10,7 @@ import RebuttalGenerator from './RebuttalGenerator';
 import HighlightedText from './HighlightedText';
 import { useAnalysisReportData } from '../../hooks/useAnalysisReportData';
 
+// Updated props for clarity and consistency
 interface AnalysisReportProps {
   analysis: GeminiAnalysisResponse;
   sourceText: string | null;
@@ -18,55 +20,41 @@ interface AnalysisReportProps {
   includeRebuttalInJson: boolean;
   includeRebuttalInPdf: boolean;
   serviceProvider: 'google' | 'local';
+  localProviderType: 'lm-studio' | 'ollama';
   apiKey: string | null;
-  selectedModel: string;
-  lmStudioUrl: string;
-  lmStudioModel: string;
-  isCurrentProviderConfigured: boolean; // Add prop
+  googleModel: string;
+  lmStudioConfig: { url: string; model: string; };
+  ollamaConfig: { url: string; model: string; };
+  isCurrentProviderConfigured: boolean;
 }
 
-const AnalysisReport: React.FC<AnalysisReportProps> = ({
-    analysis,
-    sourceText,
-    rebuttal,
-    isTranslatingRebuttal,
-    onRebuttalUpdate,
-    includeRebuttalInJson,
-    includeRebuttalInPdf,
-    serviceProvider,
-    apiKey,
-    selectedModel,
-    lmStudioUrl,
-    lmStudioModel,
-    isCurrentProviderConfigured, // Destructure prop
-}) => {
+const AnalysisReport: React.FC<AnalysisReportProps> = (props) => {
+  const {
+    analysis, sourceText, rebuttal, isTranslatingRebuttal, onRebuttalUpdate,
+    includeRebuttalInJson, includeRebuttalInPdf, serviceProvider, localProviderType,
+    apiKey, googleModel, lmStudioConfig, ollamaConfig, isCurrentProviderConfigured
+  } = props;
+
   const [chartDimensions, setChartDimensions] = useState({ width: 0, height: 0 });
   const [activeFindingId, setActiveFindingId] = useState<string | null>(null);
   const { t } = useTranslation();
 
   const {
-    hasFindings,
-    patternColorMap,
-    indexedFindings,
-    bubbleChartData,
-    finalHighlights,
+    hasFindings, patternColorMap, indexedFindings, bubbleChartData, finalHighlights,
   } = useAnalysisReportData(analysis, sourceText, chartDimensions.width);
 
   const handleBubbleClick = (findingId: string) => {
     setActiveFindingId(findingId);
-    const finding = indexedFindings.find(f => `${f.pattern_name}-${f.displayIndex}` === findingId);
-    if (finding) {
-      const element = document.getElementById(`finding-card-${finding.displayIndex}`);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        element.classList.add('bg-card-highlight-light', 'dark:bg-card-highlight-dark', 'transition-colors', 'duration-200');
-        setTimeout(() => {
-          element.classList.remove('bg-card-highlight-light', 'dark:bg-card-highlight-dark');
-          setActiveFindingId(null);
-        }, 800);
-      } else {
+    const element = document.getElementById(`finding-card-${findingId.split('-').pop()}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.classList.add('bg-indigo-100', 'dark:bg-indigo-800/50', 'transition-colors', 'duration-200');
+      setTimeout(() => {
+        element.classList.remove('bg-indigo-100', 'dark:bg-indigo-800/50');
         setActiveFindingId(null);
-      }
+      }, 800);
+    } else {
+      setActiveFindingId(null);
     }
   };
 
@@ -121,12 +109,10 @@ const AnalysisReport: React.FC<AnalysisReportProps> = ({
             {indexedFindings.map((finding) => {
               const color = patternColorMap.get(finding.pattern_name) || '#e5e7eb';
               return (
-                <div key={finding.displayIndex} id={`finding-card-${finding.displayIndex}`} className={`bg-white dark:bg-gray-800 border rounded-lg shadow-md overflow-hidden`} style={{borderColor: color}}>
-                  <div className={`p-4 border-b`} style={{ backgroundColor: color, borderColor: color }}>
-                    <h4 className={`text-l font-bold text-white uppercase`}>{finding.display_name}</h4>
-                  </div>
+                <div key={finding.displayIndex} id={`finding-card-${finding.displayIndex}`} className={`bg-white dark:bg-gray-800 border-l-4 rounded-lg shadow-md overflow-hidden`} style={{borderColor: color}}>
                   <div className="p-4 space-y-3">
-                    <div><h5 className="font-semibold text-gray-600 dark:text-gray-400 mb-1">{t('report_quote_label')}</h5><blockquote className={`italic p-3 rounded-md border-l-4`} style={{ backgroundColor: `${color}40`, borderColor: color }}><p className="text-gray-800 dark:text-gray-50">"{finding.specific_quote}"</p></blockquote></div>
+                    <h4 className={`text-l font-bold uppercase`} style={{color: color}}>{finding.display_name}</h4>
+                    <div><h5 className="font-semibold text-gray-600 dark:text-gray-400 mb-1">{t('report_quote_label')}</h5><blockquote className={`italic p-3 rounded-md border-l-4`} style={{ backgroundColor: `${color}20`, borderColor: color }}><p className="text-gray-800 dark:text-gray-50">"{finding.specific_quote}"</p></blockquote></div>
                     <div><h5 className="font-semibold text-gray-600 dark:text-gray-400 mb-1">{t('report_explanation_label')}</h5><p className="text-gray-700 dark:text-gray-50">{finding.explanation}</p></div>
                   </div>
                 </div>
@@ -144,10 +130,11 @@ const AnalysisReport: React.FC<AnalysisReportProps> = ({
           isTranslating={isTranslatingRebuttal}
           onUpdate={onRebuttalUpdate}
           serviceProvider={serviceProvider}
+          localProviderType={localProviderType}
           apiKey={apiKey}
-          selectedModel={selectedModel}
-          lmStudioUrl={lmStudioUrl}
-          lmStudioModel={lmStudioModel}
+          googleModel={googleModel}
+          lmStudioConfig={lmStudioConfig}
+          ollamaConfig={ollamaConfig}
           isCurrentProviderConfigured={isCurrentProviderConfigured}
         />
       )}

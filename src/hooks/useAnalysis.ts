@@ -1,11 +1,10 @@
 // src/hooks/useAnalysis.ts
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from '../i18n';
-import { analyzeText } from '../api/google/analysis';
-import { translateAnalysisResult } from '../api/google/translation';
-import { analyzeTextWithLMStudio } from '../api/lm-studio';
-import { analyzeTextWithOllama } from '../api/ollama';
+import { analyzeText as analyzeWithGoogle } from '../api/google/analysis';
+import { translateAnalysisResult as translateWithGoogle } from '../api/google/translation';
+import { analyzeTextWithLMStudio, translateAnalysisResultWithLMStudio } from '../api/lm-studio';
+import { analyzeTextWithOllama, translateAnalysisResultWithOllama } from '../api/ollama';
 import { GeminiAnalysisResponse } from '../types/api';
 
 export const useAnalysis = (
@@ -31,6 +30,34 @@ export const useAnalysis = (
   const [isTranslating, setIsTranslating] = useState(false);
   const analysisReportRef = useRef<HTMLDivElement>(null);
 
+  const translateAnalysis = useCallback(async (analysis: GeminiAnalysisResponse, targetLang: string) => {
+      if (!isCurrentProviderConfigured || analysis.findings.length === 0) return;
+      setIsTranslating(true);
+      setError(null);
+      try {
+          let translatedResult: GeminiAnalysisResponse;
+          if (serviceProvider === 'google') {
+              if (!apiKey) throw new Error(t('error_api_key_not_configured'));
+              translatedResult = await translateWithGoogle(apiKey, analysis, targetLang, selectedModel, t);
+          } else { // Local provider
+              if (localProviderType === 'lm-studio') {
+                  translatedResult = await translateAnalysisResultWithLMStudio(analysis, lmStudioUrl, lmStudioModel, targetLang, t);
+              } else { // Ollama
+                  translatedResult = await translateAnalysisResultWithOllama(analysis, ollamaUrl, ollamaModel, targetLang, t);
+              }
+          }
+          setTranslatedResults(prev => ({ ...prev, [targetLang]: translatedResult }));
+      } catch (err: any) {
+          setError((err as Error).message);
+      } finally {
+          setIsTranslating(false);
+      }
+  }, [
+      isCurrentProviderConfigured, serviceProvider, localProviderType,
+      apiKey, selectedModel, language, t,
+      lmStudioUrl, lmStudioModel, ollamaUrl, ollamaModel
+  ]);
+
   const handleAnalyzeText = useCallback(async (text: string) => {
     if (!isCurrentProviderConfigured) {
       setIsConfigCollapsed(false);
@@ -44,60 +71,47 @@ export const useAnalysis = (
     setTranslatedResults({});
 
     try {
-      let result;
+      let result: GeminiAnalysisResponse;
       if (serviceProvider === 'google') {
         if (!apiKey) throw new Error('error_api_key_not_configured');
-        result = await analyzeText(apiKey, text, selectedModel);
-      } else { // serviceProvider is 'local'
+        result = await analyzeWithGoogle(apiKey, text, selectedModel);
+      } else {
         if (localProviderType === 'lm-studio') {
           result = await analyzeTextWithLMStudio(text, lmStudioUrl, lmStudioModel, t);
-        } else { // ollama
+        } else {
           result = await analyzeTextWithOllama(text, ollamaUrl, ollamaModel, t);
         }
       }
       setAnalysisResult(result);
 
-      if (language !== 'en' && result.findings.length > 0 && serviceProvider === 'google' && apiKey) {
-        setIsTranslating(true);
-        const translatedResult = await translateAnalysisResult(apiKey, result, language, selectedModel, t);
-        setTranslatedResults({ [language]: translatedResult });
-        setIsTranslating(false);
+      // After analysis, if language is not English, trigger translation regardless of provider.
+      if (language !== 'en') {
+        await translateAnalysis(result, language);
       }
     } catch (err: any) {
-      const errorMessage = (err as Error).message || "An unknown error occurred during analysis.";
-      setError(errorMessage);
+      setError((err as Error).message);
       setAnalysisResult(null);
     } finally {
       setIsLoading(false);
     }
   }, [
     isCurrentProviderConfigured, serviceProvider, localProviderType,
-    apiKey, selectedModel,
-    lmStudioUrl, lmStudioModel,
-    ollamaUrl, ollamaModel,
-    language, t, setIsConfigCollapsed
+    apiKey, selectedModel, lmStudioUrl, lmStudioModel,
+    ollamaUrl, ollamaModel, language, t, setIsConfigCollapsed, translateAnalysis
   ]);
 
   useEffect(() => {
-    // This effect now correctly and simply triggers an analysis whenever
-    // a pending analysis is set by the parent component.
     if (pendingAnalysis) {
       handleAnalyzeText(pendingAnalysis.text);
       setPendingAnalysis(null);
     }
   }, [pendingAnalysis, handleAnalyzeText]);
 
-
   useEffect(() => {
-    if (!analysisResult || language === 'en' || serviceProvider === 'local' || !apiKey) return;
-    if (translatedResults[language]) return;
-    setIsTranslating(true);
-    setError(null);
-    translateAnalysisResult(apiKey, analysisResult, language, selectedModel, t)
-      .then(translated => setTranslatedResults(prev => ({ ...prev, [language]: translated })))
-      .catch(err => setError(err.message))
-      .finally(() => setIsTranslating(false));
-  }, [language, analysisResult, translatedResults, apiKey, selectedModel, t, serviceProvider]);
+    if (analysisResult && language !== 'en' && !translatedResults[language]) {
+      translateAnalysis(analysisResult, language);
+    }
+  }, [language, analysisResult, translatedResults, translateAnalysis]);
 
   useEffect(() => {
     if (analysisResult && analysisReportRef.current) {
@@ -116,6 +130,10 @@ export const useAnalysis = (
           setCurrentTextAnalyzed(data.sourceText);
           setTextToAnalyze(data.sourceText);
           setTranslatedResults({});
+          if (data.rebuttal) {
+             // If a rebuttal is loaded from JSON, you might want to handle it here
+             // or pass a handler down from App.tsx. For now, it's ignored on load.
+          }
           setError(null);
         } else { throw new Error(t('error_invalid_json_file')); }
       } catch (e: any) { setError(`${t('error_json_load_failed')} ${e.message}`); }
@@ -130,9 +148,7 @@ export const useAnalysis = (
     currentTextAnalyzed,
     textToAnalyze,
     setTextToAnalyze,
-    pendingAnalysis,
     setPendingAnalysis,
-    translatedResults,
     isTranslating,
     handleAnalyzeText,
     handleJsonLoad,
