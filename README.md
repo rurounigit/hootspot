@@ -232,6 +232,112 @@ If you want to run the project locally for development or testing, follow these 
 5.  **Review the Report**
     *   Scroll down to review the generated report, complete with a visual profile, highlights, and detailed explanations.
 
+---
+
+## Configuring Ollama for HootSpot
+
+To allow the HootSpot extension to communicate with your local Ollama server, you need to configure Ollama's Cross-Origin Resource Sharing (CORS) policy. This is a security measure that ensures only trusted websites or applications can access your local models.
+
+You only need to do this configuration once.
+
+### 1. For Developers (Local Development)
+
+During development, your unpacked extension is assigned a new, random ID every time you reload it. To avoid reconfiguring Ollama constantly, the most practical approach is to allow any Chrome extension to connect.
+
+**Warning: This is convenient for development but less secure. Only use this method on a trusted machine.**
+
+#### **Step 1: Stop the Ollama Server**
+
+Ensure Ollama is not running.
+
+*   **macOS:** Click the llama icon in the menu bar and select "Quit Ollama".
+*   **Windows:** Right-click the llama icon in the system tray and select "Quit".
+*   **Linux:** Stop the service (`sudo systemctl stop ollama`) or press `Ctrl+C` in the terminal running `ollama serve`.
+
+#### **Step 2: Set the Environment Variable & Restart**
+
+##### On macOS
+Open **Terminal** and run this command:
+```bash
+launchctl setenv OLLAMA_ORIGINS "chrome-extension://*"
+```
+Then, restart the server by launching the `Ollama.app` from your Applications folder.
+
+##### On Windows
+Open **Command Prompt** and run these commands:
+```cmd
+set OLLAMA_ORIGINS=chrome-extension://*
+ollama serve
+```
+*Note: This setting is temporary and only lasts for the current terminal session.*
+
+##### On Linux
+Open your **Terminal** and run these commands:
+```bash
+export OLLAMA_ORIGINS="chrome-extension://*"
+ollama serve
+```
+*Note: This setting is temporary and only lasts for the current terminal session.*
+
+---
+
+### 2. For Users (Published Extension)
+
+Once HootSpot is installed from the Chrome Web Store, it has a permanent, secure ID. Using this specific ID is the most secure way to configure Ollama.
+
+#### **Step 1: Find the HootSpot Extension ID**
+1.  Open Chrome and navigate to `chrome://extensions`.
+2.  Find **HootSpot AI Text Analyzer** in your list of extensions.
+3.  The ID is a 32-character string listed on the extension's card. Copy this ID.
+
+    *(Placeholder for your final ID: `abcdefghijklmnopqrstuvwxyz123456`)*
+
+#### **Step 2: Stop the Ollama Server**
+Ensure Ollama is fully quit, as described in the developer section above.
+
+#### **Step 3: Set the Permanent Environment Variable & Restart**
+
+##### On macOS
+1.  Click the llama icon in the menu bar and select **"Quit Ollama"**.
+2.  Open **Terminal** and run the following command, replacing `<YOUR_EXTENSION_ID>` with the ID you copied.
+    ```bash
+    # Example: launchctl setenv OLLAMA_ORIGINS "chrome-extension://abcdefg..."
+    launchctl setenv OLLAMA_ORIGINS "chrome-extension://<YOUR_EXTENSION_ID>"
+    ```
+3.  Restart the server by launching **Ollama.app** from your Applications folder.
+
+##### On Windows (Recommended Permanent Method)
+1.  Search for **"Edit the system environment variables"** in the Start Menu and open it.
+2.  In the window that appears, click the **"Environment Variables..."** button.
+3.  Under the **"System variables"** section (not "User variables"), click **"New..."**.
+4.  Enter the following:
+    *   Variable name: `OLLAMA_ORIGINS`
+    *   Variable value: `chrome-extension://<YOUR_EXTENSION_ID>`
+5.  Click **OK** on all windows to save.
+6.  Restart your computer, or restart the Ollama service via the Task Manager (Services tab -> right-click Ollama -> Restart).
+
+##### On Linux (Recommended Permanent Method)
+1.  Open your **Terminal**.
+2.  Create a systemd "drop-in" configuration file using a text editor like `nano`:
+    ```bash
+    sudo nano /etc/systemd/system/ollama.service.d/override.conf
+    ```
+3.  Paste the following content into the file, replacing `<YOUR_EXTENSION_ID>` with your actual ID.
+    ```ini
+    [Service]
+    Environment="OLLAMA_ORIGINS=chrome-extension://<YOUR_EXTENSION_ID}"
+    ```
+4.  Save the file and exit (`Ctrl+X`, then `Y`, then `Enter`).
+5.  Reload the systemd configuration and restart the Ollama service:
+    ```bash
+    sudo systemctl daemon-reload
+    sudo systemctl restart ollama
+    ```
+
+Once configured with one of these methods, HootSpot will be able to securely connect to your local Ollama server.
+
+---
+
 ## Directory Structure
 
 ```
