@@ -10,8 +10,7 @@
   "config_toggle_expand": "Expand settings",
   "config_toggle_collapse": "Collapse settings",
   "config_provider_title": "Service Provider",
-  "config_provider_google": "Google API (Cloud)",
-  "config_provider_local": "LM Studio (Local)",
+  "config_provider_google": "Google API",
   "config_api_key_info": "Your Google Gemini API Key is required to use HootSpot AI. It is stored locally in your browser and never sent to our servers. You are responsible for any costs associated with its use.",
   "config_get_api_key": "Get your API Key from Google AI Studio",
   "config_api_key_label": "Google Gemini API Key",
@@ -61,7 +60,7 @@
   "error_api_key_not_configured": "API Key is not configured.",
   "error_local_server_config_missing": "LM Studio server URL and Model Name must be configured.",
   "error_local_server_connection": "Could not connect to LM Studio server at {url}. Ensure the server is running and the URL is correct.",
-  "error_local_model_not_loaded": "The model '{model}' might not be loaded in LM Studio. Error: {message}",
+  "error_local_model_not_loaded": "The model '{model}' might not be loaded.",
   "error_safety_block": "The request was blocked due to safety concerns from the API. Try modifying the input text.",
   "error_analysis_failed": "Failed to analyze text: {message}",
   "error_unexpected_json_structure": "Received an unexpected JSON structure from the API.",
@@ -113,5 +112,9 @@
   "config_model_refresh": "Refresh List",
   "config_local_model_no_models": "Enter URL and Refresh",
   "error_local_model_mismatch": "Model Mismatch: Server responded with '{actual}' instead of the requested '{requested}'. Please ensure the correct model is loaded in LM Studio.",
-  "error_local_model_not_loaded_exact": "Model Not Found: The server could not find the model '{model}'. Please ensure it is loaded in LM Studio."
+  "error_local_model_not_loaded_exact": "Model Not Found: The server could not find the model '{model}'. Please ensure it is loaded in LM Studio.",
+  "config_provider_local": "Local",
+  "config_local_provider_type_label": "Local Provider",
+  "config_ollama_server_url_label": "Ollama Server URL",
+  "config_ollama_info": "Run Ollama locally and enter the server details here. Make sure the model you want to use is pulled and available."
 }

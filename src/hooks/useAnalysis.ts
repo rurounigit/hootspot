@@ -5,13 +5,17 @@ import { useTranslation } from '../i18n';
 import { analyzeText } from '../api/google/analysis';
 import { translateAnalysisResult } from '../api/google/translation';
 import { analyzeTextWithLMStudio } from '../api/lm-studio';
+import { analyzeTextWithOllama } from '../api/ollama';
 import { GeminiAnalysisResponse } from '../types/api';
 
 export const useAnalysis = (
   serviceProvider: 'google' | 'local',
+  localProviderType: 'lm-studio' | 'ollama',
   apiKey: string | null,
   lmStudioUrl: string,
   lmStudioModel: string,
+  ollamaUrl: string,
+  ollamaModel: string,
   selectedModel: string,
   isCurrentProviderConfigured: boolean,
   setIsConfigCollapsed: (isCollapsed: boolean) => void
@@ -41,11 +45,15 @@ export const useAnalysis = (
 
     try {
       let result;
-      if (serviceProvider === 'local') {
-        result = await analyzeTextWithLMStudio(text, lmStudioUrl, lmStudioModel, t);
-      } else {
+      if (serviceProvider === 'google') {
         if (!apiKey) throw new Error('error_api_key_not_configured');
         result = await analyzeText(apiKey, text, selectedModel);
+      } else { // serviceProvider is 'local'
+        if (localProviderType === 'lm-studio') {
+          result = await analyzeTextWithLMStudio(text, lmStudioUrl, lmStudioModel, t);
+        } else { // ollama
+          result = await analyzeTextWithOllama(text, ollamaUrl, ollamaModel, t);
+        }
       }
       setAnalysisResult(result);
 
@@ -62,7 +70,13 @@ export const useAnalysis = (
     } finally {
       setIsLoading(false);
     }
-  }, [isCurrentProviderConfigured, serviceProvider, lmStudioUrl, lmStudioModel, apiKey, selectedModel, language, t, setIsConfigCollapsed]);
+  }, [
+    isCurrentProviderConfigured, serviceProvider, localProviderType,
+    apiKey, selectedModel,
+    lmStudioUrl, lmStudioModel,
+    ollamaUrl, ollamaModel,
+    language, t, setIsConfigCollapsed
+  ]);
 
   useEffect(() => {
     // This effect now correctly and simply triggers an analysis whenever

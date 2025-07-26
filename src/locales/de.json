@@ -10,8 +10,7 @@
   "config_toggle_expand": "Einstellungen erweitern",
   "config_toggle_collapse": "Einstellungen einklappen",
   "config_provider_title": "Dienstanbieter",
-  "config_provider_google": "Google API (Cloud)",
-  "config_provider_local": "LM Studio (Lokal)",
+  "config_provider_google": "Google API",
   "config_api_key_info": "Ihr Google Gemini API-Schlüssel wird benötigt, um HootSpot KI zu verwenden. Er wird lokal in Ihrem Browser gespeichert und niemals an unsere Server gesendet. Sie sind für alle mit seiner Verwendung verbundenen Kosten verantwortlich.",
   "config_get_api_key": "Holen Sie sich Ihren API-Schlüssel vom Google AI Studio",
   "config_api_key_label": "Google Gemini API-Schlüssel",
@@ -61,7 +60,7 @@
   "error_api_key_not_configured": "API-Schlüssel ist nicht konfiguriert.",
   "error_local_server_config_missing": "LM Studio Server-URL und Modellname müssen konfiguriert sein.",
   "error_local_server_connection": "Verbindung zum LM Studio Server unter {url} fehlgeschlagen. Stellen Sie sicher, dass der Server läuft und die URL korrekt ist.",
-  "error_local_model_not_loaded": "Das Modell '{model}' ist möglicherweise nicht in LM Studio geladen. Fehler: {message}",
+  "error_local_model_not_loaded": "Das Modell '{model}' ist möglicherweise nicht geladen.",
   "error_safety_block": "Die Anfrage wurde aufgrund von Sicherheitsbedenken von der API blockiert. Versuchen Sie, den Eingabetext zu ändern.",
   "error_analysis_failed": "Textanalyse fehlgeschlagen: {message}",
   "error_unexpected_json_structure": "Unerwartete JSON-Struktur von der API erhalten.",
@@ -113,5 +112,9 @@
   "config_model_refresh": "Liste aktualisieren",
   "config_local_model_no_models": "URL eingeben & aktualisieren",
   "error_local_model_mismatch": "Modell-Konflikt: Server antwortete mit '{actual}' anstelle des angeforderten '{requested}'. Bitte stellen Sie sicher, dass das korrekte Modell in LM Studio geladen ist.",
-  "error_local_model_not_loaded_exact": "Modell nicht gefunden: Der Server konnte das Modell '{model}' nicht finden. Bitte stellen Sie sicher, dass es in LM Studio geladen ist."
+  "error_local_model_not_loaded_exact": "Modell nicht gefunden: Der Server konnte das Modell '{model}' nicht finden. Bitte stellen Sie sicher, dass es in LM Studio geladen ist.",
+  "config_provider_local": "Lokal",
+  "config_local_provider_type_label": "lokaler Anbieter",
+  "config_ollama_server_url_label": "Ollama Server-URL",
+  "config_ollama_info": "Führen Sie Ollama lokal aus und geben Sie hier die Serverdetails ein. Stellen Sie sicher, dass das Modell, das Sie verwenden möchten, heruntergeladen und verfügbar ist."
 }

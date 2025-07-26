@@ -10,8 +10,7 @@
   "config_toggle_expand": "Développer les paramètres",
   "config_toggle_collapse": "Réduire les paramètres",
   "config_provider_title": "Fournisseur de services",
-  "config_provider_google": "API Google (Cloud)",
-  "config_provider_local": "LM Studio (Local)",
+  "config_provider_google": "API Google",
   "config_api_key_info": "Votre clé API Google Gemini est requise pour utiliser HootSpot AI. Elle est stockée localement dans votre navigateur et n'est jamais envoyée à nos serveurs. Vous êtes responsable de tous les coûts associés à son utilisation.",
   "config_get_api_key": "Obtenez votre clé API depuis Google AI Studio",
   "config_api_key_label": "Clé API Google Gemini",
@@ -61,7 +60,7 @@
   "error_api_key_not_configured": "La clé API n'est pas configurée.",
   "error_local_server_config_missing": "L'URL du serveur LM Studio et le nom du modèle doivent être configurés.",
   "error_local_server_connection": "Impossible de se connecter au serveur LM Studio à l'adresse {url}. Assurez-vous que le serveur est en cours d'exécution et que l'URL est correcte.",
-  "error_local_model_not_loaded": "Le modèle '{model}' n'est peut-être pas chargé dans LM Studio. Erreur : {message}",
+  "error_local_model_not_loaded": "Le modèle '{model}' n'est peut-être pas chargé.",
   "error_safety_block": "La requête a été bloquée pour des raisons de sécurité par l'API. Essayez de modifier le texte d'entrée.",
   "error_analysis_failed": "L'analyse du texte a échoué : {message}",
   "error_unexpected_json_structure": "Structure JSON inattendue reçue de l'API.",
@@ -113,5 +112,9 @@
   "config_model_refresh": "Rafraîchir la Liste",
   "config_local_model_no_models": "Entrez l'URL et rafraîchissez",
   "error_local_model_mismatch": "Conflit de Modèle : Le serveur a répondu avec '{actual}' au lieu du '{requested}' demandé. Veuillez vous assurer que le bon modèle est chargé dans LM Studio.",
-  "error_local_model_not_loaded_exact": "Modèle Non Trouvé : Le serveur n'a pas pu trouver le modèle '{model}'. Veuillez vous assurer qu'il est chargé dans LM Studio."
+  "error_local_model_not_loaded_exact": "Modèle Non Trouvé : Le serveur n'a pas pu trouver le modèle '{model}'. Veuillez vous assurer qu'il est chargé dans LM Studio.",
+  "config_provider_local": "Local",
+  "config_local_provider_type_label": "Fournisseur Local",
+  "config_ollama_server_url_label": "URL du Serveur Ollama",
+  "config_ollama_info": "Exécutez Ollama localement et entrez les détails du serveur ici. Assurez-vous que le modèle que vous souhaitez utiliser est téléchargé et disponible."
 }

@@ -1,10 +1,16 @@
+// src/hooks/useTranslationManager.ts
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from '../i18n';
 import { translateText } from '../api/google/translation';
+import { generateRebuttalWithLMStudio } from '../api/lm-studio';
+import { generateRebuttalWithOllama } from '../api/ollama';
+import { GeminiAnalysisResponse } from '../types/api';
 
+
+// The hook signature can be simplified. We don't need to pass all the configs down.
+// The RebuttalGenerator component will have access to them.
 export const useTranslationManager = (
   apiKey: string | null,
-  selectedModel: string,
   serviceProvider: 'google' | 'local'
 ) => {
   const { t, language } = useTranslation();
@@ -13,44 +19,62 @@ export const useTranslationManager = (
   const [isTranslatingRebuttal, setIsTranslatingRebuttal] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // This ref tracks requests currently in progress to prevent duplicates.
   const inflightRequests = useRef<Record<string, boolean>>({});
 
   useEffect(() => {
-    if (!rebuttal || !apiKey || serviceProvider === 'local') return;
+    // We only auto-translate rebuttals generated via the Google API
+    if (!rebuttal || !apiKey || serviceProvider !== 'google') return;
     if (language === rebuttal.lang) return;
     if (translatedRebuttals[language] !== undefined) return;
-
-    // **THE FIX:** Prevent duplicate API calls by checking if a request is already in-flight.
     if (inflightRequests.current[language]) return;
 
     setIsTranslatingRebuttal(true);
     setError(null);
-
-    // Mark that we have started a request for this language.
     inflightRequests.current[language] = true;
 
-    translateText(apiKey, rebuttal.text, language, selectedModel, t)
+    // The selected model for translation should ideally be a fast one.
+    // We can hardcode the default model here or pass it down. For now, let's assume a default.
+    translateText(apiKey, rebuttal.text, language, 'models/gemini-2.5-flash-lite-preview-06-17', t)
       .then(translated => {
         setTranslatedRebuttals(prev => ({ ...prev, [language]: translated }));
       })
       .catch(err => setError(err.message))
       .finally(() => {
         setIsTranslatingRebuttal(false);
-        // Mark the request as no longer in-flight.
         inflightRequests.current[language] = false;
       });
-  // The dependency array is correct and includes the cache state.
-  }, [language, rebuttal, apiKey, selectedModel, t, serviceProvider, translatedRebuttals]);
+  }, [language, rebuttal, apiKey, t, serviceProvider, translatedRebuttals]);
 
   const handleRebuttalUpdate = (newRebuttal: string) => {
     const canonicalRebuttal = { text: newRebuttal, lang: language };
     setRebuttal(canonicalRebuttal);
-    // Reset the cache with only the new text.
     setTranslatedRebuttals({ [language]: newRebuttal });
-    // Also reset the in-flight tracker, as all old requests are now invalid.
     inflightRequests.current = {};
   };
+
+  const generateRebuttal = async (
+      analysis: GeminiAnalysisResponse,
+      sourceText: string,
+      localProviderType: 'lm-studio' | 'ollama',
+      lmStudioConfig: { url: string; model: string; },
+      ollamaConfig: { url: string; model: string; },
+      googleConfig: { model: string; }
+  ): Promise<string> => {
+      setError(null);
+      if (serviceProvider === 'google') {
+          if (!apiKey) throw new Error(t('error_api_key_not_configured'));
+          // Import `generateRebuttal` from google/analysis at the top
+          const { generateRebuttal: genGoogle } = await import('../api/google/analysis');
+          return genGoogle(apiKey, sourceText, analysis, googleConfig.model, language);
+      }
+      // Local provider
+      if (localProviderType === 'lm-studio') {
+          return generateRebuttalWithLMStudio(sourceText, analysis, lmStudioConfig.url, lmStudioConfig.model, language, t);
+      }
+      // Ollama
+      return generateRebuttalWithOllama(sourceText, analysis, ollamaConfig.url, ollamaConfig.model, language, t);
+  };
+
 
   const displayedRebuttal = translatedRebuttals[language] || null;
 
@@ -59,6 +83,7 @@ export const useTranslationManager = (
     displayedRebuttal,
     isTranslatingRebuttal,
     handleRebuttalUpdate,
+    generateRebuttal, // Expose the generator function
     translationError: error,
   };
 };

@@ -1,8 +1,9 @@
 // src/components/analysis/RebuttalGenerator.tsx
 
 import React, { useState } from 'react';
-import { generateRebuttal } from '../../api/google/analysis';
+import { generateRebuttal as generateRebuttalGoogle } from '../../api/google/analysis';
 import { generateRebuttalWithLMStudio } from '../../api/lm-studio';
+import { generateRebuttalWithOllama } from '../../api/ollama';
 import { GeminiAnalysisResponse } from '../../types/api';
 import { useTranslation } from '../../i18n';
 import { SparklesIcon } from '../../assets/icons';
@@ -14,25 +15,18 @@ interface RebuttalGeneratorProps {
     isTranslating: boolean;
     onUpdate: (newRebuttal: string) => void;
     serviceProvider: 'google' | 'local';
+    localProviderType: 'lm-studio' | 'ollama';
     apiKey: string | null;
-    selectedModel: string;
-    lmStudioUrl: string;
-    lmStudioModel: string;
-    isCurrentProviderConfigured: boolean; // Add the master flag
+    googleModel: string;
+    lmStudioConfig: { url: string; model: string; };
+    ollamaConfig: { url: string; model: string; };
+    isCurrentProviderConfigured: boolean;
 }
 
 const RebuttalGenerator: React.FC<RebuttalGeneratorProps> = ({
-    analysis,
-    sourceText,
-    rebuttalForDisplay,
-    isTranslating,
-    onUpdate,
-    serviceProvider,
-    apiKey,
-    selectedModel,
-    lmStudioUrl,
-    lmStudioModel,
-    isCurrentProviderConfigured, // Use the master flag
+    analysis, sourceText, rebuttalForDisplay, isTranslating, onUpdate,
+    serviceProvider, localProviderType, apiKey, googleModel,
+    lmStudioConfig, ollamaConfig, isCurrentProviderConfigured,
 }) => {
     const { t, language } = useTranslation();
     const [isGenerating, setIsGenerating] = useState(false);
@@ -43,12 +37,16 @@ const RebuttalGenerator: React.FC<RebuttalGeneratorProps> = ({
         setIsGenerating(true);
         setError(null);
         try {
-          let result: string;
-            if (serviceProvider === 'local') {
-                result = await generateRebuttalWithLMStudio(sourceText, analysis, lmStudioUrl, lmStudioModel, language, t);
-            } else {
+            let result: string;
+            if (serviceProvider === 'google') {
                 if (!apiKey) throw new Error(t('error_api_key_not_configured'));
-                result = await generateRebuttal(apiKey, sourceText, analysis, selectedModel, language);
+                result = await generateRebuttalGoogle(apiKey, sourceText, analysis, googleModel, language);
+            } else { // Local Provider
+                if (localProviderType === 'lm-studio') {
+                    result = await generateRebuttalWithLMStudio(sourceText, analysis, lmStudioConfig.url, lmStudioConfig.model, language, t);
+                } else { // Ollama
+                    result = await generateRebuttalWithOllama(sourceText, analysis, ollamaConfig.url, ollamaConfig.model, language, t);
+                }
             }
             onUpdate(result);
         } catch (err: any) {

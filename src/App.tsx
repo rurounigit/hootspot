@@ -16,93 +16,72 @@ import { useTranslationManager } from './hooks/useTranslationManager';
 const App: React.FC = () => {
   const { t } = useTranslation();
   const {
-    serviceProvider,
-    setServiceProvider,
-    apiKeyInput,
-    setApiKeyInput,
+    serviceProvider, setServiceProvider,
+    localProviderType, setLocalProviderType,
+    apiKeyInput, setApiKeyInput,
     debouncedApiKey,
-    selectedModel,
-    setSelectedModel,
-    lmStudioUrl,
-    setLmStudioUrl,
-    lmStudioModel,
-    setLmStudioModel,
+    selectedModel, setSelectedModel,
+    lmStudioUrl, setLmStudioUrl,
+    lmStudioModel, setLmStudioModel,
+    ollamaUrl, setOllamaUrl,
+    ollamaModel, setOllamaModel,
     maxCharLimit,
-    isNightMode,
-    setIsNightMode,
-    includeRebuttalInJson,
-    setIncludeRebuttalInJson,
-    includeRebuttalInPdf,
-    setIncludeRebuttalInPdf,
-    isConfigCollapsed,
-    setIsConfigCollapsed,
-    isCurrentProviderConfigured,
-    isTesting,
-    testStatus,
-    saveAndTestConfig,
-    handleMaxCharLimitSave,
+    isNightMode, setIsNightMode,
+    includeRebuttalInJson, setIncludeRebuttalInJson,
+    includeRebuttalInPdf, setIncludeRebuttalInPdf,
+    isConfigCollapsed, setIsConfigCollapsed,
+    isCurrentProviderConfigured, isTesting, testStatus,
+    saveAndTestConfig, handleMaxCharLimitSave,
   } = useConfig();
 
-  // UPDATED useModels call
   const { models, isLoading: areModelsLoading, error: modelsError, refetch: refetchModels } = useModels({
-    serviceProvider,
+    serviceProvider, localProviderType,
     apiKey: debouncedApiKey,
-    lmStudioUrl
+    lmStudioUrl, ollamaUrl
   });
 
   const {
-    isLoading,
-    error,
-    analysisResult,
-    currentTextAnalyzed,
-    textToAnalyze,
-    setTextToAnalyze,
-    setPendingAnalysis,
-    isTranslating,
-    handleAnalyzeText,
-    handleJsonLoad,
-    analysisReportRef,
-    displayedAnalysis,
+    isLoading, error, analysisResult,
+    currentTextAnalyzed, textToAnalyze, setTextToAnalyze,
+    setPendingAnalysis, isTranslating, handleAnalyzeText,
+    handleJsonLoad, analysisReportRef, displayedAnalysis,
   } = useAnalysis(
-    serviceProvider,
-    apiKeyInput,
-    lmStudioUrl,
-    // Use lmStudioModel for analysis request, which is the selected model for local provider
-    serviceProvider === 'local' ? lmStudioModel : selectedModel,
-    // Use selectedModel for Google provider
-    serviceProvider === 'google' ? selectedModel : '',
-    isCurrentProviderConfigured,
-    setIsConfigCollapsed
+    serviceProvider, localProviderType,
+    apiKeyInput, lmStudioUrl, lmStudioModel,
+    ollamaUrl, ollamaModel, selectedModel,
+    isCurrentProviderConfigured, setIsConfigCollapsed
   );
 
   const {
-    isTranslatingRebuttal,
-    handleRebuttalUpdate,
-    displayedRebuttal,
-    translationError,
-  } = useTranslationManager(
-    isCurrentProviderConfigured ? apiKeyInput : null,
-    serviceProvider === 'local' ? lmStudioModel : selectedModel,
-    serviceProvider
-  );
+    isTranslatingRebuttal, handleRebuttalUpdate, displayedRebuttal, translationError,
+  } = useTranslationManager(apiKeyInput, serviceProvider);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const textWasSetProgrammatically = useRef(false);
   const lastAction = useRef<'PUSH' | 'APPEND'>('PUSH');
 
-  // When models for a provider load, if there's no selected model yet, select the first one.
   useEffect(() => {
-    const modelList = serviceProvider === 'google' ? [...models.stable, ...models.preview] : models.stable;
-    const currentSelection = serviceProvider === 'google' ? selectedModel : lmStudioModel;
+    let modelList, currentSelection, setSelection;
 
-    if (modelList.length > 0 && !modelList.some(m => m.name === currentSelection)) {
-      if (serviceProvider === 'google') {
-        setSelectedModel(modelList[0].name);
-      } else {
-        setLmStudioModel(modelList[0].name);
-      }
+    if (serviceProvider === 'google') {
+        modelList = [...models.stable, ...models.preview];
+        currentSelection = selectedModel;
+        setSelection = setSelectedModel;
+    } else {
+        modelList = models.stable;
+        if (localProviderType === 'lm-studio') {
+            currentSelection = lmStudioModel;
+            setSelection = setLmStudioModel;
+        } else { // ollama
+            currentSelection = ollamaModel;
+            setSelection = setOllamaModel;
+        }
     }
-  }, [models, serviceProvider, selectedModel, setSelectedModel, lmStudioModel, setLmStudioModel]);
+
+    if (modelList.length > 0 && setSelection && !modelList.some(m => m.name === currentSelection)) {
+      setSelection(modelList[0].name);
+    }
+  }, [models, serviceProvider, localProviderType, selectedModel, setSelectedModel, lmStudioModel, setLmStudioModel, ollamaModel, setOllamaModel]);
 
 
   useEffect(() => {
@@ -140,7 +119,7 @@ const App: React.FC = () => {
       }
     });
     return () => { chrome.runtime.onMessage.removeListener(messageListener); };
-  }, [isCurrentProviderConfigured, serviceProvider, setPendingAnalysis, setTextToAnalyze, setIsConfigCollapsed]);
+  }, [isCurrentProviderConfigured, setPendingAnalysis, setTextToAnalyze, setIsConfigCollapsed]);
 
   useEffect(() => {
     if (textWasSetProgrammatically.current) {
@@ -157,6 +136,8 @@ const App: React.FC = () => {
 
   const combinedError = error || translationError;
   const isBusy = isLoading || areModelsLoading;
+  const activeLocalModel = localProviderType === 'lm-studio' ? lmStudioModel : ollamaModel;
+  const analysisModelForRebuttal = serviceProvider === 'google' ? selectedModel : activeLocalModel;
 
   return (
     <div className="relative flex flex-col h-screen bg-gray-100 dark:bg-gray-600">
@@ -180,20 +161,26 @@ const App: React.FC = () => {
           <ConfigurationManager
             serviceProvider={serviceProvider}
             onServiceProviderChange={setServiceProvider}
+            localProviderType={localProviderType}
+            onLocalProviderTypeChange={setLocalProviderType}
             apiKeyInput={apiKeyInput}
             onApiKeyInputChange={setApiKeyInput}
-            currentMaxCharLimit={maxCharLimit}
-            onMaxCharLimitSave={handleMaxCharLimitSave}
+            lmStudioUrl={lmStudioUrl}
+            onLmStudioUrlChange={setLmStudioUrl}
+            lmStudioModel={lmStudioModel}
+            onLmStudioModelChange={setLmStudioModel}
+            ollamaUrl={ollamaUrl}
+            onOllamaUrlChange={setOllamaUrl}
+            ollamaModel={ollamaModel}
+            onOllamaModelChange={setOllamaModel}
             models={models}
-            selectedModel={serviceProvider === 'google' ? selectedModel : lmStudioModel}
-            onModelChange={serviceProvider === 'google' ? setSelectedModel : setLmStudioModel}
+            googleModel={selectedModel}
+            onGoogleModelChange={setSelectedModel}
             areModelsLoading={areModelsLoading}
             modelsError={modelsError}
             onRefetchModels={refetchModels}
-            lmStudioUrl={lmStudioUrl}
-            onLmStudioUrlChange={setLmStudioUrl}
-            lmStudioModel={lmStudioModel} // Keep this for now for the config component
-            onLmStudioModelChange={setLmStudioModel} // Keep this for now for the config component
+            currentMaxCharLimit={maxCharLimit}
+            onMaxCharLimitSave={handleMaxCharLimitSave}
             isNightMode={isNightMode}
             onNightModeChange={setIsNightMode}
             includeRebuttalInJson={includeRebuttalInJson}
@@ -210,9 +197,7 @@ const App: React.FC = () => {
           <TextAnalyzer
             ref={textareaRef}
             text={textToAnalyze}
-            onTextChange={(newText) => {
-                setTextToAnalyze(newText);
-            }}
+            onTextChange={setTextToAnalyze}
             onAnalyze={handleAnalyzeText}
             isLoading={isBusy}
             maxCharLimit={maxCharLimit}
@@ -248,10 +233,11 @@ const App: React.FC = () => {
                     includeRebuttalInJson={includeRebuttalInJson}
                     includeRebuttalInPdf={includeRebuttalInPdf}
                     serviceProvider={serviceProvider}
+                    localProviderType={localProviderType}
                     apiKey={apiKeyInput}
-                    selectedModel={serviceProvider === 'google' ? selectedModel : lmStudioModel}
-                    lmStudioUrl={lmStudioUrl}
-                    lmStudioModel={lmStudioModel}
+                    googleModel={selectedModel}
+                    lmStudioConfig={{ url: lmStudioUrl, model: lmStudioModel }}
+                    ollamaConfig={{ url: ollamaUrl, model: ollamaModel }}
                     isCurrentProviderConfigured={isCurrentProviderConfigured}
                />
             )}

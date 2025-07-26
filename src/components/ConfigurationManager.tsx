@@ -5,24 +5,36 @@ import { useTranslation } from '../i18n';
 import LanguageManager from './LanguageManager';
 import { GroupedModels } from '../hooks/useModels';
 import GoogleConfig from './config/GoogleConfig';
-import LMStudioConfig from './config/LMStudioConfig';
+import LocalProviderConfig from './config/LocalProviderConfig';
 import GeneralSettings from './config/GeneralSettings';
 
 interface ConfigurationManagerProps {
   serviceProvider: 'google' | 'local';
   onServiceProviderChange: (provider: 'google' | 'local') => void;
+  localProviderType: 'lm-studio' | 'ollama';
+  onLocalProviderTypeChange: (type: 'lm-studio' | 'ollama') => void;
+
   apiKeyInput: string;
   onApiKeyInputChange: (key: string) => void;
-  models: GroupedModels;
-  selectedModel: string;
-  onModelChange: (model: string) => void;
-  areModelsLoading: boolean;
-  modelsError: string | null;
-  onRefetchModels: () => void; // Added for local model refreshing
+
   lmStudioUrl: string;
   onLmStudioUrlChange: (url: string) => void;
   lmStudioModel: string;
   onLmStudioModelChange: (model: string) => void;
+
+  ollamaUrl: string;
+  onOllamaUrlChange: (url: string) => void;
+  ollamaModel: string;
+  onOllamaModelChange: (model: string) => void;
+
+  models: GroupedModels;
+  googleModel: string;
+  onGoogleModelChange: (model: string) => void;
+
+  areModelsLoading: boolean;
+  modelsError: string | null;
+  onRefetchModels: () => void;
+
   currentMaxCharLimit: number;
   onMaxCharLimitSave: (limit: number) => void;
   isNightMode: boolean;
@@ -31,6 +43,7 @@ interface ConfigurationManagerProps {
   onIncludeRebuttalInJsonChange: (value: boolean) => void;
   includeRebuttalInPdf: boolean;
   onIncludeRebuttalInPdfChange: (value: boolean) => void;
+
   isCurrentProviderConfigured: boolean;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
@@ -39,36 +52,18 @@ interface ConfigurationManagerProps {
   onSave: () => void;
 }
 
-const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
-  serviceProvider,
-  onServiceProviderChange,
-  apiKeyInput,
-  onApiKeyInputChange,
-  models,
-  selectedModel,
-  onModelChange,
-  areModelsLoading,
-  modelsError,
-  onRefetchModels,
-  lmStudioUrl,
-  onLmStudioUrlChange,
-  lmStudioModel,
-  onLmStudioModelChange,
-  currentMaxCharLimit,
-  onMaxCharLimitSave,
-  isNightMode,
-  onNightModeChange,
-  includeRebuttalInJson,
-  onIncludeRebuttalInJsonChange,
-  includeRebuttalInPdf,
-  onIncludeRebuttalInPdfChange,
-  isCurrentProviderConfigured,
-  isCollapsed,
-  onToggleCollapse,
-  isTesting,
-  testStatus,
-  onSave,
-}) => {
+const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
+  const {
+    serviceProvider, onServiceProviderChange,
+    localProviderType, onLocalProviderTypeChange,
+    apiKeyInput, onApiKeyInputChange,
+    lmStudioUrl, onLmStudioUrlChange, lmStudioModel, onLmStudioModelChange,
+    ollamaUrl, onOllamaUrlChange, ollamaModel, onOllamaModelChange,
+    models, googleModel, onGoogleModelChange,
+    areModelsLoading, modelsError, onRefetchModels,
+    isCurrentProviderConfigured, isCollapsed, onToggleCollapse,
+    isTesting, testStatus, onSave,
+  } = props;
   const { t } = useTranslation();
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -76,12 +71,17 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
 
   const isFormValid = () => {
     if (isGoogleProvider) return apiKeyInput.trim() !== '';
-    // For local, we check URL and if a model is selected
-    return lmStudioUrl.trim() !== '' && selectedModel.trim() !== '';
+    // Local provider
+    if (localProviderType === 'lm-studio') {
+      return lmStudioUrl.trim() !== '' && lmStudioModel.trim() !== '';
+    }
+    // Ollama
+    return ollamaUrl.trim() !== '' && ollamaModel.trim() !== '';
   };
 
-  const isSaveDisabled = isTesting || !isFormValid() || (areModelsLoading && !models.stable.length) || !!modelsError;
+  const isSaveDisabled = isTesting || !isFormValid() || (areModelsLoading && !models.stable.length && !models.preview.length) || !!modelsError;
 
+  // ... (rest of the component logic is largely the same)
   useEffect(() => {
     if (isCollapsed) {
         setLocalError(null);
@@ -91,13 +91,13 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
       if (!apiKeyInput.trim()) setLocalError(t('error_api_key_empty'));
       else setLocalError(null);
     } else {
-      if (!lmStudioUrl.trim() || !selectedModel.trim()) setLocalError(t('error_local_server_config_missing'));
+      if (!isFormValid()) setLocalError(t('error_local_server_config_missing'));
       else setLocalError(null);
     }
-  }, [isCollapsed, serviceProvider, apiKeyInput, lmStudioUrl, selectedModel, t]);
+  }, [isCollapsed, serviceProvider, apiKeyInput, lmStudioUrl, lmStudioModel, ollamaUrl, ollamaModel, t]);
 
   const renderCollapsedStatus = () => {
-    const providerName = isGoogleProvider ? 'Google' : 'Local';
+    const providerName = isGoogleProvider ? 'Google' : (localProviderType === 'ollama' ? 'Ollama' : 'LM Studio');
     if (isCurrentProviderConfigured) {
       return <p className="text-sm text-green-600 dark:text-green-400">{t('config_status_configured', { provider: providerName })}</p>;
     }
@@ -107,6 +107,7 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
   return (
     <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-700">
       <div className="flex justify-between items-center mb-4">
+        {/* ... Header ... */}
         <div className="flex items-center"><SettingsIcon className="w-6 h-6 mr-2 text-blue-600 dark:text-blue-400" /><h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300">{t('config_title')}</h2></div>
         <button onClick={onToggleCollapse} className="text-blue-600 hover:text-blue-800" aria-label={isCollapsed ? t('config_toggle_expand') : t('config_toggle_collapse')}>
           {isCollapsed ? (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>) : (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" /></svg>)}
@@ -138,18 +139,22 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
               apiKeyInput={apiKeyInput}
               onApiKeyInputChange={onApiKeyInputChange}
               models={models}
-              selectedModel={selectedModel}
-              onModelChange={onModelChange}
+              selectedModel={googleModel}
+              onModelChange={onGoogleModelChange}
               areModelsLoading={areModelsLoading}
               modelsError={modelsError}
             />
           ) : (
-            <LMStudioConfig
+            <LocalProviderConfig
+              localProviderType={localProviderType}
+              onLocalProviderTypeChange={onLocalProviderTypeChange}
               lmStudioUrl={lmStudioUrl}
               onLmStudioUrlChange={onLmStudioUrlChange}
+              ollamaUrl={ollamaUrl}
+              onOllamaUrlChange={onOllamaUrlChange}
               models={models}
-              selectedModel={selectedModel}
-              onModelChange={onModelChange}
+              selectedModel={localProviderType === 'lm-studio' ? lmStudioModel : ollamaModel}
+              onModelChange={localProviderType === 'lm-studio' ? onLmStudioModelChange : onOllamaModelChange}
               areModelsLoading={areModelsLoading}
               modelsError={modelsError}
               onRefetchModels={onRefetchModels}
@@ -157,14 +162,14 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
           )}
 
           <GeneralSettings
-            currentMaxCharLimit={currentMaxCharLimit}
-            onMaxCharLimitSave={onMaxCharLimitSave}
-            isNightMode={isNightMode}
-            onNightModeChange={onNightModeChange}
-            includeRebuttalInJson={includeRebuttalInJson}
-            onIncludeRebuttalInJsonChange={onIncludeRebuttalInJsonChange}
-            includeRebuttalInPdf={includeRebuttalInPdf}
-            onIncludeRebuttalInPdfChange={onIncludeRebuttalInPdfChange}
+            currentMaxCharLimit={props.currentMaxCharLimit}
+            onMaxCharLimitSave={props.onMaxCharLimitSave}
+            isNightMode={props.isNightMode}
+            onNightModeChange={props.onNightModeChange}
+            includeRebuttalInJson={props.includeRebuttalInJson}
+            onIncludeRebuttalInJsonChange={props.onIncludeRebuttalInJsonChange}
+            includeRebuttalInPdf={props.includeRebuttalInPdf}
+            onIncludeRebuttalInPdfChange={props.onIncludeRebuttalInPdfChange}
           />
 
           <button onClick={onSave} disabled={isSaveDisabled} aria-label="save-and-test-configuration" className="mt-6 w-full flex items-center justify-center px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400 dark:disabled:bg-gray-600">
@@ -177,9 +182,10 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
 
           <LanguageManager
             serviceProvider={serviceProvider}
+            localProviderType={localProviderType}
             apiKey={apiKeyInput}
-            lmStudioUrl={lmStudioUrl}
-            lmStudioModel={selectedModel} // Pass the single selected model for translations
+            lmStudioConfig={{ url: lmStudioUrl, model: lmStudioModel }}
+            ollamaConfig={{ url: ollamaUrl, model: ollamaModel }}
             isCurrentProviderConfigured={isCurrentProviderConfigured}
           />
         </>
