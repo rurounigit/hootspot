@@ -203,7 +203,12 @@ If you want to run the project locally for development or testing, follow these 
     ### Option B: Configure with LM Studio (Local Model)
     *   **Download and Install LM Studio**: Get LM Studio from [lmstudio.ai](https://lmstudio.ai/).
     *   **Download a Model**: Within LM Studio, go to the "Discover" tab and download a compatible model (e.g., a GGUF or MLX model like `gemma-3n-E2B-it-text-GGUF` or `gemma-3n-E2B-it-MLX-4bit`).
-    *   **Start Local Inference Server**: Go to the "Local Inference Server" tab (the chat icon) in LM Studio. Select your downloaded model from the dropdown, then click "Start Server". Note the "Server URL" (e.g., `http://localhost:1234`).
+    *   **Start Local Inference Server**: In "Power User" or "Developer" Mode, Go to the "Developer" tab in LM Studio. Select your downloaded model from the dropdown, then click "Load Model". Note the "Server URL" (e.g., `http://localhost:1234`).
+    *   In LM Studio in "Developer" or "Power User" Mode in the Settings:
+        *   Just-in-Time Model Loading: When enabled, if a request specified a model that is not loaded, it will be automatically loaded and used. In addition, the "/v1/models" endpoint will also include models that are not yet loaded. You would want to disable this for HootSpot to show loaded models. If you enable this, HootSpot will show all installed models and load a selected model automatically if it is not yet loaded.
+            *   Auto unload unused JIT loaded models:A model that was loaded Just-in-time (JIT) to serve an API request will be automatically unloaded after being unused for some duration (TTL). You would want this to be disabled to avoid long loading times.
+            *   Only Keep Last JIT Loaded Model: Ensure at most 1 model is loaded via JIT at any given time (unloads previous model). This is useful if you want to make sure you don't have too many models loaded at once via JIT.
+
     *   In HootSpot's Configuration section:
         *   Select "LM Studio (Local)" under "Service Provider".
         *   Enter the full **Local Server URL** (e.g., `http://localhost:1234`) into the corresponding field.

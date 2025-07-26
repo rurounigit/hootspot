@@ -37,14 +37,18 @@ const App: React.FC = () => {
     isConfigCollapsed,
     setIsConfigCollapsed,
     isCurrentProviderConfigured,
-    hasUnsavedChanges,
     isTesting,
     testStatus,
     saveAndTestConfig,
     handleMaxCharLimitSave,
   } = useConfig();
 
-  const { models, isLoading: areModelsLoading, error: modelsError } = useModels(serviceProvider === 'google' ? debouncedApiKey : null);
+  // UPDATED useModels call
+  const { models, isLoading: areModelsLoading, error: modelsError, refetch: refetchModels } = useModels({
+    serviceProvider,
+    apiKey: debouncedApiKey,
+    lmStudioUrl
+  });
 
   const {
     isLoading,
@@ -61,10 +65,12 @@ const App: React.FC = () => {
     displayedAnalysis,
   } = useAnalysis(
     serviceProvider,
-    apiKeyInput, // Pass the live input value
+    apiKeyInput,
     lmStudioUrl,
-    lmStudioModel,
-    selectedModel,
+    // Use lmStudioModel for analysis request, which is the selected model for local provider
+    serviceProvider === 'local' ? lmStudioModel : selectedModel,
+    // Use selectedModel for Google provider
+    serviceProvider === 'google' ? selectedModel : '',
     isCurrentProviderConfigured,
     setIsConfigCollapsed
   );
@@ -75,14 +81,29 @@ const App: React.FC = () => {
     displayedRebuttal,
     translationError,
   } = useTranslationManager(
-    isCurrentProviderConfigured ? apiKeyInput : null, // Pass key only if configured
-    selectedModel,
+    isCurrentProviderConfigured ? apiKeyInput : null,
+    serviceProvider === 'local' ? lmStudioModel : selectedModel,
     serviceProvider
   );
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const textWasSetProgrammatically = useRef(false);
   const lastAction = useRef<'PUSH' | 'APPEND'>('PUSH');
+
+  // When models for a provider load, if there's no selected model yet, select the first one.
+  useEffect(() => {
+    const modelList = serviceProvider === 'google' ? [...models.stable, ...models.preview] : models.stable;
+    const currentSelection = serviceProvider === 'google' ? selectedModel : lmStudioModel;
+
+    if (modelList.length > 0 && !modelList.some(m => m.name === currentSelection)) {
+      if (serviceProvider === 'google') {
+        setSelectedModel(modelList[0].name);
+      } else {
+        setLmStudioModel(modelList[0].name);
+      }
+    }
+  }, [models, serviceProvider, selectedModel, setSelectedModel, lmStudioModel, setLmStudioModel]);
+
 
   useEffect(() => {
     const messageListener = (request: any) => {
@@ -135,7 +156,7 @@ const App: React.FC = () => {
   }, [textToAnalyze]);
 
   const combinedError = error || translationError;
-  const isBusy = isLoading || (serviceProvider === 'google' && areModelsLoading);
+  const isBusy = isLoading || areModelsLoading;
 
   return (
     <div className="relative flex flex-col h-screen bg-gray-100 dark:bg-gray-600">
@@ -164,14 +185,15 @@ const App: React.FC = () => {
             currentMaxCharLimit={maxCharLimit}
             onMaxCharLimitSave={handleMaxCharLimitSave}
             models={models}
-            selectedModel={selectedModel}
-            onModelChange={setSelectedModel}
+            selectedModel={serviceProvider === 'google' ? selectedModel : lmStudioModel}
+            onModelChange={serviceProvider === 'google' ? setSelectedModel : setLmStudioModel}
             areModelsLoading={areModelsLoading}
             modelsError={modelsError}
+            onRefetchModels={refetchModels}
             lmStudioUrl={lmStudioUrl}
             onLmStudioUrlChange={setLmStudioUrl}
-            lmStudioModel={lmStudioModel}
-            onLmStudioModelChange={setLmStudioModel}
+            lmStudioModel={lmStudioModel} // Keep this for now for the config component
+            onLmStudioModelChange={setLmStudioModel} // Keep this for now for the config component
             isNightMode={isNightMode}
             onNightModeChange={setIsNightMode}
             includeRebuttalInJson={includeRebuttalInJson}
@@ -181,7 +203,6 @@ const App: React.FC = () => {
             isCurrentProviderConfigured={isCurrentProviderConfigured}
             isCollapsed={isConfigCollapsed}
             onToggleCollapse={() => setIsConfigCollapsed(!isConfigCollapsed)}
-            hasUnsavedChanges={hasUnsavedChanges}
             isTesting={isTesting}
             testStatus={testStatus}
             onSave={saveAndTestConfig}
@@ -228,7 +249,7 @@ const App: React.FC = () => {
                     includeRebuttalInPdf={includeRebuttalInPdf}
                     serviceProvider={serviceProvider}
                     apiKey={apiKeyInput}
-                    selectedModel={selectedModel}
+                    selectedModel={serviceProvider === 'google' ? selectedModel : lmStudioModel}
                     lmStudioUrl={lmStudioUrl}
                     lmStudioModel={lmStudioModel}
                     isCurrentProviderConfigured={isCurrentProviderConfigured}

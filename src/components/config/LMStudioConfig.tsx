@@ -3,21 +3,31 @@
 import React from 'react';
 import { useTranslation } from '../../i18n';
 import { InfoIcon } from '../../assets/icons';
+import { GroupedModels } from '../../hooks/useModels';
 
 interface LMStudioConfigProps {
   lmStudioUrl: string;
   onLmStudioUrlChange: (url: string) => void;
-  lmStudioModel: string;
-  onLmStudioModelChange: (model: string) => void;
+  models: GroupedModels;
+  selectedModel: string;
+  onModelChange: (modelId: string) => void;
+  areModelsLoading: boolean;
+  modelsError: string | null;
+  onRefetchModels: () => void;
 }
 
 const LMStudioConfig: React.FC<LMStudioConfigProps> = ({
   lmStudioUrl,
   onLmStudioUrlChange,
-  lmStudioModel,
-  onLmStudioModelChange,
+  models,
+  selectedModel,
+  onModelChange,
+  areModelsLoading,
+  modelsError,
+  onRefetchModels
 }) => {
   const { t } = useTranslation();
+  const allModels = models.stable; // Local models are all in the 'stable' group
 
   return (
     <>
@@ -29,11 +39,43 @@ const LMStudioConfig: React.FC<LMStudioConfigProps> = ({
       </div>
       <div className="mb-4">
         <label htmlFor="lmStudioUrl" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('config_local_server_url_label')}</label>
-        <input type="text" id="lmStudioUrl" value={lmStudioUrl} onChange={(e) => onLmStudioUrlChange(e.target.value)} placeholder={t('config_local_server_url_placeholder')} className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-50" />
+        <input
+          type="text"
+          id="lmStudioUrl"
+          value={lmStudioUrl}
+          onChange={(e) => onLmStudioUrlChange(e.target.value)}
+          placeholder={t('config_local_server_url_placeholder')}
+          className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-50"
+        />
       </div>
       <div className="mb-6">
-        <label htmlFor="lmStudioModel" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('config_local_model_name_label')}</label>
-        <input type="text" id="lmStudioModel" value={lmStudioModel} onChange={(e) => onLmStudioModelChange(e.target.value)} placeholder={t('config_local_model_name_placeholder')} className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-50" />
+        <div className="flex justify-between items-center mb-1">
+          <label htmlFor="modelSelector" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            {t('config_local_model_name_label_dropdown')}
+          </label>
+          <button onClick={onRefetchModels} disabled={areModelsLoading || !lmStudioUrl} className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed">
+            {t('config_model_refresh')}
+          </button>
+        </div>
+        <select
+          id="modelSelector"
+          value={selectedModel}
+          onChange={(e) => onModelChange(e.target.value)}
+          disabled={areModelsLoading || !!modelsError || !lmStudioUrl}
+          className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 dark:disabled:bg-gray-600 bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-50"
+        >
+          {areModelsLoading && <option>{t('config_model_loading')}</option>}
+          {modelsError && <option>{t('config_model_error')}</option>}
+          {!areModelsLoading && !modelsError && allModels.length === 0 && (
+            <option>{t('config_local_model_no_models')}</option>
+          )}
+          {!areModelsLoading && !modelsError && allModels.map(model => (
+            <option key={model.name} value={model.name}>
+              {model.displayName}
+            </option>
+          ))}
+        </select>
+        {modelsError && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{modelsError}</p>}
       </div>
     </>
   );

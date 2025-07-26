@@ -18,6 +18,7 @@ interface ConfigurationManagerProps {
   onModelChange: (model: string) => void;
   areModelsLoading: boolean;
   modelsError: string | null;
+  onRefetchModels: () => void; // Added for local model refreshing
   lmStudioUrl: string;
   onLmStudioUrlChange: (url: string) => void;
   lmStudioModel: string;
@@ -48,6 +49,7 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
   onModelChange,
   areModelsLoading,
   modelsError,
+  onRefetchModels,
   lmStudioUrl,
   onLmStudioUrlChange,
   lmStudioModel,
@@ -74,10 +76,11 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
 
   const isFormValid = () => {
     if (isGoogleProvider) return apiKeyInput.trim() !== '';
-    return lmStudioUrl.trim() !== '' && lmStudioModel.trim() !== '';
+    // For local, we check URL and if a model is selected
+    return lmStudioUrl.trim() !== '' && selectedModel.trim() !== '';
   };
 
-  const isSaveDisabled = isTesting || !isFormValid() || (isGoogleProvider && !!modelsError);
+  const isSaveDisabled = isTesting || !isFormValid() || (areModelsLoading && !models.stable.length) || !!modelsError;
 
   useEffect(() => {
     if (isCollapsed) {
@@ -88,10 +91,10 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
       if (!apiKeyInput.trim()) setLocalError(t('error_api_key_empty'));
       else setLocalError(null);
     } else {
-      if (!lmStudioUrl.trim() || !lmStudioModel.trim()) setLocalError(t('error_local_server_config_missing'));
+      if (!lmStudioUrl.trim() || !selectedModel.trim()) setLocalError(t('error_local_server_config_missing'));
       else setLocalError(null);
     }
-  }, [isCollapsed, serviceProvider, apiKeyInput, lmStudioUrl, lmStudioModel, t]);
+  }, [isCollapsed, serviceProvider, apiKeyInput, lmStudioUrl, selectedModel, t]);
 
   const renderCollapsedStatus = () => {
     const providerName = isGoogleProvider ? 'Google' : 'Local';
@@ -144,8 +147,12 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
             <LMStudioConfig
               lmStudioUrl={lmStudioUrl}
               onLmStudioUrlChange={onLmStudioUrlChange}
-              lmStudioModel={lmStudioModel}
-              onLmStudioModelChange={onLmStudioModelChange}
+              models={models}
+              selectedModel={selectedModel}
+              onModelChange={onModelChange}
+              areModelsLoading={areModelsLoading}
+              modelsError={modelsError}
+              onRefetchModels={onRefetchModels}
             />
           )}
 
@@ -172,7 +179,7 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
             serviceProvider={serviceProvider}
             apiKey={apiKeyInput}
             lmStudioUrl={lmStudioUrl}
-            lmStudioModel={lmStudioModel}
+            lmStudioModel={selectedModel} // Pass the single selected model for translations
             isCurrentProviderConfigured={isCurrentProviderConfigured}
           />
         </>

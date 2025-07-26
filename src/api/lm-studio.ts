@@ -1,10 +1,40 @@
 // src/api/lm-studio.ts
 
 import { SYSTEM_PROMPT, REBUTTAL_SYSTEM_PROMPT, TRANSLATION_SYSTEM_PROMPT } from '../config/api-prompts';
-import { GeminiAnalysisResponse, GeminiFinding } from '../types/api';
+import { GeminiAnalysisResponse, GeminiFinding, GeminiModel } from '../types/api';
 import { LanguageCode } from '../i18n';
 
 type TFunction = (key: string, replacements?: Record<string, string | number>) => string;
+
+// NEW function to fetch models from LM Studio server
+export const fetchLMStudioModels = async (serverUrl: string): Promise<GeminiModel[]> => {
+  try {
+    const response = await fetch(`${serverUrl}/v1/models`);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error?.message || `HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+
+    if (!data.data || !Array.isArray(data.data)) {
+        console.warn("LM Studio API did not return a models array. Response:", data);
+        return [];
+    }
+
+    // Map the LM Studio model format to our internal GeminiModel format for consistency
+    return data.data.map((model: any) => ({
+      name: model.id,
+      displayName: model.id,
+      supportedGenerationMethods: ["generateContent"], // Assume this for compatibility
+      version: "1.0", // Dummy value
+    }));
+
+  } catch (error) {
+    console.error("Failed to fetch LM Studio models:", error);
+    throw error;
+  }
+};
+
 
 function extractJson(str: string): string {
     const fenceRegex = /```(?:json)?\s*([\s\S]*?)\s*```/s;
@@ -38,16 +68,32 @@ export const testLMStudioConnection = async (
                 max_tokens: 5,
             }),
         });
+
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(t('error_local_model_not_loaded', { model: modelName, message: errorData.error?.message || response.statusText }));
+            const errorData = await response.json().catch(() => ({}));
+            const errorMessage = errorData.error?.message || response.statusText;
+            if (errorMessage.includes("model_not_found")) {
+                 throw new Error(t('error_local_model_not_loaded_exact', { model: modelName }));
+            }
+            throw new Error(t('error_local_model_not_loaded', { model: modelName, message: errorMessage }));
         }
+
         const data = await response.json();
+
         if (!data.choices || data.choices.length === 0) {
             throw new Error(t('test_query_returned_empty'));
         }
+
+        const respondingModel = data.model;
+        if (respondingModel && !respondingModel.toLowerCase().includes(modelName.toLowerCase())) {
+            throw new Error(t('error_local_model_mismatch', { requested: modelName, actual: respondingModel }));
+        }
+
     } catch (error: any) {
-        if (error instanceof TypeError) {
+        if (error.message.includes('error_local_model_mismatch')) {
+            throw error;
+        }
+        if (error instanceof TypeError || error.message.includes('Failed to fetch')) {
             throw new Error(t('error_local_server_connection', { url: serverUrl }));
         }
         throw error;
@@ -173,8 +219,6 @@ export const translateUIWithLMStudio = async (
         throw new Error(t('error_local_server_config_missing'));
     }
 
-    // --- START OF THE CORRECT FIX ---
-    // Create a mapping from language code to the full, unambiguous language name.
     const languageMap: { [key: string]: string } = {
         it: 'Italian',
         de: 'German',
@@ -183,7 +227,6 @@ export const translateUIWithLMStudio = async (
         en: 'English'
     };
 
-    // Use the full language name in the prompt to avoid ambiguity.
     const languageName = languageMap[languageCode] || languageCode;
     const userPrompt = `Translate the following JSON values to ${languageName}:\n\n${jsonToTranslate}`;
 
@@ -196,7 +239,6 @@ export const translateUIWithLMStudio = async (
         temperature: 0.2,
         max_tokens: 8192,
     };
-    // --- END OF THE CORRECT FIX ---
 
     try {
         const response = await fetch(`${serverUrl}/v1/chat/completions`, {

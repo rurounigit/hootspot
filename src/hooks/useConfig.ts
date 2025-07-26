@@ -19,7 +19,9 @@ export const useConfig = () => {
   const [serviceProvider, setServiceProvider] = useState<'google' | 'local'>(() => (localStorage.getItem(SERVICE_PROVIDER_KEY) as 'google' | 'local') || 'google');
   const [apiKeyInput, setApiKeyInput] = useState<string>(() => localStorage.getItem(API_KEY_STORAGE_KEY) || '');
   const [lmStudioUrl, setLmStudioUrl] = useState<string>(() => localStorage.getItem(LM_STUDIO_URL_KEY) || '');
+  // This now stores the selected model for the LOCAL provider
   const [lmStudioModel, setLmStudioModel] = useState<string>(() => localStorage.getItem(LM_STUDIO_MODEL_KEY) || '');
+  // This now stores the selected model for the GOOGLE provider
   const [selectedModel, setSelectedModel] = useState<string>(() => localStorage.getItem(SELECTED_MODEL_STORAGE_KEY) || GEMINI_MODEL_NAME);
 
   // --- Verification and Dirty State ---
@@ -39,7 +41,6 @@ export const useConfig = () => {
 
   // --- Effects ---
 
-  // On mount, check if a valid configuration already exists in storage.
   useEffect(() => {
     const googleConfigured = !!localStorage.getItem(API_KEY_STORAGE_KEY);
     const localConfigured = !!localStorage.getItem(LM_STUDIO_URL_KEY) && !!localStorage.getItem(LM_STUDIO_MODEL_KEY);
@@ -51,13 +52,12 @@ export const useConfig = () => {
     isMounted.current = true;
   }, []);
 
-  // Any input change immediately invalidates the configuration until it's saved again.
   useEffect(() => {
     if (isMounted.current) {
       setIsVerified(false);
       setTestStatus(null);
     }
-  }, [apiKeyInput, lmStudioUrl, lmStudioModel, serviceProvider]);
+  }, [apiKeyInput, lmStudioUrl, lmStudioModel, selectedModel, serviceProvider]);
 
 
   useEffect(() => {
@@ -74,11 +74,21 @@ export const useConfig = () => {
 
   useEffect(() => { localStorage.setItem(INCLUDE_REBUTTAL_JSON_KEY, String(includeRebuttalInJson)); }, [includeRebuttalInJson]);
   useEffect(() => { localStorage.setItem(INCLUDE_REBUTTAL_PDF_KEY, String(includeRebuttalInPdf)); }, [includeRebuttalInPdf]);
-  useEffect(() => { localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel); }, [selectedModel]);
-  useEffect(() => { localStorage.setItem(SERVICE_PROVIDER_KEY, serviceProvider); }, [serviceProvider]);
+  // Save selected model based on provider
+  useEffect(() => {
+    if (serviceProvider === 'google') {
+      localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel);
+    } else {
+      localStorage.setItem(LM_STUDIO_MODEL_KEY, lmStudioModel);
+    }
+  }, [selectedModel, lmStudioModel, serviceProvider]);
 
+  useEffect(() => {
+    localStorage.setItem(SERVICE_PROVIDER_KEY, serviceProvider);
+    // When provider changes, reset verification
+    setIsVerified(false);
+  }, [serviceProvider]);
 
-  // --- Handlers ---
 
   const handleMaxCharLimitSave = useCallback((newLimit: number) => {
     localStorage.setItem(MAX_CHAR_LIMIT_STORAGE_KEY, newLimit.toString());
@@ -95,12 +105,12 @@ export const useConfig = () => {
         const trimmedApiKey = apiKeyInput.trim();
         await testApiKey(trimmedApiKey, t, selectedModel);
         localStorage.setItem(API_KEY_STORAGE_KEY, trimmedApiKey);
+        localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel);
       } else {
         const trimmedUrl = lmStudioUrl.trim();
-        const trimmedModel = lmStudioModel.trim();
-        await testLMStudioConnection(trimmedUrl, trimmedModel, t);
+        await testLMStudioConnection(trimmedUrl, lmStudioModel, t);
         localStorage.setItem(LM_STUDIO_URL_KEY, trimmedUrl);
-        localStorage.setItem(LM_STUDIO_MODEL_KEY, trimmedModel);
+        localStorage.setItem(LM_STUDIO_MODEL_KEY, lmStudioModel);
       }
       setIsVerified(true);
       setTestStatus(null);
@@ -115,24 +125,30 @@ export const useConfig = () => {
   }, [serviceProvider, apiKeyInput, lmStudioUrl, lmStudioModel, selectedModel, t, setIsConfigCollapsed]);
 
   return {
-    // State and Setters
-    serviceProvider, setServiceProvider,
-    apiKeyInput, setApiKeyInput,
+    serviceProvider,
+    setServiceProvider,
+    apiKeyInput,
+    setApiKeyInput,
     debouncedApiKey,
-    selectedModel, setSelectedModel,
-    lmStudioUrl, setLmStudioUrl,
-    lmStudioModel, setLmStudioModel,
-    maxCharLimit, setMaxCharLimit,
-    isNightMode, setIsNightMode,
-    includeRebuttalInJson, setIncludeRebuttalInJson,
-    includeRebuttalInPdf, setIncludeRebuttalInPdf,
-    isConfigCollapsed, setIsConfigCollapsed,
-    isTesting, testStatus,
-
-    // The single source of truth for configuration validity
+    selectedModel, // Google model
+    setSelectedModel,
+    lmStudioUrl,
+    setLmStudioUrl,
+    lmStudioModel, // Local model
+    setLmStudioModel,
+    maxCharLimit,
+    setMaxCharLimit,
+    isNightMode,
+    setIsNightMode,
+    includeRebuttalInJson,
+    setIncludeRebuttalInJson,
+    includeRebuttalInPdf,
+    setIncludeRebuttalInPdf,
+    isConfigCollapsed,
+    setIsConfigCollapsed,
+    isTesting,
+    testStatus,
     isCurrentProviderConfigured: isVerified,
-
-    // Handlers
     handleMaxCharLimitSave,
     saveAndTestConfig
   };

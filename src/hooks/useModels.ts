@@ -1,48 +1,74 @@
 // src/hooks/useModels.ts
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { GeminiModel } from '../types/api';
-import { fetchModels } from '../api/google/models';
+import { fetchModels as fetchGoogleModels } from '../api/google/models';
+import { fetchLMStudioModels } from '../api/lm-studio';
 
-// Define the new shape for our models state, which will be returned by fetchModels
 export interface GroupedModels {
   preview: GeminiModel[];
   stable: GeminiModel[];
 }
 
-export const useModels = (apiKey: string | null) => {
-  // The state now holds the new grouped structure
+interface UseModelsProps {
+    serviceProvider: 'google' | 'local';
+    apiKey: string | null;
+    lmStudioUrl: string;
+}
+
+export const useModels = ({ serviceProvider, apiKey, lmStudioUrl }: UseModelsProps) => {
   const [models, setModels] = useState<GroupedModels>({ preview: [], stable: [] });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // If there's no API key, reset the state and do nothing.
-    if (!apiKey) {
-      setModels({ preview: [], stable: [] });
-      setIsLoading(false);
-      setError(null); // FIX: Explicitly clear error when API key is removed.
-      return;
+  const loadModels = useCallback(async () => {
+    let shouldFetch = false;
+    if (serviceProvider === 'google' && apiKey) {
+        shouldFetch = true;
+    } else if (serviceProvider === 'local' && lmStudioUrl) {
+        try {
+            new URL(lmStudioUrl); // Basic validation
+            shouldFetch = true;
+        } catch (e) {
+            setError('Invalid LM Studio URL format.');
+            setModels({ preview: [], stable: [] });
+            return;
+        }
     }
 
-    const loadModels = async () => {
-      setIsLoading(true);
-      setError(null); // FIX: Ensure previous errors are cleared on every new attempt.
-      try {
-        // fetchModels will now return the { preview: [], stable: [] } object
-        const fetchedModels = await fetchModels(apiKey);
-        setModels(fetchedModels);
-      } catch (err: any) {
-        setError(err.message || 'An unknown error occurred while fetching models.');
-        // Ensure state is reset on error
+    if (!shouldFetch) {
         setModels({ preview: [], stable: [] });
-      } finally {
         setIsLoading(false);
-      }
-    };
+        setError(null);
+        return;
+    }
 
+    setIsLoading(true);
+    setError(null);
+    try {
+        if (serviceProvider === 'google' && apiKey) {
+            const fetchedModels = await fetchGoogleModels(apiKey);
+            setModels(fetchedModels);
+        } else if (serviceProvider === 'local' && lmStudioUrl) {
+            const fetchedModels = await fetchLMStudioModels(lmStudioUrl);
+            // For local models, we put them all in the 'stable' group for simplicity
+            setModels({ preview: [], stable: fetchedModels });
+        }
+    } catch (err: any) {
+        setError(err.message || 'An unknown error occurred while fetching models.');
+        setModels({ preview: [], stable: [] });
+    } finally {
+        setIsLoading(false);
+    }
+  }, [serviceProvider, apiKey, lmStudioUrl]);
+
+  useEffect(() => {
     loadModels();
-  }, [apiKey]); // This effect re-runs only when the apiKey changes
+  }, [loadModels]);
 
-  return { models, isLoading, error };
+  const refetch = () => {
+    loadModels();
+  };
+
+  return { models, isLoading, error, refetch };
 };
