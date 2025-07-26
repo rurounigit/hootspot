@@ -33,7 +33,6 @@ interface ConfigurationManagerProps {
   isCurrentProviderConfigured: boolean;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
-  hasUnsavedChanges: boolean;
   isTesting: boolean;
   testStatus: { message: string, type: 'success' | 'error' } | null;
   onSave: () => void;
@@ -64,7 +63,6 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
   isCurrentProviderConfigured,
   isCollapsed,
   onToggleCollapse,
-  hasUnsavedChanges,
   isTesting,
   testStatus,
   onSave,
@@ -97,9 +95,6 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
 
   const renderCollapsedStatus = () => {
     const providerName = isGoogleProvider ? 'Google' : 'Local';
-    if (hasUnsavedChanges) {
-      return <p className="text-sm text-yellow-600 dark:text-yellow-400">{t('config_status_dirty', { provider: providerName })}</p>;
-    }
     if (isCurrentProviderConfigured) {
       return <p className="text-sm text-green-600 dark:text-green-400">{t('config_status_configured', { provider: providerName })}</p>;
     }
@@ -117,7 +112,7 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
 
       {!isCollapsed && (
         <>
-          {hasUnsavedChanges && !isCurrentProviderConfigured && (
+          {!isCurrentProviderConfigured && (
             <div className="mb-4 p-3 rounded-md text-sm bg-yellow-50 text-yellow-800 border border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-400">
                 {t('config_status_unsaved')}
             </div>
@@ -171,7 +166,7 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = ({
           </button>
 
           {(localError && !testStatus) && ( <div className="mt-4 p-3 rounded-md text-sm bg-red-100 text-red-700 border border-red-300 dark:bg-red-900/50 dark:text-red-300 dark:border-red-500"> {localError} </div> )}
-          {testStatus && ( <div className={`mt-4 p-3 rounded-md text-sm ${testStatus.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-500' : 'bg-red-100 text-red-700 border border-red-300 dark:bg-red-900/50 dark:text-red-300 dark:border-red-500'}`}> {testStatus.message} </div> )}
+          {testStatus && testStatus.type === 'error' && ( <div className={`mt-4 p-3 rounded-md text-sm bg-red-100 text-red-700 border border-red-300 dark:bg-red-900/50 dark:text-red-300 dark:border-red-500`}> {testStatus.message} </div> )}
 
           <LanguageManager
             serviceProvider={serviceProvider}

@@ -1,6 +1,6 @@
 // src/hooks/useConfig.ts
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from '../i18n';
 import {
   API_KEY_STORAGE_KEY, MAX_CHAR_LIMIT_STORAGE_KEY, SELECTED_MODEL_STORAGE_KEY,
@@ -43,9 +43,7 @@ export const useConfig = () => {
   useEffect(() => {
     const googleConfigured = !!localStorage.getItem(API_KEY_STORAGE_KEY);
     const localConfigured = !!localStorage.getItem(LM_STUDIO_URL_KEY) && !!localStorage.getItem(LM_STUDIO_MODEL_KEY);
-
     const providerInStorage = (localStorage.getItem(SERVICE_PROVIDER_KEY) as 'google' | 'local') || 'google';
-
     const isInitiallyVerified = (providerInStorage === 'google' && googleConfigured) || (providerInStorage === 'local' && localConfigured);
 
     setIsVerified(isInitiallyVerified);
@@ -97,17 +95,16 @@ export const useConfig = () => {
         const trimmedApiKey = apiKeyInput.trim();
         await testApiKey(trimmedApiKey, t, selectedModel);
         localStorage.setItem(API_KEY_STORAGE_KEY, trimmedApiKey);
-        setTestStatus({ message: t('success_api_key_saved'), type: 'success' });
       } else {
         const trimmedUrl = lmStudioUrl.trim();
         const trimmedModel = lmStudioModel.trim();
         await testLMStudioConnection(trimmedUrl, trimmedModel, t);
         localStorage.setItem(LM_STUDIO_URL_KEY, trimmedUrl);
         localStorage.setItem(LM_STUDIO_MODEL_KEY, trimmedModel);
-        setTestStatus({ message: t('success_local_connection'), type: 'success' });
       }
       setIsVerified(true);
-      setTimeout(() => setIsConfigCollapsed(true), 1200);
+      setTestStatus(null);
+      setIsConfigCollapsed(true);
 
     } catch (err: any) {
       setTestStatus({ message: (err as Error).message, type: 'error' });
@@ -115,15 +112,7 @@ export const useConfig = () => {
     } finally {
       setIsTesting(false);
     }
-  }, [serviceProvider, apiKeyInput, lmStudioUrl, lmStudioModel, selectedModel, t]);
-
-  const hasUnsavedChanges = useMemo(() => {
-    if (serviceProvider === 'google') {
-      return apiKeyInput !== (localStorage.getItem(API_KEY_STORAGE_KEY) || '');
-    }
-    return lmStudioUrl !== (localStorage.getItem(LM_STUDIO_URL_KEY) || '') ||
-           lmStudioModel !== (localStorage.getItem(LM_STUDIO_MODEL_KEY) || '');
-  }, [apiKeyInput, lmStudioModel, lmStudioUrl, serviceProvider]);
+  }, [serviceProvider, apiKeyInput, lmStudioUrl, lmStudioModel, selectedModel, t, setIsConfigCollapsed]);
 
   return {
     // State and Setters
@@ -142,8 +131,6 @@ export const useConfig = () => {
 
     // The single source of truth for configuration validity
     isCurrentProviderConfigured: isVerified,
-    // The flag for showing the "unsaved changes" warning
-    hasUnsavedChanges,
 
     // Handlers
     handleMaxCharLimitSave,
