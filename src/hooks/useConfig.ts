@@ -1,6 +1,6 @@
 // src/hooks/useConfig.ts
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '../i18n';
 import {
   API_KEY_STORAGE_KEY, MAX_CHAR_LIMIT_STORAGE_KEY, SELECTED_MODEL_STORAGE_KEY,
@@ -17,26 +17,18 @@ import { testOllamaConnection } from '../api/ollama';
 export const useConfig = () => {
   const { t } = useTranslation();
 
-  // --- Core State ---
-  const [serviceProvider, setServiceProvider] = useState<'google' | 'local'>(() => (localStorage.getItem(SERVICE_PROVIDER_KEY) as 'google' | 'local') || 'google');
-  const [localProviderType, setLocalProviderType] = useState<'lm-studio' | 'ollama'>(() => (localStorage.getItem(LOCAL_PROVIDER_TYPE_KEY) as 'lm-studio' | 'ollama') || 'lm-studio');
-
-  const [apiKeyInput, setApiKeyInput] = useState<string>(() => localStorage.getItem(API_KEY_STORAGE_KEY) || '');
-  const [selectedModel, setSelectedModel] = useState<string>(() => localStorage.getItem(SELECTED_MODEL_STORAGE_KEY) || GEMINI_MODEL_NAME);
-
-  const [lmStudioUrl, setLmStudioUrl] = useState<string>(() => localStorage.getItem(LM_STUDIO_URL_KEY) || 'http://localhost:1234');
-  const [lmStudioModel, setLmStudioModel] = useState<string>(() => localStorage.getItem(LM_STUDIO_MODEL_KEY) || '');
-
-  const [ollamaUrl, setOllamaUrl] = useState<string>(() => localStorage.getItem(OLLAMA_URL_KEY) || 'http://localhost:11434');
-  const [ollamaModel, setOllamaModel] = useState<string>(() => localStorage.getItem(OLLAMA_MODEL_KEY) || '');
-
-  // --- Verification and Dirty State ---
+  // --- State Declarations ---
+  const [serviceProvider, setServiceProviderState] = useState<'google' | 'local'>(() => (localStorage.getItem(SERVICE_PROVIDER_KEY) as 'google' | 'local') || 'google');
+  const [localProviderType, setLocalProviderTypeState] = useState<'lm-studio' | 'ollama'>(() => (localStorage.getItem(LOCAL_PROVIDER_TYPE_KEY) as 'lm-studio' | 'ollama') || 'lm-studio');
+  const [apiKeyInput, setApiKeyInputState] = useState<string>(() => localStorage.getItem(API_KEY_STORAGE_KEY) || '');
+  const [selectedModel, setSelectedModelState] = useState<string>(() => localStorage.getItem(SELECTED_MODEL_STORAGE_KEY) || GEMINI_MODEL_NAME);
+  const [lmStudioUrl, setLmStudioUrlState] = useState<string>(() => localStorage.getItem(LM_STUDIO_URL_KEY) || 'http://localhost:1234');
+  const [lmStudioModel, setLmStudioModelState] = useState<string>(() => localStorage.getItem(LM_STUDIO_MODEL_KEY) || '');
+  const [ollamaUrl, setOllamaUrlState] = useState<string>(() => localStorage.getItem(OLLAMA_URL_KEY) || 'http://localhost:11434');
+  const [ollamaModel, setOllamaModelState] = useState<string>(() => localStorage.getItem(OLLAMA_MODEL_KEY) || '');
   const [isVerified, setIsVerified] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [testStatus, setTestStatus] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
-  const isMounted = useRef(false);
-
-  // --- UI and Other Settings State ---
   const [debouncedApiKey, setDebouncedApiKey] = useState<string>(apiKeyInput);
   const [maxCharLimit, setMaxCharLimit] = useState<number>(DEFAULT_MAX_CHAR_LIMIT);
   const [isNightMode, setIsNightMode] = useState<boolean>(() => localStorage.getItem(NIGHT_MODE_STORAGE_KEY) === 'true');
@@ -44,57 +36,65 @@ export const useConfig = () => {
   const [includeRebuttalInPdf, setIncludeRebuttalInPdf] = useState<boolean>(() => localStorage.getItem(INCLUDE_REBUTTAL_PDF_KEY) === 'true');
   const [isConfigCollapsed, setIsConfigCollapsed] = useState(false);
 
-  // --- Effects ---
-  useEffect(() => {
-    const googleConfigured = !!localStorage.getItem(API_KEY_STORAGE_KEY);
-    const lmStudioConfigured = !!localStorage.getItem(LM_STUDIO_URL_KEY) && !!localStorage.getItem(LM_STUDIO_MODEL_KEY);
-    const ollamaConfigured = !!localStorage.getItem(OLLAMA_URL_KEY) && !!localStorage.getItem(OLLAMA_MODEL_KEY);
 
+  // --- Effects ---
+
+  // Effect for initial verification on mount
+  useEffect(() => {
     const providerInStorage = (localStorage.getItem(SERVICE_PROVIDER_KEY) as 'google' | 'local') || 'google';
     const localTypeInStorage = (localStorage.getItem(LOCAL_PROVIDER_TYPE_KEY) as 'lm-studio' | 'ollama') || 'lm-studio';
 
     let isInitiallyVerified = false;
-    if (providerInStorage === 'google' && googleConfigured) {
-        isInitiallyVerified = true;
-    } else if (providerInStorage === 'local') {
-        if (localTypeInStorage === 'lm-studio' && lmStudioConfigured) isInitiallyVerified = true;
-        if (localTypeInStorage === 'ollama' && ollamaConfigured) isInitiallyVerified = true;
+    if (providerInStorage === 'google') {
+      isInitiallyVerified = !!localStorage.getItem(API_KEY_STORAGE_KEY);
+    } else { // 'local'
+      if (localTypeInStorage === 'lm-studio') {
+        isInitiallyVerified = !!localStorage.getItem(LM_STUDIO_URL_KEY) && !!localStorage.getItem(LM_STUDIO_MODEL_KEY);
+      } else { // 'ollama'
+        isInitiallyVerified = !!localStorage.getItem(OLLAMA_URL_KEY) && !!localStorage.getItem(OLLAMA_MODEL_KEY);
+      }
     }
 
     setIsVerified(isInitiallyVerified);
     setIsConfigCollapsed(isInitiallyVerified);
-    isMounted.current = true;
+
+    const storedMaxCharLimit = localStorage.getItem(MAX_CHAR_LIMIT_STORAGE_KEY);
+    if (storedMaxCharLimit) {
+      setMaxCharLimit(parseInt(storedMaxCharLimit, 10) || DEFAULT_MAX_CHAR_LIMIT);
+    }
   }, []);
 
-  useEffect(() => {
-    if (isMounted.current) {
-      setIsVerified(false);
-      setTestStatus(null);
-    }
-  }, [apiKeyInput, selectedModel, serviceProvider, localProviderType, lmStudioUrl, lmStudioModel, ollamaUrl, ollamaModel]);
 
+  // Debounce API key for model fetching
   useEffect(() => {
     const handler = setTimeout(() => { setDebouncedApiKey(apiKeyInput.trim()); }, 500);
     return () => clearTimeout(handler);
   }, [apiKeyInput]);
 
-  useEffect(() => {
-    const storedMaxCharLimit = localStorage.getItem(MAX_CHAR_LIMIT_STORAGE_KEY);
-    if (storedMaxCharLimit) { setMaxCharLimit(parseInt(storedMaxCharLimit, 10) || DEFAULT_MAX_CHAR_LIMIT); }
-    localStorage.setItem(NIGHT_MODE_STORAGE_KEY, String(isNightMode));
-    document.documentElement.classList.toggle('dark', isNightMode);
-  }, [isNightMode]);
-
+  // Sync simple settings to localStorage
+  useEffect(() => { document.documentElement.classList.toggle('dark', isNightMode); localStorage.setItem(NIGHT_MODE_STORAGE_KEY, String(isNightMode)); }, [isNightMode]);
   useEffect(() => { localStorage.setItem(INCLUDE_REBUTTAL_JSON_KEY, String(includeRebuttalInJson)); }, [includeRebuttalInJson]);
   useEffect(() => { localStorage.setItem(INCLUDE_REBUTTAL_PDF_KEY, String(includeRebuttalInPdf)); }, [includeRebuttalInPdf]);
-  useEffect(() => { localStorage.setItem(SERVICE_PROVIDER_KEY, serviceProvider); setIsVerified(false); }, [serviceProvider]);
-  useEffect(() => { localStorage.setItem(LOCAL_PROVIDER_TYPE_KEY, localProviderType); setIsVerified(false); }, [localProviderType]);
-
-  useEffect(() => { localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel); }, [selectedModel]);
-  useEffect(() => { localStorage.setItem(LM_STUDIO_MODEL_KEY, lmStudioModel); }, [lmStudioModel]);
-  useEffect(() => { localStorage.setItem(OLLAMA_MODEL_KEY, ollamaModel); }, [ollamaModel]);
 
 
+  // --- State Change Handlers (THE FIX) ---
+  // These wrappers explicitly set the verified state to false when a user makes a change.
+  const setAndDirty = <T extends (...args: any[]) => void>(setter: T) => (...args: Parameters<T>): void => {
+      setter(...args);
+      setIsVerified(false);
+      setTestStatus(null);
+  };
+
+  const setServiceProvider = setAndDirty(setServiceProviderState);
+  const setLocalProviderType = setAndDirty(setLocalProviderTypeState);
+  const setApiKeyInput = setAndDirty(setApiKeyInputState);
+  const setSelectedModel = setAndDirty(setSelectedModelState);
+  const setLmStudioUrl = setAndDirty(setLmStudioUrlState);
+  const setLmStudioModel = setAndDirty(setLmStudioModelState);
+  const setOllamaUrl = setAndDirty(setOllamaUrlState);
+  const setOllamaModel = setAndDirty(setOllamaModelState);
+
+  // --- Save and Test Logic ---
   const handleMaxCharLimitSave = useCallback((newLimit: number) => {
     localStorage.setItem(MAX_CHAR_LIMIT_STORAGE_KEY, newLimit.toString());
     setMaxCharLimit(newLimit);
@@ -103,24 +103,27 @@ export const useConfig = () => {
   const saveAndTestConfig = useCallback(async () => {
     setIsTesting(true);
     setTestStatus(null);
-    setIsVerified(false);
 
     try {
       if (serviceProvider === 'google') {
         const trimmedApiKey = apiKeyInput.trim();
         await testApiKey(trimmedApiKey, t, selectedModel);
         localStorage.setItem(API_KEY_STORAGE_KEY, trimmedApiKey);
-      } else { // serviceProvider is 'local'
+        localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel);
+      } else {
         if (localProviderType === 'lm-studio') {
-            const trimmedUrl = lmStudioUrl.trim();
-            await testLMStudioConnection(trimmedUrl, lmStudioModel, t);
-            localStorage.setItem(LM_STUDIO_URL_KEY, trimmedUrl);
-        } else if (localProviderType === 'ollama') {
-            const trimmedUrl = ollamaUrl.trim();
-            await testOllamaConnection(trimmedUrl, ollamaModel, t);
-            localStorage.setItem(OLLAMA_URL_KEY, trimmedUrl);
+          await testLMStudioConnection(lmStudioUrl.trim(), lmStudioModel, t);
+          localStorage.setItem(LM_STUDIO_URL_KEY, lmStudioUrl.trim());
+          localStorage.setItem(LM_STUDIO_MODEL_KEY, lmStudioModel);
+        } else { // ollama
+          await testOllamaConnection(ollamaUrl.trim(), ollamaModel, t);
+          localStorage.setItem(OLLAMA_URL_KEY, ollamaUrl.trim());
+          localStorage.setItem(OLLAMA_MODEL_KEY, ollamaModel);
         }
       }
+      // On success, save provider settings and mark as verified
+      localStorage.setItem(SERVICE_PROVIDER_KEY, serviceProvider);
+      localStorage.setItem(LOCAL_PROVIDER_TYPE_KEY, localProviderType);
       setIsVerified(true);
       setTestStatus(null);
       setIsConfigCollapsed(true);
@@ -131,7 +134,10 @@ export const useConfig = () => {
     } finally {
       setIsTesting(false);
     }
-  }, [serviceProvider, localProviderType, apiKeyInput, selectedModel, lmStudioUrl, lmStudioModel, ollamaUrl, ollamaModel, t, setIsConfigCollapsed]);
+  }, [
+    serviceProvider, localProviderType, apiKeyInput, selectedModel,
+    lmStudioUrl, lmStudioModel, ollamaUrl, ollamaModel, t
+  ]);
 
   return {
     serviceProvider, setServiceProvider,
