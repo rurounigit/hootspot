@@ -99,7 +99,7 @@ const TextAnalyzer = forwardRef<HTMLTextAreaElement, TextAnalyzerProps>(
 
             {exceedsLimit && (
               <span className="text-xs font-normal">
-                {t('analyzer_chars_count', { count: charCount, limit: maxCharLimit })}{` ${t('analyzer_chars_over_limit', { over: charCount - maxCharLimit })}`}
+                {t('analyzer_chars_count', { count: charCount, limit: maxCharLimit })}
               </span>
             )}
           </p>
