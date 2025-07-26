@@ -1,0 +1,1 @@
+if I change from google api mode to local mode and back, even though I saved my google config, the Analysis Model reverts to Gemini 2.5 Pro.

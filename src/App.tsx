@@ -12,6 +12,7 @@ import { useAnalysis } from './hooks/useAnalysis';
 import { HootSpotLogoIcon, SunIcon, MoonIcon } from './assets/icons';
 import Tooltip from './components/common/Tooltip';
 import { useTranslationManager } from './hooks/useTranslationManager';
+import { GEMINI_MODEL_NAME } from './config/api-prompts';
 
 const App: React.FC = () => {
   const { t } = useTranslation();
@@ -83,8 +84,16 @@ const App: React.FC = () => {
             setSelection = setOllamaModel;
         }
     }
+    // Logic to select a default model if the current one becomes invalid
     if (modelList.length > 0 && setSelection && !modelList.some(m => m.name === currentSelection)) {
-      setSelection(modelList[0].name);
+        // 1. Try to find the app's default Gemini model.
+        const preferredDefault = modelList.find(m => m.name === GEMINI_MODEL_NAME);
+        if (preferredDefault) {
+            setSelection(preferredDefault.name);
+        } else {
+            // 2. If the preferred default isn't available, fall back to the first model in the list.
+            setSelection(modelList[0].name);
+        }
     }
   }, [models, serviceProvider, localProviderType, selectedModel, setSelectedModel, lmStudioModel, setLmStudioModel, ollamaModel, setOllamaModel]);
 
