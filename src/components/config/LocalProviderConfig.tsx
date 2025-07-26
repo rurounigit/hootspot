@@ -40,6 +40,12 @@ const LocalProviderConfig: React.FC<LocalProviderConfigProps> = ({
   const infoText = isOllama ? t('config_ollama_info') : t('config_local_server_info');
   const onUrlChange = isOllama ? onOllamaUrlChange : onLmStudioUrlChange;
 
+  // --- DYNAMIC LABEL LOGIC ---
+  // Select the correct translation key for the model dropdown label.
+  const modelLabelKey = isOllama
+    ? 'config_ollama_model_name_label_dropdown'
+    : 'config_local_model_name_label_dropdown';
+
   return (
     <>
       <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-md dark:bg-blue-900 dark:border-blue-700">
@@ -79,7 +85,7 @@ const LocalProviderConfig: React.FC<LocalProviderConfigProps> = ({
       <div className="mb-6">
         <div className="flex justify-between items-center mb-1">
           <label htmlFor="modelSelector" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            {t('config_local_model_name_label_dropdown')}
+            {t(modelLabelKey)}
           </label>
           <button onClick={onRefetchModels} disabled={areModelsLoading || !currentUrl} className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed">
             {t('config_model_refresh')}

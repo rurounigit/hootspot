@@ -116,5 +116,6 @@
   "config_provider_local": "Local",
   "config_local_provider_type_label": "Local Provider",
   "config_ollama_server_url_label": "Ollama Server URL",
-  "config_ollama_info": "Run Ollama locally and enter the server details here. Make sure the model you want to use is pulled and available."
+  "config_ollama_info": "Run Ollama locally and enter the server details here. Make sure the model you want to use is pulled and available.",
+  "config_ollama_model_name_label_dropdown": "Model (load in Ollama)"
 }

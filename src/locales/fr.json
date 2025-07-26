@@ -116,5 +116,6 @@
   "config_provider_local": "Local",
   "config_local_provider_type_label": "Fournisseur Local",
   "config_ollama_server_url_label": "URL du Serveur Ollama",
-  "config_ollama_info": "Exécutez Ollama localement et entrez les détails du serveur ici. Assurez-vous que le modèle que vous souhaitez utiliser est téléchargé et disponible."
+  "config_ollama_info": "Exécutez Ollama localement et entrez les détails du serveur ici. Assurez-vous que le modèle que vous souhaitez utiliser est téléchargé et disponible.",
+  "config_ollama_model_name_label_dropdown": "Modèle (chargez dans Ollama)"
 }
