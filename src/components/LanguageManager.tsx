@@ -4,22 +4,25 @@ import React, { useState } from 'react';
 import { useTranslation } from '../i18n';
 import { translateUI } from '../api/google/translation';
 import { translateUIWithLMStudio } from '../api/lm-studio';
+import { translateUIWithOllama } from '../api/ollama';
 import { AddIcon } from '../assets/icons';
 import { defaultLanguages } from '../i18n';
 
 interface LanguageManagerProps {
   serviceProvider: 'google' | 'local';
+  localProviderType: 'lm-studio' | 'ollama';
   apiKey: string | null;
-  lmStudioUrl: string;
-  lmStudioModel: string;
+  lmStudioConfig: { url: string; model: string; };
+  ollamaConfig: { url: string; model: string; };
   isCurrentProviderConfigured: boolean;
 }
 
 const LanguageManager: React.FC<LanguageManagerProps> = ({
   serviceProvider,
+  localProviderType,
   apiKey,
-  lmStudioUrl,
-  lmStudioModel,
+  lmStudioConfig,
+  ollamaConfig,
   isCurrentProviderConfigured
 }) => {
   const { t, addLanguage, deleteLanguage, availableLanguages } = useTranslation();
@@ -43,7 +46,11 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({
       if (serviceProvider === 'google' && apiKey) {
         translatedJson = await translateUI(apiKey, code, JSON.stringify(baseTranslations.default), t);
       } else if (serviceProvider === 'local') {
-        translatedJson = await translateUIWithLMStudio(lmStudioUrl, lmStudioModel, code, JSON.stringify(baseTranslations.default), t);
+        if (localProviderType === 'lm-studio') {
+          translatedJson = await translateUIWithLMStudio(lmStudioConfig.url, lmStudioConfig.model, code, JSON.stringify(baseTranslations.default), t);
+        } else { // ollama
+          translatedJson = await translateUIWithOllama(ollamaConfig.url, ollamaConfig.model, code, JSON.stringify(baseTranslations.default), t);
+        }
       } else {
         // Silently throw an error if the provider is not configured
         throw new Error("Translation provider not properly configured.");
