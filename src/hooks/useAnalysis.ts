@@ -70,6 +70,8 @@ export const useAnalysis = (
     setAnalysisResult(null);
     setCurrentTextAnalyzed(text);
     setTranslatedResults({});
+    // When starting a new analysis, clear any old rebuttal.
+    onRebuttalLoad({ text: '', lang: language });
 
     try {
       let result: GeminiAnalysisResponse;
@@ -85,7 +87,6 @@ export const useAnalysis = (
       }
       setAnalysisResult(result);
 
-      // After analysis, if language is not English, trigger translation regardless of provider.
       if (language !== 'en') {
         await translateAnalysis(result, language);
       }
@@ -98,7 +99,7 @@ export const useAnalysis = (
   }, [
     isCurrentProviderConfigured, serviceProvider, localProviderType,
     apiKey, selectedModel, lmStudioUrl, lmStudioModel,
-    ollamaUrl, ollamaModel, language, t, setIsConfigCollapsed, translateAnalysis
+    ollamaUrl, ollamaModel, language, t, setIsConfigCollapsed, translateAnalysis, onRebuttalLoad
   ]);
 
   useEffect(() => {
@@ -130,32 +131,25 @@ export const useAnalysis = (
           throw new Error(t('error_invalid_json_file'));
         }
 
-        // --- STATE UPDATES ---
         setError(null);
         setAnalysisResult(data.analysisResult);
         setCurrentTextAnalyzed(data.sourceText);
         setTextToAnalyze(data.sourceText);
-        setTranslatedResults({}); // Clear previous translations
 
-        const fileLang = data.languageCode || 'en'; // Default to 'en' for legacy files
+        const fileLang = data.languageCode || 'en';
 
-        // --- REBUTTAL LOADING ---
         if (data.rebuttal && typeof data.rebuttal === 'string') {
-          const loadedRebuttal = {
-            text: data.rebuttal,
-            lang: fileLang,
-          };
-          onRebuttalLoad(loadedRebuttal);
+          onRebuttalLoad({ text: data.rebuttal, lang: fileLang });
         } else {
-          // If no rebuttal in file, clear any existing one.
           onRebuttalLoad({ text: '', lang: language });
         }
 
-        // --- TRANSLATION LOGIC ---
         if (fileLang !== language) {
-          // If the file's language is different from the current UI language, translate.
+          setTranslatedResults({});
           translateAnalysis(data.analysisResult, language);
-          }
+        } else {
+          setTranslatedResults({ [language]: data.analysisResult });
+        }
       } catch (e: any) { setError(`${t('error_json_load_failed')} ${e.message}`); }
     };
     reader.readAsText(file);
