@@ -42,19 +42,7 @@ const App: React.FC = () => {
   });
 
   const {
-    isLoading, error: analysisError, analysisResult,
-    currentTextAnalyzed, textToAnalyze, setTextToAnalyze,
-    setPendingAnalysis, isTranslating, handleAnalyzeText,
-    handleJsonLoad, analysisReportRef, displayedAnalysis,
-  } = useAnalysis(
-    serviceProvider, localProviderType,
-    apiKeyInput, lmStudioUrl, lmStudioModel,
-    ollamaUrl, ollamaModel, selectedModel,
-    isCurrentProviderConfigured, setIsConfigCollapsed
-  );
-
-  const {
-    isTranslatingRebuttal, handleRebuttalUpdate, displayedRebuttal, translationError,
+    isTranslatingRebuttal, handleRebuttalUpdate, displayedRebuttal, translationError, loadRebuttal
   } = useTranslationManager({
       serviceProvider, localProviderType,
       apiKey: apiKeyInput,
@@ -63,6 +51,19 @@ const App: React.FC = () => {
       ollamaConfig: { url: ollamaUrl, model: ollamaModel },
       isCurrentProviderConfigured,
   });
+
+  const {
+    isLoading, error: analysisError, analysisResult,
+    currentTextAnalyzed, textToAnalyze, setTextToAnalyze,
+    setPendingAnalysis, isTranslating, handleAnalyzeText,
+    handleJsonLoad, analysisReportRef, displayedAnalysis,
+  } = useAnalysis(
+    serviceProvider, localProviderType,
+    apiKeyInput, lmStudioUrl, lmStudioModel,
+    ollamaUrl, ollamaModel, selectedModel,
+    isCurrentProviderConfigured, setIsConfigCollapsed,
+    loadRebuttal
+  );
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const textWasSetProgrammatically = useRef(false);
@@ -99,9 +100,9 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const messageListener = (request: any) => {
-      textWasSetProgrammatically.current = true;
       if (request.type === 'PUSH_TEXT_TO_PANEL' && request.text) {
         lastAction.current = 'PUSH';
+        textWasSetProgrammatically.current = true;
         setTextToAnalyze(request.text);
         if (request.autoAnalyze) {
           if (isCurrentProviderConfigured) {
@@ -112,6 +113,7 @@ const App: React.FC = () => {
         }
       } else if (request.type === 'APPEND_TEXT_TO_PANEL' && request.text) {
         lastAction.current = 'APPEND';
+        textWasSetProgrammatically.current = true;
         setTextToAnalyze(prevText => `${prevText.trim() ? `${prevText}\n\n` : ''}${request.text}`);
       }
     };
@@ -119,9 +121,9 @@ const App: React.FC = () => {
     chrome.runtime.sendMessage({ type: 'PULL_INITIAL_TEXT' }, (response) => {
       if (chrome.runtime.lastError) { return; }
       if (response?.text) {
-        textWasSetProgrammatically.current = true;
         lastAction.current = 'PUSH';
-        setTextToAnalyze(response.text);
+        textWasSetProgrammatically.current = true;
+        setTextToAnalyze(prev => (prev === '' ? response.text : prev));
         if (response.autoAnalyze) {
           if (isCurrentProviderConfigured) {
             setPendingAnalysis({ text: response.text });

@@ -29,7 +29,7 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
     includeRebuttalInJson,
     includeRebuttalInPdf,
 }) => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { isGenerating, generatePdf } = usePdfGenerator();
@@ -68,7 +68,8 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
     const dataToSave: any = {
       reportId: reportId,
       sourceText: sourceText,
-      analysisResult: analysis
+      analysisResult: analysis,
+      languageCode: language,
     };
 
     if (includeRebuttalInJson && rebuttal) {

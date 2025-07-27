@@ -74,13 +74,22 @@ export const useTranslationManager = (config: UseTranslationManagerConfig) => {
     inflightRequests.current = {};
   };
 
-  const displayedRebuttal = translatedRebuttals[language] || null;
+  const loadRebuttal = (loaded: { text: string; lang: string }) => {
+    setRebuttal(loaded);
+    setTranslatedRebuttals({}); // Reset translations to force re-translation if needed
+    inflightRequests.current = {};
+  };
+
+  const displayedRebuttal =
+    translatedRebuttals[language] ??
+    (rebuttal && rebuttal.lang === language ? rebuttal.text : null);
 
   return {
     rebuttal,
     displayedRebuttal,
     isTranslatingRebuttal,
     handleRebuttalUpdate,
+    loadRebuttal,
     translationError,
   };
 };

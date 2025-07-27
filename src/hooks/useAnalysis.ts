@@ -17,7 +17,8 @@ export const useAnalysis = (
   ollamaModel: string,
   selectedModel: string,
   isCurrentProviderConfigured: boolean,
-  setIsConfigCollapsed: (isCollapsed: boolean) => void
+  setIsConfigCollapsed: (isCollapsed: boolean) => void,
+  onRebuttalLoad: (rebuttal: { text: string; lang: string }) => void
 ) => {
   const { t, language } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
@@ -125,17 +126,36 @@ export const useAnalysis = (
       try {
         const text = event.target?.result as string;
         const data = JSON.parse(text);
-        if (data.reportId && data.analysisResult && typeof data.sourceText === 'string') {
-          setAnalysisResult(data.analysisResult);
-          setCurrentTextAnalyzed(data.sourceText);
-          setTextToAnalyze(data.sourceText);
-          setTranslatedResults({});
-          if (data.rebuttal) {
-             // If a rebuttal is loaded from JSON, you might want to handle it here
-             // or pass a handler down from App.tsx. For now, it's ignored on load.
+        if (!data.reportId || !data.analysisResult || typeof data.sourceText !== 'string') {
+          throw new Error(t('error_invalid_json_file'));
+        }
+
+        // --- STATE UPDATES ---
+        setError(null);
+        setAnalysisResult(data.analysisResult);
+        setCurrentTextAnalyzed(data.sourceText);
+        setTextToAnalyze(data.sourceText);
+        setTranslatedResults({}); // Clear previous translations
+
+        const fileLang = data.languageCode || 'en'; // Default to 'en' for legacy files
+
+        // --- REBUTTAL LOADING ---
+        if (data.rebuttal && typeof data.rebuttal === 'string') {
+          const loadedRebuttal = {
+            text: data.rebuttal,
+            lang: fileLang,
+          };
+          onRebuttalLoad(loadedRebuttal);
+        } else {
+          // If no rebuttal in file, clear any existing one.
+          onRebuttalLoad({ text: '', lang: language });
+        }
+
+        // --- TRANSLATION LOGIC ---
+        if (fileLang !== language) {
+          // If the file's language is different from the current UI language, translate.
+          translateAnalysis(data.analysisResult, language);
           }
-          setError(null);
-        } else { throw new Error(t('error_invalid_json_file')); }
       } catch (e: any) { setError(`${t('error_json_load_failed')} ${e.message}`); }
     };
     reader.readAsText(file);
