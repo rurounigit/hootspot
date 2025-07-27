@@ -14,6 +14,25 @@ import { testApiKey } from '../api/google/utils';
 import { testLMStudioConnection } from '../api/lm-studio';
 import { testOllamaConnection } from '../api/ollama';
 
+// ++ START: Added helper function for synchronous initialization ++
+const getInitialVerifiedState = (): boolean => {
+  const providerInStorage = (localStorage.getItem(SERVICE_PROVIDER_KEY) as 'google' | 'local') || 'google';
+  const localTypeInStorage = (localStorage.getItem(LOCAL_PROVIDER_TYPE_KEY) as 'lm-studio' | 'ollama') || 'lm-studio';
+
+  let isInitiallyVerified = false;
+  if (providerInStorage === 'google') {
+    isInitiallyVerified = !!localStorage.getItem(API_KEY_STORAGE_KEY);
+  } else { // 'local'
+    if (localTypeInStorage === 'lm-studio') {
+      isInitiallyVerified = !!localStorage.getItem(LM_STUDIO_URL_KEY) && !!localStorage.getItem(LM_STUDIO_MODEL_KEY);
+    } else { // 'ollama'
+      isInitiallyVerified = !!localStorage.getItem(OLLAMA_URL_KEY) && !!localStorage.getItem(OLLAMA_MODEL_KEY);
+    }
+  }
+  return isInitiallyVerified;
+};
+// ++ END: Added helper function for synchronous initialization ++
+
 export const useConfig = () => {
   const { t } = useTranslation();
 
@@ -26,7 +45,8 @@ export const useConfig = () => {
   const [lmStudioModel, setLmStudioModelState] = useState<string>(() => localStorage.getItem(LM_STUDIO_MODEL_KEY) || '');
   const [ollamaUrl, setOllamaUrlState] = useState<string>(() => localStorage.getItem(OLLAMA_URL_KEY) || 'http://localhost:11434');
   const [ollamaModel, setOllamaModelState] = useState<string>(() => localStorage.getItem(OLLAMA_MODEL_KEY) || '');
-  const [isVerified, setIsVerified] = useState(false);
+  // -- MODIFIED: Initialize state synchronously using the new helper function --
+  const [isVerified, setIsVerified] = useState(getInitialVerifiedState);
   const [isTesting, setIsTesting] = useState(false);
   const [testStatus, setTestStatus] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
   const [debouncedApiKey, setDebouncedApiKey] = useState<string>(apiKeyInput);
@@ -39,30 +59,16 @@ export const useConfig = () => {
 
   // --- Effects ---
 
-  // Effect for initial verification on mount
+  // -- MODIFIED: Simplified useEffect for one-time setup --
   useEffect(() => {
-    const providerInStorage = (localStorage.getItem(SERVICE_PROVIDER_KEY) as 'google' | 'local') || 'google';
-    const localTypeInStorage = (localStorage.getItem(LOCAL_PROVIDER_TYPE_KEY) as 'lm-studio' | 'ollama') || 'lm-studio';
-
-    let isInitiallyVerified = false;
-    if (providerInStorage === 'google') {
-      isInitiallyVerified = !!localStorage.getItem(API_KEY_STORAGE_KEY);
-    } else { // 'local'
-      if (localTypeInStorage === 'lm-studio') {
-        isInitiallyVerified = !!localStorage.getItem(LM_STUDIO_URL_KEY) && !!localStorage.getItem(LM_STUDIO_MODEL_KEY);
-      } else { // 'ollama'
-        isInitiallyVerified = !!localStorage.getItem(OLLAMA_URL_KEY) && !!localStorage.getItem(OLLAMA_MODEL_KEY);
-      }
-    }
-
-    setIsVerified(isInitiallyVerified);
-    setIsConfigCollapsed(isInitiallyVerified);
+    // isVerified is now correct on initial render, so just sync the UI state to it.
+    setIsConfigCollapsed(isVerified);
 
     const storedMaxCharLimit = localStorage.getItem(MAX_CHAR_LIMIT_STORAGE_KEY);
     if (storedMaxCharLimit) {
       setMaxCharLimit(parseInt(storedMaxCharLimit, 10) || DEFAULT_MAX_CHAR_LIMIT);
     }
-  }, []);
+  }, []); // Empty array ensures this runs only once on mount.
 
 
   // Debounce API key for model fetching
