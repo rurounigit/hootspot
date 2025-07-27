@@ -4,9 +4,9 @@ import React, { useState } from 'react';
 import { useTranslation } from '../i18n';
 import { translateUI } from '../api/google/translation';
 import { translateUIWithLMStudio } from '../api/lm-studio';
-import { translateUIWithOllama } from '../api/ollama';
 import { AddIcon } from '../assets/icons';
 import { defaultLanguages } from '../i18n';
+import { translateUIWithOllama } from '../api/ollama';
 
 interface LanguageManagerProps {
   serviceProvider: 'google' | 'local';
@@ -29,7 +29,9 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({
   const [newLangCode, setNewLangCode] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
 
+
   const handleAddLanguage = async () => {
+
     const code = newLangCode.trim().toLowerCase();
     if (!code || !isCurrentProviderConfigured) {
       // Early exit if no code is provided or the provider is not configured.
@@ -37,27 +39,66 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({
       return;
     }
 
+
     setIsTranslating(true);
 
     try {
-      const baseTranslations = await import('../locales/en.json');
-      let translatedJson: Record<string, string>;
+      const baseTranslationsModule = await import('../locales/en.json');
+      const baseTranslations = baseTranslationsModule.default;
 
+      // STEP 1: Create Mappings and the Numbered JSON
+      const keyToNumberMap = new Map<string, string>();
+      const numberToKeyMap = new Map<string, string>();
+      const numberedJson: Record<string, string> = {};
+      let counter = 0;
+
+      for (const key in baseTranslations) {
+        if (Object.prototype.hasOwnProperty.call(baseTranslations, key)) {
+          const numberKey = counter.toString();
+          keyToNumberMap.set(key, numberKey);
+          numberToKeyMap.set(numberKey, key);
+          numberedJson[numberKey] = (baseTranslations as any)[key];
+          counter++;
+        }
+      }
+
+      let translatedNumberedJson: Record<string, string>;
+      const jsonToSend = JSON.stringify(numberedJson);
+
+      // STEP 2: Send the Numbered JSON for Translation
       if (serviceProvider === 'google' && apiKey) {
-        translatedJson = await translateUI(apiKey, code, JSON.stringify(baseTranslations.default), t);
+        translatedNumberedJson = await translateUI(apiKey, code, jsonToSend, t);
       } else if (serviceProvider === 'local') {
         if (localProviderType === 'lm-studio') {
-          translatedJson = await translateUIWithLMStudio(lmStudioConfig.url, lmStudioConfig.model, code, JSON.stringify(baseTranslations.default), t);
-        } else { // ollama
-          translatedJson = await translateUIWithOllama(ollamaConfig.url, ollamaConfig.model, code, JSON.stringify(baseTranslations.default), t);
+          translatedNumberedJson = await translateUIWithLMStudio(lmStudioConfig.url, lmStudioConfig.model, code, jsonToSend, t);
+        } else { // Ollama
+          translatedNumberedJson = await translateUIWithOllama(ollamaConfig.url, ollamaConfig.model, code, jsonToSend, t);
         }
       } else {
-        // Silently throw an error if the provider is not configured
         throw new Error("Translation provider not properly configured.");
       }
 
-      addLanguage(code, code, translatedJson);
+      // STEP 3: Reconstruct the JSON with Original Keys
+      const reconstructedJson: Record<string, string> = {};
+      for (const numberKey in translatedNumberedJson) {
+        if (Object.prototype.hasOwnProperty.call(translatedNumberedJson, numberKey)) {
+          const originalKey = numberToKeyMap.get(numberKey);
+          if (originalKey) {
+            reconstructedJson[originalKey] = translatedNumberedJson[numberKey];
+          } else {
+             console.warn(`Could not find original key for numbered key: ${numberKey}`);
+          }
+        }
+      }
+
+      // Final check to ensure all original keys are present
+      if (Object.keys(reconstructedJson).length !== Object.keys(baseTranslations).length) {
+          throw new Error(t('lang_manager_error_parse', { message: "The translated response was incomplete." }));
+      }
+
+      addLanguage(code, code, reconstructedJson);
       setNewLangCode('');
+
     } catch (err: any) {
       // Errors are now logged to the console instead of being shown in the UI.
       console.error(err.message || "An unexpected error occurred during translation.");
@@ -108,6 +149,7 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({
           )}
           {isTranslating ? t('lang_manager_button_translating') : t('lang_manager_button_add')}
         </button>
+
       </div>
 
       {customLanguages.length > 0 && (
