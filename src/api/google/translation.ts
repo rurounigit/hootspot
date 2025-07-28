@@ -4,7 +4,12 @@ import { GEMINI_MODEL_NAME, ANALYSIS_TRANSLATION_PROMPT, SIMPLE_TEXT_TRANSLATION
 import { GeminiAnalysisResponse } from "../../types/api";
 import { LanguageCode } from "../../i18n";
 import { extractJson, repairAndParseJson } from "./utils";
-import { createNumberedJsonForTranslation, reconstructTranslatedJson } from "../../utils/translationUtils";
+import {
+  createNumberedJsonForTranslation,
+  reconstructTranslatedJson,
+  flattenAnalysisForTranslation,
+  reconstructAnalysisFromTranslation
+} from "../../utils/translationUtils";
 
 type TFunction = (key: string, replacements?: Record<string, string | number>) => string;
 
@@ -22,14 +27,7 @@ export const translateAnalysisResult = async (
   const ai = new GoogleGenAI({ apiKey });
   const systemPrompt = ANALYSIS_TRANSLATION_PROMPT.replace('{language}', targetLanguage);
 
-  // Flatten the analysis object for translation
-  const flatSource: Record<string, string> = { 'analysis_summary': analysis.analysis_summary };
-  analysis.findings.forEach((finding, index) => {
-    flatSource[`finding_${index}_display_name`] = finding.display_name;
-    flatSource[`finding_${index}_explanation`] = finding.explanation;
-  });
-
-  // Create numbered JSON for efficiency
+  const flatSource = flattenAnalysisForTranslation(analysis);
   const { numberedJson, numberToKeyMap } = createNumberedJsonForTranslation(flatSource);
   const contentToTranslate = JSON.stringify(numberedJson);
 
@@ -54,18 +52,8 @@ export const translateAnalysisResult = async (
         parsedData = await repairAndParseJson(apiKey, jsonStr, modelName);
     }
 
-    // Reconstruct the flat object with translations
     const translatedFlat = reconstructTranslatedJson(parsedData, numberToKeyMap);
-
-    // Create a deep copy and merge translations back into the original structure
-    const translatedAnalysis = JSON.parse(JSON.stringify(analysis));
-    translatedAnalysis.analysis_summary = translatedFlat['analysis_summary'] || analysis.analysis_summary;
-    translatedAnalysis.findings.forEach((finding: any, index: number) => {
-      finding.display_name = translatedFlat[`finding_${index}_display_name`] || finding.display_name;
-      finding.explanation = translatedFlat[`finding_${index}_explanation`] || finding.explanation;
-    });
-
-    return translatedAnalysis;
+    return reconstructAnalysisFromTranslation(analysis, translatedFlat);
 
   } catch (error: any) {
     console.error("Error translating analysis result:", error);
@@ -91,7 +79,6 @@ export const translateText = async (
   }
 
   const ai = new GoogleGenAI({ apiKey });
-
   const systemPrompt = SIMPLE_TEXT_TRANSLATION_PROMPT.replace('{language}', targetLanguage);
 
   try {

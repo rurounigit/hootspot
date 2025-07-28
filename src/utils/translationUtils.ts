@@ -1,5 +1,7 @@
 // src/utils/translationUtils.ts
 
+import { GeminiAnalysisResponse } from "../types/api";
+
 /**
  * Creates a token-efficient, numbered JSON object from a source object,
  * along with a map to reconstruct the original keys later.
@@ -50,4 +52,44 @@ export const reconstructTranslatedJson = (
     }
   }
   return reconstructedJson;
+};
+
+/**
+ * Flattens a complex analysis object into a simple key-value record
+ * suitable for translation.
+ *
+ * @param analysis The original analysis response.
+ * @returns A flat object with unique keys and text values to be translated.
+ */
+export const flattenAnalysisForTranslation = (analysis: GeminiAnalysisResponse): Record<string, string> => {
+    const flatSource: Record<string, string> = { 'analysis_summary': analysis.analysis_summary };
+    analysis.findings.forEach((finding, index) => {
+        flatSource[`finding_${index}_display_name`] = finding.display_name;
+        flatSource[`finding_${index}_explanation`] = finding.explanation;
+    });
+    return flatSource;
+};
+
+/**
+ * Merges a flat record of translated text back into a deep copy of the
+ * original analysis object structure.
+ *
+ * @param originalAnalysis The original, untranslated analysis object.
+ * @param translatedFlat The flat record containing the translated texts.
+ * @returns A new analysis object with the translated text merged in.
+ */
+export const reconstructAnalysisFromTranslation = (
+    originalAnalysis: GeminiAnalysisResponse,
+    translatedFlat: Record<string, string>
+): GeminiAnalysisResponse => {
+    const translatedAnalysis = JSON.parse(JSON.stringify(originalAnalysis));
+
+    translatedAnalysis.analysis_summary = translatedFlat['analysis_summary'] || originalAnalysis.analysis_summary;
+
+    translatedAnalysis.findings.forEach((finding: any, index: number) => {
+        finding.display_name = translatedFlat[`finding_${index}_display_name`] || finding.display_name;
+        finding.explanation = translatedFlat[`finding_${index}_explanation`] || finding.explanation;
+    });
+
+    return translatedAnalysis;
 };
