@@ -1,31 +1,11 @@
 // src/api/google/utils.ts
 import { GoogleGenAI } from "@google/genai";
 import { JSON_REPAIR_SYSTEM_PROMPT, GEMINI_MODEL_NAME } from "../../config/api-prompts";
+import { extractJson } from "../../utils/apiUtils"; // Import from the central utility
 
 type TFunction = (key: string, replacements?: Record<string, string | number>) => string;
 
-// This helper function aggressively extracts a JSON object from a string.
-export function extractJson(str: string): string {
-    // First, try to find JSON within markdown fences.
-    const fenceRegex = /```(?:json)?\s*([\s\S]*?)\s*```/s;
-    const fenceMatch = str.match(fenceRegex);
-    if (fenceMatch && fenceMatch[1]) {
-        return fenceMatch[1].trim();
-    }
-
-    // If no fences, find the first '{' and the last '}'
-    const firstBrace = str.indexOf('{');
-    const lastBrace = str.lastIndexOf('}');
-
-    if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
-        // Return the original string if no valid JSON structure is found
-        return str;
-    }
-
-    return str.substring(firstBrace, lastBrace + 1);
-}
-
-// Self-healing JSON repair function
+// Self-healing JSON repair function (Google-specific)
 export async function repairAndParseJson(
     apiKey: string,
     brokenJson: string,

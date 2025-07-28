@@ -3,7 +3,8 @@ import { GoogleGenAI } from "@google/genai";
 import { GEMINI_MODEL_NAME, ANALYSIS_TRANSLATION_PROMPT, SIMPLE_TEXT_TRANSLATION_PROMPT, TRANSLATION_SYSTEM_PROMPT } from "../../config/api-prompts";
 import { GeminiAnalysisResponse } from "../../types/api";
 import { LanguageCode } from "../../i18n";
-import { extractJson, repairAndParseJson } from "./utils";
+import { repairAndParseJson } from "./utils";
+import { extractJson } from "../../utils/apiUtils";
 import {
   createNumberedJsonForTranslation,
   reconstructTranslatedJson,

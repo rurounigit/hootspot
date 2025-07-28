@@ -15,6 +15,8 @@ import {
   flattenAnalysisForTranslation,
   reconstructAnalysisFromTranslation
 } from '../utils/translationUtils';
+import { extractJson } from '../utils/apiUtils';
+
 
 type TFunction = (key: string, replacements?: Record<string, string | number>) => string;
 
@@ -100,7 +102,10 @@ export const analyzeTextWithOllama = async (
         const data = await response.json();
         const content = data.message?.content;
         if (!content) throw new Error(t('error_unexpected_json_structure'));
-        let parsedData = JSON.parse(content);
+
+        // CORRECTED: Use extractJson for safety
+        let parsedData = JSON.parse(extractJson(content));
+
         if (typeof parsedData.analysis_summary === 'string' && Array.isArray(parsedData.findings)) {
             parsedData.findings.sort((a: GeminiFinding, b: GeminiFinding) => {
                 return textToAnalyze.indexOf(a.specific_quote) - textToAnalyze.indexOf(b.specific_quote);
@@ -179,7 +184,9 @@ export const translateUIWithOllama = async (
     const data = await response.json();
     const content = data.message?.content;
     if (!content) throw new Error(t('error_unexpected_json_structure'));
-    return JSON.parse(content);
+
+    // CORRECTED: Use extractJson for safety
+    return JSON.parse(extractJson(content));
 };
 
 export const translateAnalysisResultWithOllama = async (
@@ -217,7 +224,8 @@ export const translateAnalysisResultWithOllama = async (
     const content = data.message?.content;
     if (!content) throw new Error(t('error_unexpected_json_structure'));
 
-    const translatedNumbered = JSON.parse(content);
+    // CORRECTED: Use extractJson for safety
+    const translatedNumbered = JSON.parse(extractJson(content));
     const translatedFlat = reconstructTranslatedJson(translatedNumbered, numberToKeyMap);
 
     return reconstructAnalysisFromTranslation(analysis, translatedFlat);

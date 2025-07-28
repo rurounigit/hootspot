@@ -15,22 +15,9 @@ import {
   flattenAnalysisForTranslation,
   reconstructAnalysisFromTranslation
 } from '../utils/translationUtils';
+import { extractJson } from '../utils/apiUtils';
 
 type TFunction = (key: string, replacements?: Record<string, string | number>) => string;
-
-function extractJson(str: string): string {
-    const fenceRegex = /```(?:json)?\s*([\s\S]*?)\s*```/s;
-    const fenceMatch = str.match(fenceRegex);
-    if (fenceMatch && fenceMatch[1]) {
-        return fenceMatch[1].trim();
-    }
-    const firstBrace = str.indexOf('{');
-    const lastBrace = str.lastIndexOf('}');
-    if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
-        return str;
-    }
-    return str.substring(firstBrace, lastBrace + 1);
-}
 
 export const fetchLMStudioModels = async (serverUrl: string): Promise<GeminiModel[]> => {
   try {
