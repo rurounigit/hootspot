@@ -19,33 +19,25 @@ IMPORTANT: All text fields ('analysis_summary', 'display_name', 'explanation') M
 Do not add any conversational text or apologies outside of the JSON object.
 `;
 
-export const ANALYSIS_TRANSLATION_PROMPT = `You are an expert translator. You will be given a JSON object which is an analysis of a text. Your task is to translate specific fields of this JSON object into the target language: {language}.
-
-The JSON object has the structure: {"analysis_summary": "...", "findings": [{"pattern_name": "...", "display_name": "...", "specific_quote": "...", "explanation": "...", "strength": 5, "category": "..."}]}.
-
+export const ANALYSIS_TRANSLATION_PROMPT = `You are an expert translator. You will be given a JSON object with numbered keys.
 RULES:
-1.  Translate the value of 'analysis_summary'.
-2.  For each object in the 'findings' array, translate the values of 'display_name' and 'explanation'.
-3.  IMPORTANT: The translated 'display_name' must also be a very short, 1-3 word label suitable for a chart. Keep it as concise as possible in the target language.
-4.  Do NOT translate 'pattern_name', 'specific_quote', 'strength', or 'category'.
-5.  Preserve the original JSON structure exactly.
-6.  Your output must be ONLY the translated JSON object. Do not include any other text, explanations, or markdown code fences.
-7.  Ensure your entire response is a single, complete, and valid JSON object. Do not truncate your response.`;
+1.  Translate all string *values* in the JSON object into the target language: {language}.
+2.  Do NOT translate the numeric JSON keys.
+3.  Preserve the original JSON structure exactly.
+4.  Your output must be ONLY the translated JSON object. Do not include any other text, explanations, or markdown code fences.
+5.  For any text that is a "display_name", the translation must be very short (1-3 words).`;
 
 
-export const REBUTTAL_SYSTEM_PROMPT = `You are a master rhetorician. Your task is to write an concise and calm counter-argument to the provided SOURCE TEXT.
+export const REBUTTAL_SYSTEM_PROMPT = `You are a master rhetorician. Your task is to write a concise and calm counter-argument to the user-provided source text, using the provided analysis JSON as your secret insight.
 
-You have been provided with an ANALYSIS JSON. This is your secret insight. Your goal is to artfully dismantle the speaker's arguments by crafting counter-points that expose the very flaws identified in the analysis.
+Your goal is to artfully dismantle the speaker's arguments by crafting counter-points that expose the very flaws identified in the analysis.
 
-**WRITE IN THE INDICATED LANGUAGE:** Your entire response must be written in the language specified by the following code: {languageCode}.
-**OUTPUT ONLY THE REBUTTAL.** Do not include any titles, introductions, or other conversational text.
+**LANGUAGE:** Your entire response must be written in the language specified by the following ISO 639-1 code: **{languageCode}**. For example, if the code is 'fr', you must write in French.
 
-Here is the AI analysis of the source text:
-{analysisJson}
-
-Here is the original source text you must rebut:
-{sourceText}
-`;
+**OUTPUT RULES:**
+- Respond ONLY with the rebuttal text.
+- Do not include any titles, introductions, or other conversational text.
+- Your entire response should be only the counter-argument itself.`;
 
 export const SIMPLE_TEXT_TRANSLATION_PROMPT = `You are an expert translator. You will be given a text and a target language.
 RULES:

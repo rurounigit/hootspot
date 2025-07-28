@@ -9,6 +9,7 @@ import {
 } from '../config/api-prompts';
 import { GeminiAnalysisResponse, GeminiFinding, GeminiModel } from '../types/api';
 import { LanguageCode } from '../i18n';
+import { createNumberedJsonForTranslation, reconstructTranslatedJson } from '../utils/translationUtils';
 
 type TFunction = (key: string, replacements?: Record<string, string | number>) => string;
 
@@ -118,13 +119,15 @@ export const generateRebuttalWithOllama = async (
     languageCode: LanguageCode,
     t: TFunction
 ): Promise<string> => {
-    const prompt = REBUTTAL_SYSTEM_PROMPT
-        .replace('{analysisJson}', JSON.stringify(analysis, null, 2))
-        .replace('{sourceText}', sourceText)
-        .replace('{languageCode}', languageCode);
+    const systemPrompt = REBUTTAL_SYSTEM_PROMPT.replace('{languageCode}', languageCode);
+    const userContent = `Here is the AI analysis of the source text:\n${JSON.stringify(analysis, null, 2)}\n\nHere is the original source text you must rebut:\n${sourceText}`;
+
     const payload = {
         model: modelName,
-        messages: [ { role: "user", content: prompt } ],
+        messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userContent }
+        ],
         stream: false,
     };
     const response = await fetch(`${serverUrl}/api/chat`, {
@@ -183,11 +186,21 @@ export const translateAnalysisResultWithOllama = async (
 ): Promise<GeminiAnalysisResponse> => {
     if (!serverUrl || !modelName) throw new Error(t('error_local_server_config_missing'));
     const systemPrompt = ANALYSIS_TRANSLATION_PROMPT.replace('{language}', targetLanguage);
+
+    const flatSource: Record<string, string> = { 'analysis_summary': analysis.analysis_summary };
+    analysis.findings.forEach((finding, index) => {
+        flatSource[`finding_${index}_display_name`] = finding.display_name;
+        flatSource[`finding_${index}_explanation`] = finding.explanation;
+    });
+
+    const { numberedJson, numberToKeyMap } = createNumberedJsonForTranslation(flatSource);
+    const contentToTranslate = JSON.stringify(numberedJson);
+
     const payload = {
         model: modelName,
         messages: [
             { role: "system", content: systemPrompt },
-            { role: "user", content: JSON.stringify(analysis) }
+            { role: "user", content: contentToTranslate }
         ],
         format: "json",
         stream: false,
@@ -197,11 +210,24 @@ export const translateAnalysisResultWithOllama = async (
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
     });
+
     if (!response.ok) throw new Error(t('error_translation_failed', { message: `Ollama: ${response.statusText}` }));
+
     const data = await response.json();
     const content = data.message?.content;
     if (!content) throw new Error(t('error_unexpected_json_structure'));
-    return JSON.parse(content);
+
+    const translatedNumbered = JSON.parse(content);
+    const translatedFlat = reconstructTranslatedJson(translatedNumbered, numberToKeyMap);
+
+    const translatedAnalysis = JSON.parse(JSON.stringify(analysis));
+    translatedAnalysis.analysis_summary = translatedFlat['analysis_summary'] || analysis.analysis_summary;
+    translatedAnalysis.findings.forEach((finding: any, index: number) => {
+      finding.display_name = translatedFlat[`finding_${index}_display_name`] || finding.display_name;
+      finding.explanation = translatedFlat[`finding_${index}_explanation`] || finding.explanation;
+    });
+
+    return translatedAnalysis;
 };
 
 export const translateTextWithOllama = async (

@@ -7,6 +7,7 @@ import { translateUIWithLMStudio } from '../api/lm-studio';
 import { AddIcon } from '../assets/icons';
 import { defaultLanguages } from '../i18n';
 import { translateUIWithOllama } from '../api/ollama';
+import { createNumberedJsonForTranslation, reconstructTranslatedJson } from '../utils/translationUtils';
 
 interface LanguageManagerProps {
   serviceProvider: 'google' | 'local';
@@ -28,44 +29,32 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({
   const { t, addLanguage, deleteLanguage, availableLanguages } = useTranslation();
   const [newLangCode, setNewLangCode] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
-
+  const [error, setError] = useState<string | null>(null);
 
   const handleAddLanguage = async () => {
-
+    setError(null);
     const code = newLangCode.trim().toLowerCase();
-    if (!code || !isCurrentProviderConfigured) {
-      // Early exit if no code is provided or the provider is not configured.
-      // Error messages are no longer displayed to the user.
+    if (!code) {
+      setError(t('lang_manager_error_empty'));
       return;
     }
-
+    if (!isCurrentProviderConfigured) {
+      setError(t('lang_manager_error_no_key'));
+      return;
+    }
 
     setIsTranslating(true);
 
     try {
       const baseTranslationsModule = await import('../locales/en.json');
-      const baseTranslations = baseTranslationsModule.default;
+      const baseTranslations = baseTranslationsModule.default as Record<string, string>;
 
-      // STEP 1: Create Mappings and the Numbered JSON
-      const keyToNumberMap = new Map<string, string>();
-      const numberToKeyMap = new Map<string, string>();
-      const numberedJson: Record<string, string> = {};
-      let counter = 0;
-
-      for (const key in baseTranslations) {
-        if (Object.prototype.hasOwnProperty.call(baseTranslations, key)) {
-          const numberKey = counter.toString();
-          keyToNumberMap.set(key, numberKey);
-          numberToKeyMap.set(numberKey, key);
-          numberedJson[numberKey] = (baseTranslations as any)[key];
-          counter++;
-        }
-      }
+      // Use the utility to create the numbered JSON and the map
+      const { numberedJson, numberToKeyMap } = createNumberedJsonForTranslation(baseTranslations);
 
       let translatedNumberedJson: Record<string, string>;
       const jsonToSend = JSON.stringify(numberedJson);
 
-      // STEP 2: Send the Numbered JSON for Translation
       if (serviceProvider === 'google' && apiKey) {
         translatedNumberedJson = await translateUI(apiKey, code, jsonToSend, t);
       } else if (serviceProvider === 'local') {
@@ -78,30 +67,18 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({
         throw new Error("Translation provider not properly configured.");
       }
 
-      // STEP 3: Reconstruct the JSON with Original Keys
-      const reconstructedJson: Record<string, string> = {};
-      for (const numberKey in translatedNumberedJson) {
-        if (Object.prototype.hasOwnProperty.call(translatedNumberedJson, numberKey)) {
-          const originalKey = numberToKeyMap.get(numberKey);
-          if (originalKey) {
-            reconstructedJson[originalKey] = translatedNumberedJson[numberKey];
-          } else {
-             console.warn(`Could not find original key for numbered key: ${numberKey}`);
-          }
-        }
-      }
+      // Use the utility to reconstruct the final JSON
+      const reconstructedJson = reconstructTranslatedJson(translatedNumberedJson, numberToKeyMap);
 
-      // Final check to ensure all original keys are present
       if (Object.keys(reconstructedJson).length !== Object.keys(baseTranslations).length) {
-          throw new Error(t('lang_manager_error_parse', { message: "The translated response was incomplete." }));
+        throw new Error(t('lang_manager_error_parse', { message: "The translated response was incomplete." }));
       }
 
       addLanguage(code, code, reconstructedJson);
       setNewLangCode('');
 
     } catch (err: any) {
-      // Errors are now logged to the console instead of being shown in the UI.
-      console.error(err.message || "An unexpected error occurred during translation.");
+      setError(err.message || t('lang_manager_error_generic'));
     } finally {
       setIsTranslating(false);
     }
@@ -150,6 +127,11 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({
           {isTranslating ? t('lang_manager_button_translating') : t('lang_manager_button_add')}
         </button>
 
+         {error && (
+            <div className="mt-4 p-3 rounded-md text-sm bg-red-100 text-red-700 border border-red-300 dark:bg-red-900/50 dark:text-red-300 dark:border-red-500">
+              {error}
+            </div>
+        )}
       </div>
 
       {customLanguages.length > 0 && (
