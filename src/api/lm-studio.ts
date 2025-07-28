@@ -16,6 +16,7 @@ import {
   reconstructAnalysisFromTranslation
 } from '../utils/translationUtils';
 import { extractJson } from '../utils/apiUtils';
+import { LANGUAGE_CODE_MAP } from '../constants';
 
 type TFunction = (key: string, replacements?: Record<string, string | number>) => string;
 
@@ -149,8 +150,10 @@ export const generateRebuttalWithLMStudio = async (
 ): Promise<string> => {
     if (!serverUrl || !modelName) throw new Error(t('error_local_server_config_missing'));
     if (!sourceText || !analysis) throw new Error("Source text and analysis are required to generate a rebuttal.");
+    const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
+    const languageName = languageMap[languageCode] || languageCode;
 
-    const systemPrompt = REBUTTAL_SYSTEM_PROMPT.replace('{languageCode}', languageCode);
+    const systemPrompt = REBUTTAL_SYSTEM_PROMPT.replace('{language}', languageName);
     const userContent = `Here is the AI analysis of the source text:\n${JSON.stringify(analysis, null, 2)}\n\nHere is the original source text you must rebut:\n${sourceText}`;
 
     const payload = {
@@ -185,7 +188,7 @@ export const translateUIWithLMStudio = async (
     t: TFunction,
 ): Promise<Record<string, string>> => {
     if (!serverUrl || !modelName) throw new Error(t('error_local_server_config_missing'));
-    const languageMap: { [key: string]: string } = { it: 'Italian', de: 'German', fr: 'French', es: 'Spanish', en: 'English' };
+    const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
     const languageName = languageMap[languageCode] || languageCode;
     const userPrompt = `Translate the following JSON values to ${languageName}:\n\n${jsonToTranslate}`;
     const payload = {
@@ -220,7 +223,9 @@ export const translateAnalysisResultWithLMStudio = async (
     t: TFunction
 ): Promise<GeminiAnalysisResponse> => {
     if (!serverUrl || !modelName) throw new Error(t('error_local_server_config_missing'));
-    const systemPrompt = ANALYSIS_TRANSLATION_PROMPT.replace('{language}', targetLanguage);
+    const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
+    const languageName = languageMap[targetLanguage] || targetLanguage;
+    const systemPrompt = ANALYSIS_TRANSLATION_PROMPT.replace('{language}', languageName);
 
     const flatSource = flattenAnalysisForTranslation(analysis);
     const { numberedJson, numberToKeyMap } = createNumberedJsonForTranslation(flatSource);
@@ -261,7 +266,9 @@ export const translateTextWithLMStudio = async (
     t: TFunction
 ): Promise<string> => {
     if (!serverUrl || !modelName) throw new Error(t('error_local_server_config_missing'));
-    const systemPrompt = SIMPLE_TEXT_TRANSLATION_PROMPT.replace('{language}', targetLanguage);
+    const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
+    const languageName = languageMap[targetLanguage] || targetLanguage;
+    const systemPrompt = SIMPLE_TEXT_TRANSLATION_PROMPT.replace('{language}', languageName);
     const payload = {
         model: modelName,
         messages: [

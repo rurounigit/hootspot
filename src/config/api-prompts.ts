@@ -32,7 +32,7 @@ export const REBUTTAL_SYSTEM_PROMPT = `You are a master rhetorician. Your task i
 
 Your goal is to artfully dismantle the speaker's arguments by crafting counter-points that expose the very flaws identified in the analysis.
 
-**LANGUAGE:** Your entire response must be written in the language specified by the following ISO 639-1 code: **{languageCode}**. For example, if the code is 'fr', you must write in French.
+**LANGUAGE:** Your entire response must be written in the target language {language}.
 
 **OUTPUT RULES:**
 - Respond ONLY with the rebuttal text.
@@ -54,4 +54,4 @@ RULES:
 3.  Preserve any placeholders like {variable} exactly as they are. For example, if the English is "Characters: {count} / {limit}", the German should be "Zeichen: {count} / {limit}".
 4.  Your output must be ONLY the translated JSON object. Do not include any other text, explanations, or markdown code fences.`;
 
-export const JSON_REPAIR_SYSTEM_PROMPT = `The following text is supposed to be a single, valid JSON object, but it contains syntax errors. Please fix the syntax and return only the corrected, valid JSON object. Do not add any explanations, apologies, or markdown formatting. The JSON must be complete.`;
+export const JSON_REPAIR_SYSTEM_PROMPT = `The following text is supposed to be a single, valid JSON object, but it contains syntax errors. Fix the syntax and return only the corrected, valid JSON object. Do not add any explanations, apologies, or markdown formatting. The JSON must be complete.`;

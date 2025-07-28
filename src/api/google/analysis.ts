@@ -1,7 +1,8 @@
 import { GoogleGenAI } from "@google/genai";
 import { GEMINI_MODEL_NAME, SYSTEM_PROMPT, REBUTTAL_SYSTEM_PROMPT } from "../../config/api-prompts";
 import { GeminiAnalysisResponse, GeminiFinding } from "../../types/api";
-import { extractJson, repairAndParseJson } from "./utils";
+import { repairAndParseJson } from "./utils";
+import { extractJson } from "../../utils/apiUtils";
 
 export const analyzeText = async (
   apiKey: string,
@@ -101,7 +102,7 @@ export const generateRebuttal = async (
   const fullPrompt = REBUTTAL_SYSTEM_PROMPT
     .replace('{analysisJson}', JSON.stringify(analysis, null, 2))
     .replace('{sourceText}', sourceText)
-    .replace('{languageCode}', languageCode);
+    .replace('{language}', languageCode);
 
   try {
     const result = await model.generateContent({
