@@ -110,9 +110,11 @@ const AnalysisReport: React.FC<AnalysisReportProps> = (props) => {
               const color = patternColorMap.get(finding.pattern_name) || '#e5e7eb';
               return (
                 <div key={finding.displayIndex} id={`finding-card-${finding.displayIndex}`} className={`bg-white dark:bg-gray-800 border-l-4 rounded-lg shadow-md overflow-hidden`} style={{borderColor: color}}>
+                  <div className={`p-4 border-b`} style={{ backgroundColor: color, borderColor: color }}>
+                    <h4 className={`text-l font-bold text-white uppercase`}>{finding.display_name}</h4>
+                  </div>
                   <div className="p-4 space-y-3">
-                    <h4 className={`text-l font-bold uppercase`} style={{color: color}}>{finding.display_name}</h4>
-                    <div><h5 className="font-semibold text-gray-600 dark:text-gray-400 mb-1">{t('report_quote_label')}</h5><blockquote className={`italic p-3 rounded-md border-l-4`} style={{ backgroundColor: `${color}20`, borderColor: color }}><p className="text-gray-800 dark:text-gray-50">"{finding.specific_quote}"</p></blockquote></div>
+                    <div><h5 className="font-semibold text-gray-600 dark:text-gray-400 mb-1">{t('report_quote_label')}</h5><blockquote className={`italic p-3 rounded-md border-l-4`} style={{ backgroundColor: `${color}40`, borderColor: color }}><p className="text-gray-800 dark:text-gray-50">"{finding.specific_quote}"</p></blockquote></div>
                     <div><h5 className="font-semibold text-gray-600 dark:text-gray-400 mb-1">{t('report_explanation_label')}</h5><p className="text-gray-700 dark:text-gray-50">{finding.explanation}</p></div>
                   </div>
                 </div>
