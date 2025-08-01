@@ -37,7 +37,13 @@ Your goal is to artfully dismantle the speaker's arguments by crafting counter-p
 **OUTPUT RULES:**
 - Respond ONLY with the rebuttal text.
 - Do not include any titles, introductions, or other conversational text.
-- Your entire response should be only the counter-argument itself.`;
+- Your entire response should be only the counter-argument itself.
+
+Here is the AI analysis of the source text:
+{analysisJson}
+
+Here is the original source text you must rebut:
+{sourceText}`;
 
 export const SIMPLE_TEXT_TRANSLATION_PROMPT = `You are an expert translator. You will be given a text and a target language.
 RULES:
