@@ -111,10 +111,17 @@ export const translateUI = async (
     const ai = new GoogleGenAI({ apiKey });
 
     try {
+        // Parse the base translations JSON
+        const baseTranslations = JSON.parse(baseTranslationsJSON);
+
+        // Use translation utilities for token efficiency
+        const { numberedJson, numberToKeyMap } = createNumberedJsonForTranslation(baseTranslations);
+        const contentToTranslate = JSON.stringify(numberedJson);
+
         const fullResponse = await ai.models.generateContent({
             model: GEMINI_MODEL_NAME,
             contents: [
-                { role: "user", parts: [{ text: `Translate the following JSON values to ${targetLanguage}:\n\n${baseTranslationsJSON}` }] }
+                { role: "user", parts: [{ text: `Translate the following JSON values to ${targetLanguage}:\n\n${contentToTranslate}` }] }
             ],
             config: {
                 systemInstruction: String(TRANSLATION_SYSTEM_PROMPT),
@@ -130,7 +137,9 @@ export const translateUI = async (
         } catch(e) {
             parsedData = await repairAndParseJson(apiKey, jsonStr, GEMINI_MODEL_NAME);
         }
-        return parsedData;
+
+        // Reconstruct the translated JSON with original keys
+        return reconstructTranslatedJson(parsedData, numberToKeyMap);
     } catch (error: any) {
         console.error("Error translating UI with Gemini API:", error);
         if (error.message && error.message.includes("SAFETY")) {

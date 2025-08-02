@@ -167,7 +167,14 @@ export const translateUIWithOllama = async (
     const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
     const languageName = languageMap[languageCode] || languageCode;
 
-    const userPrompt = `Translate the following JSON values to ${languageName}:\n\n${jsonToTranslate}`;
+    // Parse the base translations JSON
+    const baseTranslations = JSON.parse(jsonToTranslate);
+
+    // Use translation utilities for token efficiency
+    const { numberedJson, numberToKeyMap } = createNumberedJsonForTranslation(baseTranslations);
+    const contentToTranslate = JSON.stringify(numberedJson);
+
+    const userPrompt = `Translate the following JSON values to ${languageName}:\n\n${contentToTranslate}`;
     const payload = {
         model: modelName,
         messages: [
@@ -191,7 +198,9 @@ export const translateUIWithOllama = async (
     if (!content) throw new Error(t('error_unexpected_json_structure'));
 
     // CORRECTED: Use extractJson for safety
-    return JSON.parse(extractJson(content));
+    // Reconstruct the translated JSON with original keys
+    const translatedNumbered = JSON.parse(extractJson(content));
+    return reconstructTranslatedJson(translatedNumbered, numberToKeyMap);
 };
 
 export const translateAnalysisResultWithOllama = async (

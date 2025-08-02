@@ -188,9 +188,18 @@ export const translateUIWithLMStudio = async (
     t: TFunction,
 ): Promise<Record<string, string>> => {
     if (!serverUrl || !modelName) throw new Error(t('error_local_server_config_missing'));
+
     const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
     const languageName = languageMap[languageCode] || languageCode;
-    const userPrompt = `Translate the following JSON values to ${languageName}:\n\n${jsonToTranslate}`;
+
+    // Parse the base translations JSON
+    const baseTranslations = JSON.parse(jsonToTranslate);
+
+    // Use translation utilities for token efficiency
+    const { numberedJson, numberToKeyMap } = createNumberedJsonForTranslation(baseTranslations);
+    const contentToTranslate = JSON.stringify(numberedJson);
+
+    const userPrompt = `Translate the following JSON values to ${languageName}:\n\n${contentToTranslate}`;
     const payload = {
         model: modelName,
         messages: [
@@ -212,7 +221,10 @@ export const translateUIWithLMStudio = async (
     const data = await response.json();
     const content = data.choices[0]?.message?.content;
     if (!content) throw new Error(t('error_unexpected_json_structure'));
-    return JSON.parse(extractJson(content));
+
+    // Reconstruct the translated JSON with original keys
+    const translatedNumbered = JSON.parse(extractJson(content));
+    return reconstructTranslatedJson(translatedNumbered, numberToKeyMap);
 };
 
 export const translateAnalysisResultWithLMStudio = async (
