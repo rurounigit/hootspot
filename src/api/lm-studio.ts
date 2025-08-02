@@ -1,5 +1,6 @@
 // src/api/lm-studio.ts
 
+import { LMStudioClient } from "@lmstudio/sdk";
 import {
   SYSTEM_PROMPT,
   REBUTTAL_SYSTEM_PROMPT,
@@ -15,7 +16,7 @@ import {
   flattenAnalysisForTranslation,
   reconstructAnalysisFromTranslation
 } from '../utils/translationUtils';
-import { extractJson } from '../utils/apiUtils';
+import { ANALYSIS_RESPONSE_SCHEMA, UI_TRANSLATION_SCHEMA, ANALYSIS_TRANSLATION_SCHEMA } from '../config/schemas';
 import { LANGUAGE_CODE_MAP } from '../constants';
 
 type TFunction = (key: string, replacements?: Record<string, string | number>) => string;
@@ -56,40 +57,25 @@ export const testLMStudioConnection = async (
         throw new Error('error_local_server_config_missing');
     }
     try {
-        const response = await fetch(`${serverUrl}/v1/chat/completions`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: modelName,
-                messages: [{ role: 'user', content: 'Hello' }],
-                max_tokens: 5,
-            }),
-        });
+        const client = new LMStudioClient({ baseUrl: serverUrl });
+        const model = await client.llm.model(modelName, { verbose: false });
 
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            const errorMessage = errorData.error?.message || response.statusText;
-            if (errorMessage.includes("model_not_found")) {
-                 throw new Error(t('error_local_model_not_loaded_exact', { model: modelName }));
-            }
-            throw new Error(t('error_local_model_not_loaded', { model: modelName, message: errorMessage }));
-        }
+        const result = await model.respond(
+            [{ role: 'user', content: 'Hello' }],
+            { maxTokens: 5 }
+        );
 
-        const data = await response.json();
-        if (!data.choices || data.choices.length === 0) {
+        if (!result.content || result.content.trim().length === 0) {
             throw new Error(t('test_query_returned_empty'));
         }
-        const respondingModel = data.model;
-        if (respondingModel && !respondingModel.toLowerCase().includes(modelName.toLowerCase())) {
-            throw new Error(t('error_local_model_mismatch', { requested: modelName, actual: respondingModel }));
-        }
-
     } catch (error: any) {
-        if (error.message.includes('error_local_model_mismatch')) throw error;
         if (error instanceof TypeError || error.message.includes('Failed to fetch')) {
             throw new Error(t('error_local_server_connection', { url: serverUrl }));
         }
-        throw error;
+        if (error.message.includes('model_not_found')) {
+            throw new Error(t('error_local_model_not_loaded_exact', { model: modelName }));
+        }
+        throw new Error(t('error_local_model_not_loaded', { model: modelName, message: error.message || 'Unknown error' }));
     }
 };
 
@@ -102,29 +88,29 @@ export const analyzeTextWithLMStudio = async (
     if (!serverUrl || !modelName) throw new Error('error_local_server_config_missing');
     if (!textToAnalyze.trim()) return { analysis_summary: "No text provided for analysis.", findings: [] };
 
-    const payload = {
-        model: modelName,
-        messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            { role: "user", content: `Please analyze the following text: ${textToAnalyze}` }
-        ],
-        temperature: 0.2,
-        max_tokens: 8192,
-    };
     try {
-        const response = await fetch(`${serverUrl}/v1/chat/completions`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-        });
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(t('error_local_model_not_loaded', { model: modelName, message: errorData.error?.message || response.statusText }));
-        }
-        const data = await response.json();
-        const content = data.choices[0]?.message?.content;
+        const client = new LMStudioClient({ baseUrl: serverUrl });
+        const model = await client.llm.model(modelName, { verbose: false });
+
+        const result = await model.respond(
+            [
+                { role: "system", content: SYSTEM_PROMPT },
+                { role: "user", content: `Please analyze the following text: ${textToAnalyze}` }
+            ],
+            {
+                temperature: 0.2,
+                maxTokens: 8192,
+                structured: {
+                    type: "json",
+                    jsonSchema: ANALYSIS_RESPONSE_SCHEMA
+                }
+            }
+        );
+
+        const content = result.content;
         if (!content) throw new Error(t('error_unexpected_json_structure'));
-        let parsedData = JSON.parse(extractJson(content));
+
+        const parsedData = JSON.parse(content);
         if (typeof parsedData.analysis_summary === 'string' && Array.isArray(parsedData.findings)) {
             parsedData.findings.sort((a: GeminiFinding, b: GeminiFinding) => {
                 return (textToAnalyze.indexOf(a.specific_quote) - textToAnalyze.indexOf(b.specific_quote));
@@ -156,28 +142,27 @@ export const generateRebuttalWithLMStudio = async (
     const systemPrompt = REBUTTAL_SYSTEM_PROMPT.replace('{language}', languageName);
     const userContent = `Here is the AI analysis of the source text:\n${JSON.stringify(analysis, null, 2)}\n\nHere is the original source text you must rebut:\n${sourceText}`;
 
-    const payload = {
-        model: modelName,
-        messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userContent }
-        ],
-        temperature: 0.7,
-        max_tokens: 8192,
-    };
-    const response = await fetch(`${serverUrl}/v1/chat/completions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-    });
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(t('error_local_model_not_loaded', { model: modelName, message: errorData.error?.message || response.statusText }));
+    try {
+        const client = new LMStudioClient({ baseUrl: serverUrl });
+        const model = await client.llm.model(modelName, { verbose: false });
+
+        const result = await model.respond(
+            [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userContent }
+            ],
+            {
+                temperature: 0.7,
+                maxTokens: 8192,
+            }
+        );
+
+        return result.content.trim();
+    } catch (error: any) {
+        if (error instanceof TypeError) throw new Error(t('error_local_server_connection', { url: serverUrl }));
+        console.error("Error generating rebuttal with LM Studio:", error);
+        throw error;
     }
-    const data = await response.json();
-    const content = data.choices[0]?.message?.content;
-    if (!content) throw new Error(t('error_unexpected_json_structure'));
-    return content.trim();
 };
 
 export const translateUIWithLMStudio = async (
@@ -200,31 +185,36 @@ export const translateUIWithLMStudio = async (
     const contentToTranslate = JSON.stringify(numberedJson);
 
     const userPrompt = `Translate the following JSON values to ${languageName}:\n\n${contentToTranslate}`;
-    const payload = {
-        model: modelName,
-        messages: [
-            { role: "system", content: TRANSLATION_SYSTEM_PROMPT },
-            { role: "user", content: userPrompt }
-        ],
-        temperature: 0.2,
-        max_tokens: 8192,
-    };
-    const response = await fetch(`${serverUrl}/v1/chat/completions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-    });
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(t('error_local_model_not_loaded', { model: modelName, message: errorData.error?.message || response.statusText }));
-    }
-    const data = await response.json();
-    const content = data.choices[0]?.message?.content;
-    if (!content) throw new Error(t('error_unexpected_json_structure'));
 
-    // Reconstruct the translated JSON with original keys
-    const translatedNumbered = JSON.parse(extractJson(content));
-    return reconstructTranslatedJson(translatedNumbered, numberToKeyMap);
+    try {
+        const client = new LMStudioClient({ baseUrl: serverUrl });
+        const model = await client.llm.model(modelName, { verbose: false });
+
+        const result = await model.respond(
+            [
+                { role: "system", content: TRANSLATION_SYSTEM_PROMPT },
+                { role: "user", content: userPrompt }
+            ],
+            {
+                temperature: 0.2,
+                maxTokens: 8192,
+                structured: {
+                    type: "json",
+                    jsonSchema: UI_TRANSLATION_SCHEMA
+                }
+            }
+        );
+
+        const content = result.content;
+        if (!content) throw new Error(t('error_unexpected_json_structure'));
+
+        const translatedNumbered = JSON.parse(content);
+        return reconstructTranslatedJson(translatedNumbered, numberToKeyMap);
+    } catch (error: any) {
+        if (error instanceof TypeError) throw new Error(t('error_local_server_connection', { url: serverUrl }));
+        console.error("Error translating UI with LM Studio:", error);
+        throw error;
+    }
 };
 
 export const translateAnalysisResultWithLMStudio = async (
@@ -243,31 +233,37 @@ export const translateAnalysisResultWithLMStudio = async (
     const { numberedJson, numberToKeyMap } = createNumberedJsonForTranslation(flatSource);
     const contentToTranslate = JSON.stringify(numberedJson);
 
-    const payload = {
-        model: modelName,
-        messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: contentToTranslate }
-        ],
-        temperature: 0.2,
-        max_tokens: 8192,
-    };
-    const response = await fetch(`${serverUrl}/v1/chat/completions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-    });
+    try {
+        const client = new LMStudioClient({ baseUrl: serverUrl });
+        const model = await client.llm.model(modelName, { verbose: false });
 
-    if (!response.ok) throw new Error(t('error_translation_failed', { message: `LM Studio: ${response.statusText}` }));
+        const result = await model.respond(
+            [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: contentToTranslate }
+            ],
+            {
+                temperature: 0.2,
+                maxTokens: 8192,
+                structured: {
+                    type: "json",
+                    jsonSchema: ANALYSIS_TRANSLATION_SCHEMA
+                }
+            }
+        );
 
-    const data = await response.json();
-    const content = data.choices[0]?.message?.content;
-    if (!content) throw new Error(t('error_unexpected_json_structure'));
+        const content = result.content;
+        if (!content) throw new Error(t('error_unexpected_json_structure'));
 
-    const translatedNumbered = JSON.parse(extractJson(content));
-    const translatedFlat = reconstructTranslatedJson(translatedNumbered, numberToKeyMap);
+        const translatedNumbered = JSON.parse(content);
+        const translatedFlat = reconstructTranslatedJson(translatedNumbered, numberToKeyMap);
 
-    return reconstructAnalysisFromTranslation(analysis, translatedFlat);
+        return reconstructAnalysisFromTranslation(analysis, translatedFlat);
+    } catch (error: any) {
+        if (error instanceof TypeError) throw new Error(t('error_local_server_connection', { url: serverUrl }));
+        console.error("Error translating analysis with LM Studio:", error);
+        throw error;
+    }
 };
 
 export const translateTextWithLMStudio = async (
@@ -282,20 +278,25 @@ export const translateTextWithLMStudio = async (
     const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
     const languageName = languageMap[targetLanguage] || targetLanguage;
     const systemPrompt = SIMPLE_TEXT_TRANSLATION_PROMPT.replace('{language}', languageName);
-    const payload = {
-        model: modelName,
-        messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: textToTranslate }
-        ],
-        temperature: 0.2,
-    };
-    const response = await fetch(`${serverUrl}/v1/chat/completions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-    });
-    if (!response.ok) throw new Error(t('error_rebuttal_translation_failed', { message: `LM Studio: ${response.statusText}` }));
-    const data = await response.json();
-    return (data.choices[0]?.message?.content || '').trim();
+
+    try {
+        const client = new LMStudioClient({ baseUrl: serverUrl });
+        const model = await client.llm.model(modelName, { verbose: false });
+
+        const result = await model.respond(
+            [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: textToTranslate }
+            ],
+            {
+                temperature: 0.2,
+            }
+        );
+
+        return result.content.trim();
+    } catch (error: any) {
+        if (error instanceof TypeError) throw new Error(t('error_local_server_connection', { url: serverUrl }));
+        console.error("Error translating text with LM Studio:", error);
+        throw error;
+    }
 };

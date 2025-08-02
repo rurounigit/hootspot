@@ -1,8 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { GEMINI_MODEL_NAME, SYSTEM_PROMPT, REBUTTAL_SYSTEM_PROMPT } from "../../config/api-prompts";
 import { GeminiAnalysisResponse, GeminiFinding } from "../../types/api";
-import { repairAndParseJson } from "./utils";
-import { extractJson } from "../../utils/apiUtils";
+import { ANALYSIS_RESPONSE_SCHEMA } from "../../config/schemas";
 
 export const analyzeText = async (
   apiKey: string,
@@ -33,18 +32,13 @@ export const analyzeText = async (
           temperature: 0.2,
           topP: 0,
           topK: 1,
+          responseSchema: ANALYSIS_RESPONSE_SCHEMA,
+          responseMimeType: "application/json",
         },
       });
 
       const rawText = result.text ?? '';
-      const jsonStr = extractJson(rawText);
-      let parsedData;
-
-      try {
-        parsedData = JSON.parse(jsonStr);
-      } catch (e) {
-        parsedData = await repairAndParseJson(apiKey, jsonStr, modelName || GEMINI_MODEL_NAME);
-      }
+      const parsedData = JSON.parse(rawText);
 
       if (typeof parsedData.analysis_summary === 'string' && Array.isArray(parsedData.findings)) {
           parsedData.findings.sort((a: GeminiFinding, b: GeminiFinding) => {

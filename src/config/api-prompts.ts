@@ -13,12 +13,8 @@ For each finding of a manipulative pattern you identify, you must provide:
 
 For "Repetition" patterns: Only flag quotes where the EXACT same phrase or a very similar variation appears 2+ times in the text.
 
-You must respond ONLY with a valid JSON object with this structure:
-{"analysis_summary": "...", "findings": [{"pattern_name": "...", "display_name": "...", "specific_quote": "...", "explanation": "...", "strength": 5, "category": "..."}]}
-
-If no manipulative patterns are found, return a JSON object with an empty "findings" array.
+The response format will be automatically structured as JSON.
 IMPORTANT: All text fields ('analysis_summary', 'display_name', 'explanation') MUST be in English.
-Do not add any conversational text or apologies outside of the JSON object.
 `;
 
 export const ANALYSIS_TRANSLATION_PROMPT = `You are an expert translator. You will be given a JSON object with numbered keys.

@@ -15,7 +15,7 @@ import {
   flattenAnalysisForTranslation,
   reconstructAnalysisFromTranslation
 } from '../utils/translationUtils';
-import { extractJson } from '../utils/apiUtils';
+import { ANALYSIS_RESPONSE_SCHEMA, UI_TRANSLATION_SCHEMA, ANALYSIS_TRANSLATION_SCHEMA } from '../config/schemas';
 import { LANGUAGE_CODE_MAP } from '../constants';
 
 
@@ -81,10 +81,13 @@ export const analyzeTextWithOllama = async (
     if (!serverUrl || !modelName) throw new Error('error_local_server_config_missing');
     if (!textToAnalyze.trim()) return { analysis_summary: "No text provided for analysis.", findings: [] };
 
+    // Enhance the system prompt to include schema information
+    const enhancedSystemPrompt = `${SYSTEM_PROMPT}\n\nPlease ensure your response follows this exact JSON structure: ${JSON.stringify(ANALYSIS_RESPONSE_SCHEMA, null, 2)}`;
+
     const payload = {
         model: modelName,
         messages: [
-            { role: "system", content: SYSTEM_PROMPT },
+            { role: "system", content: enhancedSystemPrompt },
             { role: "user", content: `Please analyze the following text: ${textToAnalyze}` }
         ],
         format: "json",
@@ -104,8 +107,7 @@ export const analyzeTextWithOllama = async (
         const content = data.message?.content;
         if (!content) throw new Error(t('error_unexpected_json_structure'));
 
-        // CORRECTED: Use extractJson for safety
-        let parsedData = JSON.parse(extractJson(content));
+        let parsedData = JSON.parse(content);
 
         if (typeof parsedData.analysis_summary === 'string' && Array.isArray(parsedData.findings)) {
             parsedData.findings.sort((a: GeminiFinding, b: GeminiFinding) => {
@@ -174,11 +176,14 @@ export const translateUIWithOllama = async (
     const { numberedJson, numberToKeyMap } = createNumberedJsonForTranslation(baseTranslations);
     const contentToTranslate = JSON.stringify(numberedJson);
 
+    // Enhance the system prompt to include schema information
+    const enhancedSystemPrompt = `${TRANSLATION_SYSTEM_PROMPT}\n\nPlease ensure your response follows this exact JSON structure: ${JSON.stringify(UI_TRANSLATION_SCHEMA, null, 2)}`;
+
     const userPrompt = `Translate the following JSON values to ${languageName}:\n\n${contentToTranslate}`;
     const payload = {
         model: modelName,
         messages: [
-            { role: "system", content: TRANSLATION_SYSTEM_PROMPT },
+            { role: "system", content: enhancedSystemPrompt },
             { role: "user", content: userPrompt }
         ],
         format: "json",
@@ -197,9 +202,8 @@ export const translateUIWithOllama = async (
     const content = data.message?.content;
     if (!content) throw new Error(t('error_unexpected_json_structure'));
 
-    // CORRECTED: Use extractJson for safety
     // Reconstruct the translated JSON with original keys
-    const translatedNumbered = JSON.parse(extractJson(content));
+    const translatedNumbered = JSON.parse(content);
     return reconstructTranslatedJson(translatedNumbered, numberToKeyMap);
 };
 
@@ -214,7 +218,8 @@ export const translateAnalysisResultWithOllama = async (
     const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
     const languageName = languageMap[targetLanguage] || targetLanguage;
 
-    const systemPrompt = ANALYSIS_TRANSLATION_PROMPT.replace('{language}', languageName);
+    // Enhance the system prompt to include schema information
+    const enhancedSystemPrompt = `${ANALYSIS_TRANSLATION_PROMPT.replace('{language}', languageName)}\n\nPlease ensure your response follows this exact JSON structure: ${JSON.stringify(ANALYSIS_TRANSLATION_SCHEMA, null, 2)}`;
 
     const flatSource = flattenAnalysisForTranslation(analysis);
     const { numberedJson, numberToKeyMap } = createNumberedJsonForTranslation(flatSource);
@@ -223,7 +228,7 @@ export const translateAnalysisResultWithOllama = async (
     const payload = {
         model: modelName,
         messages: [
-            { role: "system", content: systemPrompt },
+            { role: "system", content: enhancedSystemPrompt },
             { role: "user", content: contentToTranslate }
         ],
         format: "json",
@@ -241,8 +246,7 @@ export const translateAnalysisResultWithOllama = async (
     const content = data.message?.content;
     if (!content) throw new Error(t('error_unexpected_json_structure'));
 
-    // CORRECTED: Use extractJson for safety
-    const translatedNumbered = JSON.parse(extractJson(content));
+    const translatedNumbered = JSON.parse(content);
     const translatedFlat = reconstructTranslatedJson(translatedNumbered, numberToKeyMap);
 
     return reconstructAnalysisFromTranslation(analysis, translatedFlat);

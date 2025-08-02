@@ -3,14 +3,15 @@ import { GoogleGenAI } from "@google/genai";
 import { GEMINI_MODEL_NAME, ANALYSIS_TRANSLATION_PROMPT, SIMPLE_TEXT_TRANSLATION_PROMPT, TRANSLATION_SYSTEM_PROMPT } from "../../config/api-prompts";
 import { GeminiAnalysisResponse } from "../../types/api";
 import { LanguageCode } from "../../i18n";
-import { repairAndParseJson } from "./utils";
-import { extractJson } from "../../utils/apiUtils";
+import { UI_TRANSLATION_SCHEMA, ANALYSIS_TRANSLATION_SCHEMA } from "../../config/schemas";
 import {
   createNumberedJsonForTranslation,
   reconstructTranslatedJson,
   flattenAnalysisForTranslation,
   reconstructAnalysisFromTranslation
 } from "../../utils/translationUtils";
+import { extractJson } from "../../utils/apiUtils";
+import { repairAndParseJson } from "./utils";
 
 type TFunction = (key: string, replacements?: Record<string, string | number>) => string;
 
@@ -39,18 +40,13 @@ export const translateAnalysisResult = async (
       config: {
         systemInstruction: String(systemPrompt),
         temperature: 0.2,
+        responseSchema: ANALYSIS_TRANSLATION_SCHEMA,
+        responseMimeType: "application/json",
       },
     });
 
     const rawText = fullResponse.text ?? '';
-    const jsonStr = extractJson(rawText);
-    let parsedData;
-
-    try {
-        parsedData = JSON.parse(jsonStr);
-    } catch (e) {
-        parsedData = await repairAndParseJson(apiKey, jsonStr, modelName);
-    }
+    const parsedData = JSON.parse(rawText);
 
     const translatedFlat = reconstructTranslatedJson(parsedData, numberToKeyMap);
     return reconstructAnalysisFromTranslation(analysis, translatedFlat);
@@ -126,17 +122,13 @@ export const translateUI = async (
             config: {
                 systemInstruction: String(TRANSLATION_SYSTEM_PROMPT),
                 temperature: 0.2,
+                responseSchema: UI_TRANSLATION_SCHEMA,
+                responseMimeType: "application/json",
             },
         });
 
         const rawText = fullResponse.text ?? '';
-        const jsonStr = extractJson(rawText);
-        let parsedData;
-        try {
-            parsedData = JSON.parse(jsonStr);
-        } catch(e) {
-            parsedData = await repairAndParseJson(apiKey, jsonStr, GEMINI_MODEL_NAME);
-        }
+        const parsedData = JSON.parse(rawText);
 
         // Reconstruct the translated JSON with original keys
         return reconstructTranslatedJson(parsedData, numberToKeyMap);
