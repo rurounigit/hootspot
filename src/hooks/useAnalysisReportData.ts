@@ -84,10 +84,22 @@ export const useAnalysisReportData = (
          let match;
 
          while ((match = regex.exec(sourceText))) {
-             // FIX: The end position must be calculated based on the length of the actual
-             // match found in the source text (`match[0]`), not the cleaned quote.
-             // This preserves trailing punctuation in the highlight.
-             const quoteEnd = match.index + match[0].length;
+             // Find the actual end position in the source text by looking for trailing characters
+             // that should be included in the highlight
+             let quoteEnd = match.index + match[0].length;
+
+             // Extend the match to include trailing punctuation and quote characters
+             // that immediately follow the matched text
+             while (quoteEnd < sourceText.length) {
+               const nextChar = sourceText[quoteEnd];
+               // Include common trailing punctuation and quote characters
+               if (/[.,;:"“”'‘’`\-!?]/.test(nextChar)) {
+                 quoteEnd++;
+               } else {
+                 // Stop at whitespace or other characters that indicate word boundary
+                 break;
+               }
+             }
 
              const key = `${match.index}-${quoteEnd}`;
              const existing = matchesByPosition.get(key);
