@@ -39,7 +39,6 @@ export const translateAnalysisResult = async (
       config: {
         systemInstruction: String(systemPrompt),
         temperature: 0.2,
-        maxOutputTokens: 8192,
       },
     });
 
@@ -120,7 +119,6 @@ export const translateUI = async (
             config: {
                 systemInstruction: String(TRANSLATION_SYSTEM_PROMPT),
                 temperature: 0.2,
-                maxOutputTokens: 8192,
             },
         });
 
