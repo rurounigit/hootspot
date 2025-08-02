@@ -255,6 +255,7 @@ export const translateTextWithOllama = async (
     targetLanguage: LanguageCode,
     t: TFunction
 ): Promise<string> => {
+    if (!textToTranslate.trim()) return "";
     if (!serverUrl || !modelName) throw new Error(t('error_local_server_config_missing'));
     const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
     const languageName = languageMap[targetLanguage] || targetLanguage;
