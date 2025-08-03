@@ -72,51 +72,66 @@ export const useAnalysisReportData = (
 
   const finalHighlights = useMemo(() => {
     const matchesByPosition = new Map<string, { start: number; end: number; findings: (GeminiFinding & { displayIndex: number })[] }>();
+    const MIN_WORDS_FOR_MATCH = 3;
 
-     if (hasFindings && sourceText) {
-       indexedFindings.forEach(finding => {
-         const quote = finding.specific_quote;
-         if (!quote || typeof quote !== 'string' || quote.trim() === '') return;
+    if (hasFindings && sourceText) {
+      indexedFindings.forEach(finding => {
+        const originalQuote = finding.specific_quote;
+        if (!originalQuote || typeof originalQuote !== 'string' || originalQuote.trim() === '') return;
 
-         const cleanedQuoteForRegex = quote.trim().replace(/[\s.,;:"“”'‘’`]+$/g, "");
-         const escapedQuote = escapeRegex(cleanedQuoteForRegex);
-         const regex = new RegExp(escapedQuote, 'gi');
-         let match;
+        const cleanedQuote = originalQuote
+          .trim()
+          .replace(/^[.,;:"“”'‘’`\s…]+/, '')
+          .replace(/[.,;:"“”'‘’`\s…]+$/, '');
 
-         while ((match = regex.exec(sourceText))) {
-             // Find the actual end position in the source text by looking for trailing characters
-             // that should be included in the highlight
-             let quoteEnd = match.index + match[0].length;
+        if (!cleanedQuote) return;
 
-             // Extend the match to include trailing punctuation and quote characters
-             // that immediately follow the matched text
-             while (quoteEnd < sourceText.length) {
-               const nextChar = sourceText[quoteEnd];
-               // Include common trailing punctuation and quote characters
-               if (/[.,;:"“”'‘’`\-!?]/.test(nextChar)) {
-                 quoteEnd++;
-               } else {
-                 // Stop at whitespace or other characters that indicate word boundary
-                 break;
-               }
-             }
+        let words = cleanedQuote.split(/\s+/);
 
-             const key = `${match.index}-${quoteEnd}`;
-             const existing = matchesByPosition.get(key);
+        // *** THE NEW "SALAMI-SLICE" LOGIC ***
+        while (words.length >= MIN_WORDS_FOR_MATCH) {
+          const searchTerm = escapeRegex(words.join(' '));
+          const regex = new RegExp(searchTerm, 'gi');
 
-             if (existing) {
-               if (!existing.findings.some(f => f.displayIndex === finding.displayIndex)) {
-                 existing.findings.push(finding);
-               }
-             } else {
-                 matchesByPosition.set(key, {
-                     start: match.index,
-                     end: quoteEnd,
-                     findings: [finding],
-                 });
-             }
-         }
-       });
+          const allMatches = Array.from(sourceText.matchAll(regex));
+
+          // Only proceed if we find exactly one match to avoid ambiguity
+          if (allMatches.length === 1) {
+            const match = allMatches[0];
+            const matchIndex = match.index!;
+            let quoteEnd = matchIndex + match[0].length;
+
+            while (quoteEnd < sourceText.length) {
+              const nextChar = sourceText[quoteEnd];
+              if (/[.,;:"“”'‘’`\-!?]/.test(nextChar)) {
+                quoteEnd++;
+              } else {
+                break;
+              }
+            }
+
+            const key = `${matchIndex}-${quoteEnd}`;
+            const existing = matchesByPosition.get(key);
+            if (existing) {
+              if (!existing.findings.some(f => f.displayIndex === finding.displayIndex)) {
+                existing.findings.push(finding);
+              }
+            } else {
+              matchesByPosition.set(key, {
+                start: matchIndex,
+                end: quoteEnd,
+                findings: [finding],
+              });
+            }
+
+            // Match found, break the while loop for this finding
+            break;
+          }
+
+          // If no unique match found, remove the first word and try again
+          words.shift();
+        }
+      });
     }
 
     const sortedMatches = Array.from(matchesByPosition.values()).sort((a, b) => a.start - b.start);

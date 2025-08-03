@@ -11,8 +11,6 @@ For each finding of a manipulative pattern you identify, you must provide:
 5.  'strength': An integer score from 1 to 10. The more manipulative the pattern is the higher the score should be.
 6.  'category': Classify the pattern into ONE of the following keys: "category_interpersonal_psychological", "category_covert_indirect_control", or "category_sociopolitical_rhetorical".
 
-For "Repetition" patterns: Only add a finding where the EXACT same phrase or a very similar variation appears 2+ times in the text.
-
 You must respond ONLY with a valid JSON object with this structure:
 {"analysis_summary": "...", "findings": [{"pattern_name": "...", "display_name": "...", "specific_quote": "...", "explanation": "...", "strength": 5, "category": "..."}]}
 
