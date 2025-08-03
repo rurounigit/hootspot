@@ -106,6 +106,12 @@ export const useConfig = () => {
     setMaxCharLimit(newLimit);
   }, []);
 
+  const invalidateConfig = useCallback((errorMessage: string) => {
+      setIsVerified(false);
+      setTestStatus({ message: errorMessage, type: 'error' });
+      setIsConfigCollapsed(false);
+  }, []);
+
   const saveAndTestConfig = useCallback(async () => {
     setIsTesting(true);
     setTestStatus(null);
@@ -163,6 +169,7 @@ export const useConfig = () => {
     isTesting, testStatus,
     isCurrentProviderConfigured: isVerified,
     handleMaxCharLimitSave,
-    saveAndTestConfig
+    saveAndTestConfig,
+    invalidateConfig
   };
 };

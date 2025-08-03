@@ -33,6 +33,7 @@ const App: React.FC = () => {
     isConfigCollapsed, setIsConfigCollapsed,
     isCurrentProviderConfigured, isTesting, testStatus,
     saveAndTestConfig, handleMaxCharLimitSave,
+    invalidateConfig,
   } = useConfig();
 
   const { models, isLoading: areModelsLoading, error: modelsError, refetch: refetchModels } = useModels({
@@ -42,7 +43,8 @@ const App: React.FC = () => {
   });
 
   const {
-    isTranslatingRebuttal, handleRebuttalUpdate, displayedRebuttal, translationError, loadRebuttal
+    isTranslatingRebuttal, handleRebuttalUpdate, displayedRebuttal,
+    translationError: translationErrorObject, loadRebuttal, clearTranslationError,
   } = useTranslationManager({
       serviceProvider, localProviderType,
       apiKey: apiKeyInput,
@@ -53,10 +55,10 @@ const App: React.FC = () => {
   });
 
   const {
-    isLoading, error: analysisError, analysisResult,
+    isLoading, error: analysisErrorObject, analysisResult,
     currentTextAnalyzed, textToAnalyze, setTextToAnalyze,
     setPendingAnalysis, isTranslating, handleAnalyzeText,
-    handleJsonLoad, analysisReportRef, displayedAnalysis,
+    handleJsonLoad, analysisReportRef, displayedAnalysis, clearError: clearAnalysisError,
   } = useAnalysis(
     serviceProvider, localProviderType,
     apiKeyInput, lmStudioUrl, lmStudioModel,
@@ -137,6 +139,24 @@ const App: React.FC = () => {
   }, [isCurrentProviderConfigured, setPendingAnalysis, setTextToAnalyze, setIsConfigCollapsed]);
 
   useEffect(() => {
+    if (analysisErrorObject?.type === 'config') {
+      invalidateConfig(analysisErrorObject.message);
+      clearAnalysisError();
+    }
+  }, [analysisErrorObject, invalidateConfig, clearAnalysisError]);
+
+  useEffect(() => {
+    if (translationErrorObject?.type === 'config') {
+      invalidateConfig(translationErrorObject.message);
+      clearTranslationError();
+    }
+  }, [translationErrorObject, invalidateConfig, clearTranslationError]);
+
+  const generalAnalysisError = analysisErrorObject?.type === 'general' ? analysisErrorObject.message : null;
+  const generalTranslationError = translationErrorObject?.type === 'general' ? translationErrorObject.message : null;
+  const combinedError = generalAnalysisError || generalTranslationError;
+
+  useEffect(() => {
     if (textWasSetProgrammatically.current) {
       textareaRef.current?.focus();
       if (lastAction.current === 'APPEND') {
@@ -149,7 +169,6 @@ const App: React.FC = () => {
     }
   }, [textToAnalyze]);
 
-  const combinedError = analysisError || translationError;
   const isBusy = isLoading || areModelsLoading;
 
   return (
@@ -212,7 +231,7 @@ const App: React.FC = () => {
             </div>
           )}
           <div ref={analysisReportRef} className="mt-2">
-            {(!isLoading && !isTranslating && !analysisError && displayedAnalysis) && (
+            {(!isLoading && !isTranslating && !combinedError && displayedAnalysis) && (
                <AnalysisReport
                     analysis={displayedAnalysis}
                     sourceText={currentTextAnalyzed}

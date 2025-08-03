@@ -38,7 +38,7 @@ export const testApiKey = async (
   modelName: string
 ): Promise<void> => {
   if (!apiKey) {
-    throw new Error('error_api_key_empty');
+    throw new Error(`KEY::error_api_key_empty::${t('error_api_key_empty')}`);
   }
   try {
     const ai = new GoogleGenAI({ apiKey });
@@ -52,23 +52,23 @@ export const testApiKey = async (
       }
     });
     if (!(response.text) || response.text.trim().length === 0) {
-        throw new Error(t('test_query_returned_empty'));
+        throw new Error(`KEY::test_query_returned_empty::${t('test_query_returned_empty')}`);
     }
-  } catch (error: any) {
+    } catch (error: any) {
     console.error("API Key test failed:", error);
     let apiErrorObject;
     try {
       apiErrorObject = JSON.parse(error.message);
     } catch (e) {
-      throw new Error(t('error_api_key_test_failed_message', { message: error.message || 'Unknown error' }));
+      throw new Error(`KEY::error_api_key_test_failed_message::${t('error_api_key_test_failed_message', { message: error.message || 'Unknown error' })}`);
     }
     if (apiErrorObject && apiErrorObject.error && apiErrorObject.error.message) {
       const { code, status, message } = apiErrorObject.error;
       if (status === 'RESOURCE_EXHAUSTED' || code === 429) {
-        throw new Error(t('error_quota_exhausted', { message: message }));
+        throw new Error(`KEY::error_quota_exhausted::${t('error_quota_exhausted', { message: message })}`);
       }
-      throw new Error(t('error_api_generic', { message: message }));
+      throw new Error(`KEY::error_api_generic::${t('error_api_generic', { message: message })}`);
     }
-    throw new Error(t('error_api_key_test_failed_generic'));
+    throw new Error(`KEY::error_api_key_test_failed_generic::${t('error_api_key_test_failed_generic')}`);
   }
 };

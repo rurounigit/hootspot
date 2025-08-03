@@ -7,6 +7,26 @@ import { analyzeTextWithLMStudio, translateAnalysisResultWithLMStudio } from '..
 import { analyzeTextWithOllama, translateAnalysisResultWithOllama } from '../api/ollama';
 import { GeminiAnalysisResponse } from '../types/api';
 
+const CONFIG_ERROR_KEYS = [
+    'error_api_key_not_configured', 'error_api_key_empty', 'error_api_key_test_failed_message', 'error_quota_exhausted', 'error_api_generic', 'error_api_key_test_failed_generic',
+    'error_local_server_config_missing', 'error_local_server_connection', 'error_local_model_not_loaded', 'error_local_model_not_loaded_exact', 'error_local_model_mismatch',
+    'error_provider_not_configured',
+    'test_query_returned_empty',
+];
+
+const isConfigError = (errorMessage: string): boolean => {
+    if (!errorMessage || !errorMessage.startsWith('KEY::')) return false;
+    const key = errorMessage.split('::')[1];
+    return CONFIG_ERROR_KEYS.some(configKey => key === configKey);
+};
+
+const getCleanErrorMessage = (errorMessage: string): string => {
+    if (errorMessage && errorMessage.startsWith('KEY::')) {
+        return errorMessage.substring(errorMessage.indexOf('::', 5) + 2);
+    }
+    return errorMessage;
+};
+
 export const useAnalysis = (
   serviceProvider: 'google' | 'local',
   localProviderType: 'lm-studio' | 'ollama',
@@ -22,7 +42,7 @@ export const useAnalysis = (
 ) => {
   const { t, language } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ message: string, type: 'config' | 'general' } | null>(null);
   const [analysisResult, setAnalysisResult] = useState<GeminiAnalysisResponse | null>(null);
   const [currentTextAnalyzed, setCurrentTextAnalyzed] = useState<string | null>(null);
   const [textToAnalyze, setTextToAnalyze] = useState('');
@@ -49,7 +69,13 @@ export const useAnalysis = (
           }
           setTranslatedResults(prev => ({ ...prev, [targetLang]: translatedResult }));
       } catch (err: any) {
-          setError((err as Error).message);
+          const rawMessage = (err as Error).message;
+          const cleanMessage = getCleanErrorMessage(rawMessage);
+          if (isConfigError(rawMessage)) {
+              setError({ message: cleanMessage, type: 'config' });
+          } else {
+              setError({ message: cleanMessage, type: 'general' });
+          }
       } finally {
           setIsTranslating(false);
       }
@@ -62,7 +88,7 @@ export const useAnalysis = (
   const handleAnalyzeText = useCallback(async (text: string) => {
     if (!isCurrentProviderConfigured) {
       setIsConfigCollapsed(false);
-      setError(t('error_provider_not_configured'));
+      setError({ message: t('error_provider_not_configured'), type: 'config' });
       return;
     }
     setIsLoading(true);
@@ -91,7 +117,13 @@ export const useAnalysis = (
         await translateAnalysis(result, language);
       }
     } catch (err: any) {
-      setError((err as Error).message);
+      const rawMessage = (err as Error).message;
+      const cleanMessage = getCleanErrorMessage(rawMessage);
+      if (isConfigError(rawMessage)) {
+        setError({ message: cleanMessage, type: 'config' });
+      } else {
+        setError({ message: cleanMessage, type: 'general' });
+      }
       setAnalysisResult(null);
     } finally {
       setIsLoading(false);
@@ -150,10 +182,17 @@ export const useAnalysis = (
         } else {
           setTranslatedResults({ [language]: data.analysisResult });
         }
-      } catch (e: any) { setError(`${t('error_json_load_failed')} ${e.message}`); }
+      } catch (e: any) {
+          const rawMessage = (e as Error).message;
+          const cleanMessage = getCleanErrorMessage(rawMessage);
+          const finalMessage = `${t('error_json_load_failed')} ${cleanMessage}`;
+          setError({ message: finalMessage, type: 'general' });
+      }
     };
     reader.readAsText(file);
   };
+
+  const clearError = useCallback(() => { setError(null); }, []);
 
   return {
     isLoading,
@@ -168,5 +207,6 @@ export const useAnalysis = (
     handleJsonLoad,
     analysisReportRef,
     displayedAnalysis: translatedResults[language] || analysisResult,
+    clearError,
   };
 };

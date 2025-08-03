@@ -108,7 +108,7 @@ export const testLMStudioConnection = async (
     t: TFunction
 ): Promise<void> => {
     if (!serverUrl || !modelName) {
-        throw new Error('error_local_server_config_missing');
+        throw new Error(`KEY::error_local_server_config_missing::${t('error_local_server_config_missing')}`);
     }
     try {
         const response = await fetch(`${serverUrl}/v1/chat/completions`, {
@@ -125,24 +125,24 @@ export const testLMStudioConnection = async (
             const errorData = await response.json().catch(() => ({}));
             const errorMessage = errorData.error?.message || response.statusText;
             if (errorMessage.includes("model_not_found")) {
-                 throw new Error(t('error_local_model_not_loaded_exact', { model: modelName }));
+                 throw new Error(`KEY::error_local_model_not_loaded_exact::${t('error_local_model_not_loaded_exact', { model: modelName })}`);
             }
-            throw new Error(t('error_local_model_not_loaded', { model: modelName, message: errorMessage }));
+            throw new Error(`KEY::error_local_model_not_loaded::${t('error_local_model_not_loaded', { model: modelName, message: errorMessage })}`);
         }
 
         const data = await response.json();
         if (!data.choices || data.choices.length === 0) {
-            throw new Error(t('test_query_returned_empty'));
+            throw new Error(`KEY::test_query_returned_empty::${t('test_query_returned_empty')}`);
         }
         const respondingModel = data.model;
         if (respondingModel && !respondingModel.toLowerCase().includes(modelName.toLowerCase())) {
-            throw new Error(t('error_local_model_mismatch', { requested: modelName, actual: respondingModel }));
+            throw new Error(`KEY::error_local_model_mismatch::${t('error_local_model_mismatch', { requested: modelName, actual: respondingModel })}`);
         }
 
     } catch (error: any) {
         if (error.message.includes('error_local_model_mismatch')) throw error;
         if (error instanceof TypeError || error.message.includes('Failed to fetch')) {
-            throw new Error(t('error_local_server_connection', { url: serverUrl }));
+            throw new Error(`KEY::error_local_server_connection::${t('error_local_server_connection', { url: serverUrl })}`);
         }
         throw error;
     }
@@ -154,7 +154,7 @@ export const analyzeTextWithLMStudio = async (
     modelName: string,
     t: TFunction
 ): Promise<GeminiAnalysisResponse> => {
-    if (!serverUrl || !modelName) throw new Error('error_local_server_config_missing');
+    if (!serverUrl || !modelName) throw new Error(`KEY::error_local_server_config_missing::${t('error_local_server_config_missing')}`);
     if (!textToAnalyze.trim()) return { analysis_summary: "No text provided for analysis.", findings: [] };
 
     const payload = {
@@ -174,11 +174,11 @@ export const analyzeTextWithLMStudio = async (
         });
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(t('error_local_model_not_loaded', { model: modelName, message: errorData.error?.message || response.statusText }));
+            throw new Error(`KEY::error_local_model_not_loaded::${t('error_local_model_not_loaded', { model: modelName, message: errorData.error?.message || response.statusText })}`);
         }
         const data = await response.json();
         const content = data.choices[0]?.message?.content;
-        if (!content) throw new Error(t('error_unexpected_json_structure'));
+        if (!content) throw new Error(`KEY::error_unexpected_json_structure::${t('error_unexpected_json_structure')}`);
 
         const jsonStr = extractJson(content);
         let parsedData;
@@ -214,7 +214,7 @@ export const generateRebuttalWithLMStudio = async (
     languageCode: LanguageCode,
     t: TFunction
 ): Promise<string> => {
-    if (!serverUrl || !modelName) throw new Error(t('error_local_server_config_missing'));
+    if (!serverUrl || !modelName) throw new Error(`KEY::error_local_server_config_missing::${t('error_local_server_config_missing')}`);
     if (!sourceText || !analysis) throw new Error("Source text and analysis are required to generate a rebuttal.");
     const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
     const languageName = languageMap[languageCode] || languageCode;
@@ -238,11 +238,11 @@ export const generateRebuttalWithLMStudio = async (
     });
     if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(t('error_local_model_not_loaded', { model: modelName, message: errorData.error?.message || response.statusText }));
+        throw new Error(`KEY::error_local_model_not_loaded::${t('error_local_model_not_loaded', { model: modelName, message: errorData.error?.message || response.statusText })}`);
     }
     const data = await response.json();
     const content = data.choices[0]?.message?.content;
-    if (!content) throw new Error(t('error_unexpected_json_structure'));
+    if (!content) throw new Error(`KEY::error_unexpected_json_structure::${t('error_unexpected_json_structure')}`);
     return content.trim();
 };
 
@@ -253,7 +253,7 @@ export const translateUIWithLMStudio = async (
     jsonToTranslate: string,
     t: TFunction,
 ): Promise<Record<string, string>> => {
-    if (!serverUrl || !modelName) throw new Error(t('error_local_server_config_missing'));
+    if (!serverUrl || !modelName) throw new Error(`KEY::error_local_server_config_missing::${t('error_local_server_config_missing')}`);
 
     const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
     const languageName = languageMap[languageCode] || languageCode;
@@ -282,11 +282,11 @@ export const translateUIWithLMStudio = async (
     });
     if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(t('error_local_model_not_loaded', { model: modelName, message: errorData.error?.message || response.statusText }));
+        throw new Error(`KEY::error_local_model_not_loaded::${t('error_local_model_not_loaded', { model: modelName, message: errorData.error?.message || response.statusText })}`);
     }
     const data = await response.json();
     const content = data.choices[0]?.message?.content;
-    if (!content) throw new Error(t('error_unexpected_json_structure'));
+    if (!content) throw new Error(`KEY::error_unexpected_json_structure::${t('error_unexpected_json_structure')}`);
 
     // Reconstruct the translated JSON with original keys
     const translatedNumbered = JSON.parse(extractJson(content));
@@ -300,7 +300,7 @@ export const translateAnalysisResultWithLMStudio = async (
     targetLanguage: LanguageCode,
     t: TFunction
 ): Promise<GeminiAnalysisResponse> => {
-    if (!serverUrl || !modelName) throw new Error(t('error_local_server_config_missing'));
+    if (!serverUrl || !modelName) throw new Error(`KEY::error_local_server_config_missing::${t('error_local_server_config_missing')}`);
     const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
     const languageName = languageMap[targetLanguage] || targetLanguage;
     const systemPrompt = ANALYSIS_TRANSLATION_PROMPT.replace('{language}', languageName);
@@ -324,11 +324,11 @@ export const translateAnalysisResultWithLMStudio = async (
         body: JSON.stringify(payload),
     });
 
-    if (!response.ok) throw new Error(t('error_translation_failed', { message: `LM Studio: ${response.statusText}` }));
+    if (!response.ok) throw new Error(`KEY::error_translation_failed::${t('error_translation_failed', { message: `LM Studio: ${response.statusText}` })}`);
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content;
-    if (!content) throw new Error(t('error_unexpected_json_structure'));
+    if (!content) throw new Error(`KEY::error_unexpected_json_structure::${t('error_unexpected_json_structure')}`);
 
     const translatedNumbered = JSON.parse(extractJson(content));
     const translatedFlat = reconstructTranslatedJson(translatedNumbered, numberToKeyMap);
@@ -344,7 +344,7 @@ export const translateTextWithLMStudio = async (
     t: TFunction
 ): Promise<string> => {
     if (!textToTranslate.trim()) return "";
-    if (!serverUrl || !modelName) throw new Error(t('error_local_server_config_missing'));
+    if (!serverUrl || !modelName) throw new Error(`KEY::error_local_server_config_missing::${t('error_local_server_config_missing')}`);
     const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
     const languageName = languageMap[targetLanguage] || targetLanguage;
     const systemPrompt = SIMPLE_TEXT_TRANSLATION_PROMPT.replace('{language}', languageName);
@@ -361,7 +361,7 @@ export const translateTextWithLMStudio = async (
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
     });
-    if (!response.ok) throw new Error(t('error_rebuttal_translation_failed', { message: `LM Studio: ${response.statusText}` }));
+    if (!response.ok) throw new Error(`KEY::error_rebuttal_translation_failed::${t('error_rebuttal_translation_failed', { message: `LM Studio: ${response.statusText}` })}`);
     const data = await response.json();
     return (data.choices[0]?.message?.content || '').trim();
 };

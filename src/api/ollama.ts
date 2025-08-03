@@ -107,7 +107,7 @@ export const testOllamaConnection = async (
     modelName: string,
     t: TFunction
 ): Promise<void> => {
-    if (!serverUrl || !modelName) throw new Error('error_local_server_config_missing');
+    if (!serverUrl || !modelName) throw new Error(`KEY::error_local_server_config_missing::${t('error_local_server_config_missing')}`);
     try {
         const response = await fetch(`${serverUrl}/api/chat`, {
             method: 'POST',
@@ -119,11 +119,11 @@ export const testOllamaConnection = async (
         });
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
-            throw new Error(t('error_local_model_not_loaded', { model: modelName, message: errorData.error || response.statusText }));
+            throw new Error(`KEY::error_local_model_not_loaded::${t('error_local_model_not_loaded', { model: modelName, message: errorData.error || response.statusText })}`);
         }
     } catch (error: any) {
         if (error instanceof TypeError || error.message.includes('Failed to fetch')) {
-            throw new Error(t('error_local_server_connection', { url: serverUrl }));
+            throw new Error(`KEY::error_local_server_connection::${t('error_local_server_connection', { url: serverUrl })}`);
         }
         throw error;
     }
@@ -135,7 +135,7 @@ export const analyzeTextWithOllama = async (
     modelName: string,
     t: TFunction
 ): Promise<GeminiAnalysisResponse> => {
-    if (!serverUrl || !modelName) throw new Error('error_local_server_config_missing');
+    if (!serverUrl || !modelName) throw new Error(`KEY::error_local_server_config_missing::${t('error_local_server_config_missing')}`);
     if (!textToAnalyze.trim()) return { analysis_summary: "No text provided for analysis.", findings: [] };
 
     const payload = {
@@ -155,11 +155,11 @@ export const analyzeTextWithOllama = async (
         });
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(t('error_local_model_not_loaded', { model: modelName, message: errorData.error || response.statusText }));
+            throw new Error(`KEY::error_local_model_not_loaded::${t('error_local_model_not_loaded', { model: modelName, message: errorData.error || response.statusText })}`);
         }
         const data = await response.json();
         const content = data.message?.content;
-        if (!content) throw new Error(t('error_unexpected_json_structure'));
+        if (!content) throw new Error(`KEY::error_unexpected_json_structure::${t('error_unexpected_json_structure')}`);
 
         const jsonStr = extractJson(content);
         let parsedData;
@@ -216,7 +216,7 @@ export const generateRebuttalWithOllama = async (
     });
     if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(t('error_local_model_not_loaded', { model: modelName, message: errorData.error || "Unknown" }));
+        throw new Error(`KEY::error_local_model_not_loaded::${t('error_local_model_not_loaded', { model: modelName, message: errorData.error || "Unknown" })}`);
     }
     const data = await response.json();
     return (data.message?.content || '').trim();
@@ -253,11 +253,11 @@ export const translateUIWithOllama = async (
     });
     if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(t('error_local_model_not_loaded', { model: modelName, message: errorData.error || "Unknown" }));
+        throw new Error(`KEY::error_local_model_not_loaded::${t('error_local_model_not_loaded', { model: modelName, message: errorData.error || "Unknown" })}`);
     }
     const data = await response.json();
     const content = data.message?.content;
-    if (!content) throw new Error(t('error_unexpected_json_structure'));
+    if (!content) throw new Error(`KEY::error_unexpected_json_structure::${t('error_unexpected_json_structure')}`);
 
     const translatedNumbered = JSON.parse(extractJson(content));
     return reconstructTranslatedJson(translatedNumbered, numberToKeyMap);
@@ -270,7 +270,7 @@ export const translateAnalysisResultWithOllama = async (
     targetLanguage: LanguageCode,
     t: TFunction
 ): Promise<GeminiAnalysisResponse> => {
-    if (!serverUrl || !modelName) throw new Error(t('error_local_server_config_missing'));
+    if (!serverUrl || !modelName) throw new Error(`KEY::error_local_server_config_missing::${t('error_local_server_config_missing')}`);
     const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
     const languageName = languageMap[targetLanguage] || targetLanguage;
 
@@ -295,11 +295,11 @@ export const translateAnalysisResultWithOllama = async (
         body: JSON.stringify(payload),
     });
 
-    if (!response.ok) throw new Error(t('error_translation_failed', { message: `Ollama: ${response.statusText}` }));
+    if (!response.ok) throw new Error(`KEY::error_translation_failed::${t('error_translation_failed', { message: `Ollama: ${response.statusText}` })}`);
 
     const data = await response.json();
     const content = data.message?.content;
-    if (!content) throw new Error(t('error_unexpected_json_structure'));
+    if (!content) throw new Error(`KEY::error_unexpected_json_structure::${t('error_unexpected_json_structure')}`);
 
     const translatedNumbered = JSON.parse(extractJson(content));
     const translatedFlat = reconstructTranslatedJson(translatedNumbered, numberToKeyMap);
@@ -315,7 +315,7 @@ export const translateTextWithOllama = async (
     t: TFunction
 ): Promise<string> => {
     if (!textToTranslate.trim()) return "";
-    if (!serverUrl || !modelName) throw new Error(t('error_local_server_config_missing'));
+    if (!serverUrl || !modelName) throw new Error(`KEY::error_local_server_config_missing::${t('error_local_server_config_missing')}`);
     const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
     const languageName = languageMap[targetLanguage] || targetLanguage;
 
@@ -333,7 +333,7 @@ export const translateTextWithOllama = async (
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
     });
-    if (!response.ok) throw new Error(t('error_rebuttal_translation_failed', { message: `Ollama: ${response.statusText}` }));
+    if (!response.ok) throw new Error(`KEY::error_rebuttal_translation_failed::${t('error_rebuttal_translation_failed', { message: `Ollama: ${response.statusText}` })}`);
     const data = await response.json();
     return (data.message?.content || '').trim();
 };
