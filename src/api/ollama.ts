@@ -5,7 +5,8 @@ import {
   REBUTTAL_SYSTEM_PROMPT,
   TRANSLATION_SYSTEM_PROMPT,
   ANALYSIS_TRANSLATION_PROMPT,
-  SIMPLE_TEXT_TRANSLATION_PROMPT
+  SIMPLE_TEXT_TRANSLATION_PROMPT,
+  JSON_REPAIR_SYSTEM_PROMPT,
 } from '../config/api-prompts';
 import { GeminiAnalysisResponse, GeminiFinding, GeminiModel } from '../types/api';
 import { LanguageCode } from '../i18n';
@@ -20,6 +21,62 @@ import { LANGUAGE_CODE_MAP } from '../constants';
 
 
 type TFunction = (key: string, replacements?: Record<string, string | number>) => string;
+
+/**
+ * Attempts to repair a malformed JSON string by sending it back to the Ollama model
+ * with specific instructions to fix it.
+ * @param serverUrl The URL of the Ollama server.
+ * @param modelName The model to use for the repair.
+ * @param brokenJson The malformed JSON string.
+ * @param t The translation function for error messages.
+ * @returns A promise that resolves to the parsed JSON object.
+ */
+async function repairAndParseJsonWithOllama(
+    serverUrl: string,
+    modelName: string,
+    brokenJson: string,
+    t: TFunction
+): Promise<any> {
+    console.warn("HootSpot: Attempting to repair malformed JSON from Ollama...");
+    try {
+        const payload = {
+            model: modelName,
+            messages: [
+                { role: "system", content: JSON_REPAIR_SYSTEM_PROMPT },
+                { role: "user", content: brokenJson }
+            ],
+            format: "json", // Ask Ollama to ensure the output is JSON
+            stream: false,
+            options: {
+                temperature: 0.0,
+            }
+        };
+        const response = await fetch(`${serverUrl}/api/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            throw new Error(t('error_analysis_failed', { message: `Repair attempt failed with status: ${response.statusText}` }));
+        }
+
+        const data = await response.json();
+        const repairedContent = data.message?.content;
+        if (!repairedContent) {
+            throw new Error(t('error_unexpected_json_structure'));
+        }
+
+        // Ollama with format: "json" should return clean JSON, but we extract just in case.
+        const repairedJson = extractJson(repairedContent);
+        return JSON.parse(repairedJson);
+
+    } catch (e: any) {
+        console.error("--- HootSpot JSON REPAIR FAILED ---");
+        console.error("Original broken JSON from Ollama:", brokenJson);
+        throw new Error(t('error_analysis_failed', { message: `Failed to parse or repair the model's response. Details: ${e.message}` }));
+    }
+}
 
 export const fetchOllamaModels = async (serverUrl: string): Promise<GeminiModel[]> => {
   try {
@@ -104,8 +161,16 @@ export const analyzeTextWithOllama = async (
         const content = data.message?.content;
         if (!content) throw new Error(t('error_unexpected_json_structure'));
 
-        // CORRECTED: Use extractJson for safety
-        let parsedData = JSON.parse(extractJson(content));
+        const jsonStr = extractJson(content);
+        let parsedData;
+
+        try {
+            // First attempt to parse
+            parsedData = JSON.parse(jsonStr);
+        } catch (error) {
+            // Fallback to repair function
+            parsedData = await repairAndParseJsonWithOllama(serverUrl, modelName, jsonStr, t);
+        }
 
         if (typeof parsedData.analysis_summary === 'string' && Array.isArray(parsedData.findings)) {
             parsedData.findings.sort((a: GeminiFinding, b: GeminiFinding) => {
@@ -167,10 +232,7 @@ export const translateUIWithOllama = async (
     const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
     const languageName = languageMap[languageCode] || languageCode;
 
-    // Parse the base translations JSON
     const baseTranslations = JSON.parse(jsonToTranslate);
-
-    // Use translation utilities for token efficiency
     const { numberedJson, numberToKeyMap } = createNumberedJsonForTranslation(baseTranslations);
     const contentToTranslate = JSON.stringify(numberedJson);
 
@@ -197,8 +259,6 @@ export const translateUIWithOllama = async (
     const content = data.message?.content;
     if (!content) throw new Error(t('error_unexpected_json_structure'));
 
-    // CORRECTED: Use extractJson for safety
-    // Reconstruct the translated JSON with original keys
     const translatedNumbered = JSON.parse(extractJson(content));
     return reconstructTranslatedJson(translatedNumbered, numberToKeyMap);
 };
@@ -241,7 +301,6 @@ export const translateAnalysisResultWithOllama = async (
     const content = data.message?.content;
     if (!content) throw new Error(t('error_unexpected_json_structure'));
 
-    // CORRECTED: Use extractJson for safety
     const translatedNumbered = JSON.parse(extractJson(content));
     const translatedFlat = reconstructTranslatedJson(translatedNumbered, numberToKeyMap);
 

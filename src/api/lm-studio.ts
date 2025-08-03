@@ -5,7 +5,8 @@ import {
   REBUTTAL_SYSTEM_PROMPT,
   TRANSLATION_SYSTEM_PROMPT,
   ANALYSIS_TRANSLATION_PROMPT,
-  SIMPLE_TEXT_TRANSLATION_PROMPT
+  SIMPLE_TEXT_TRANSLATION_PROMPT,
+  JSON_REPAIR_SYSTEM_PROMPT,
 } from '../config/api-prompts';
 import { GeminiAnalysisResponse, GeminiFinding, GeminiModel } from '../types/api';
 import { LanguageCode } from '../i18n';
@@ -19,6 +20,60 @@ import { extractJson } from '../utils/apiUtils';
 import { LANGUAGE_CODE_MAP } from '../constants';
 
 type TFunction = (key: string, replacements?: Record<string, string | number>) => string;
+
+/**
+ * Attempts to repair a malformed JSON string by sending it back to the model
+ * with specific instructions to fix it.
+ * @param serverUrl The URL of the LM Studio server.
+ * @param modelName The model to use for the repair.
+ * @param brokenJson The malformed JSON string.
+ * @param t The translation function for error messages.
+ * @returns A promise that resolves to the parsed JSON object.
+ */
+async function repairAndParseJsonWithLMStudio(
+    serverUrl: string,
+    modelName: string,
+    brokenJson: string,
+    t: TFunction
+): Promise<any> {
+    console.warn("HootSpot: Attempting to repair malformed JSON from LM Studio...");
+    try {
+        const payload = {
+            model: modelName,
+            messages: [
+                { role: "system", content: JSON_REPAIR_SYSTEM_PROMPT },
+                { role: "user", content: brokenJson }
+            ],
+            temperature: 0.0, // Use 0 temperature for deterministic repair
+        };
+        const response = await fetch(`${serverUrl}/v1/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            throw new Error(t('error_analysis_failed', { message: `Repair attempt failed with status: ${response.statusText}` }));
+        }
+
+        const data = await response.json();
+        const repairedContent = data.choices[0]?.message?.content;
+        if (!repairedContent) {
+            throw new Error(t('error_unexpected_json_structure'));
+        }
+
+        // Extract JSON from the repaired content, in case the model added markdown fences again
+        const repairedJson = extractJson(repairedContent);
+        return JSON.parse(repairedJson); // Parse the hopefully fixed JSON
+
+    } catch (e: any) {
+        console.error("--- HootSpot JSON REPAIR FAILED ---");
+        console.error("Original broken JSON from LM Studio:", brokenJson);
+        // Throw a specific, user-facing error.
+        throw new Error(t('error_analysis_failed', { message: `Failed to parse or repair the model's response. Details: ${e.message}` }));
+    }
+}
+
 
 export const fetchLMStudioModels = async (serverUrl: string): Promise<GeminiModel[]> => {
   try {
@@ -124,7 +179,18 @@ export const analyzeTextWithLMStudio = async (
         const data = await response.json();
         const content = data.choices[0]?.message?.content;
         if (!content) throw new Error(t('error_unexpected_json_structure'));
-        let parsedData = JSON.parse(extractJson(content));
+
+        const jsonStr = extractJson(content);
+        let parsedData;
+
+        try {
+            // First attempt to parse the extracted JSON directly
+            parsedData = JSON.parse(jsonStr);
+        } catch (error) {
+            // If parsing fails, attempt to repair it
+            parsedData = await repairAndParseJsonWithLMStudio(serverUrl, modelName, jsonStr, t);
+        }
+
         if (typeof parsedData.analysis_summary === 'string' && Array.isArray(parsedData.findings)) {
             parsedData.findings.sort((a: GeminiFinding, b: GeminiFinding) => {
                 return (textToAnalyze.indexOf(a.specific_quote) - textToAnalyze.indexOf(b.specific_quote));
@@ -136,7 +202,7 @@ export const analyzeTextWithLMStudio = async (
     } catch (error: any) {
         if (error instanceof TypeError) throw new Error(t('error_local_server_connection', { url: serverUrl }));
         console.error("Error analyzing text with LM Studio:", error);
-        throw error;
+        throw error; // Re-throw the (potentially new) error
     }
 };
 
