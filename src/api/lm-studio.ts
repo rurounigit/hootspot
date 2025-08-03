@@ -163,7 +163,7 @@ export const analyzeTextWithLMStudio = async (
             { role: "system", content: SYSTEM_PROMPT },
             { role: "user", content: `Please analyze the following text: ${textToAnalyze}` }
         ],
-        temperature: 0.2,
+        temperature: 0,
         max_tokens: 8192,
     };
     try {

@@ -115,6 +115,7 @@ export const testOllamaConnection = async (
             body: JSON.stringify({
                 model: modelName,
                 messages: [{ role: 'user', content: 'Hello' }],
+                options: {"num_ctx": 5, "temperature": 0}
             }),
         });
         if (!response.ok) {
@@ -146,6 +147,7 @@ export const analyzeTextWithOllama = async (
         ],
         format: "json",
         stream: false,
+        options: {"temperature": 0}
     };
     try {
         const response = await fetch(`${serverUrl}/api/chat`, {
@@ -208,6 +210,7 @@ export const generateRebuttalWithOllama = async (
             { role: "user", content: userContent }
         ],
         stream: false,
+        options: {"temperature": 0.7}
     };
     const response = await fetch(`${serverUrl}/api/chat`, {
         method: 'POST',
@@ -245,6 +248,7 @@ export const translateUIWithOllama = async (
         ],
         format: "json",
         stream: false,
+        options: {"temperature": 0.2}
     };
     const response = await fetch(`${serverUrl}/api/chat`, {
         method: 'POST',
@@ -288,6 +292,7 @@ export const translateAnalysisResultWithOllama = async (
         ],
         format: "json",
         stream: false,
+        options: {"temperature": 0.2}
     };
     const response = await fetch(`${serverUrl}/api/chat`, {
         method: 'POST',
@@ -327,6 +332,7 @@ export const translateTextWithOllama = async (
             { role: "user", content: textToTranslate }
         ],
         stream: false,
+        options: {"temperature": 0.2}
     };
     const response = await fetch(`${serverUrl}/api/chat`, {
         method: 'POST',

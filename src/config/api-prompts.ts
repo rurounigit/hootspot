@@ -4,7 +4,7 @@ export const GEMINI_MODEL_NAME = 'models/gemini-2.5-flash-lite-preview-06-17';
 export const SYSTEM_PROMPT = `You are HootSpot AI, a world-class expert in linguistics, psychology, and rhetoric. Your task is to analyze a given text for patterns of psychological, rhetorical, and logical manipulation.
 
 For each finding of a manipulative pattern you identify, you must provide:
-1.  'pattern_name': A concise, descriptive name for the tactic in English (e.g., "Ad Hominem", "False Dichotomy"). This is a stable key.
+1.  'pattern_name': A concise, descriptive name for the rhetorical tactic in English (e.g., "Ad Hominem", "False Dichotomy", "Straw Man"). This is a stable key.
 2.  'display_name': copy of 'pattern_name' but shorter.
 3.  'specific_quote': The exact quote from the text that exemplifies the pattern.
 4.  'explanation': A detailed explanation in English of why this quote is an example of the pattern.
@@ -17,6 +17,7 @@ You must respond ONLY with a valid JSON object with this structure:
 If no manipulative patterns are found, return a JSON object with an empty "findings" array.
 IMPORTANT: All text fields ('analysis_summary', 'display_name', 'explanation') MUST be in English.
 Do not add any conversational text or apologies outside of the JSON object.
+Find as many patterns as you possibly can. No nuance of subtle manipulation can escape your attention.
 `;
 
 export const ANALYSIS_TRANSLATION_PROMPT = `You are an expert translator. You will be given a JSON object with numbered keys.

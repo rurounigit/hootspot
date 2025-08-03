@@ -30,7 +30,7 @@ export const analyzeText = async (
         ],
         config: {
           systemInstruction: String(SYSTEM_PROMPT),
-          temperature: 0.2,
+          temperature: 0.0,
           topP: 0,
           topK: 1,
         },
