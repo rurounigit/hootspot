@@ -1,47 +1,58 @@
 // src/hooks/useModels.ts
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { GeminiModel } from '../types/api';
-import { fetchModels } from '../api/google';
+import { fetchModels as fetchGoogleModels } from '../api/google/models';
+import { fetchLMStudioModels } from '../api/lm-studio';
+import { fetchOllamaModels } from '../api/ollama';
 
-// Define the new shape for our models state, which will be returned by fetchModels
 export interface GroupedModels {
   preview: GeminiModel[];
   stable: GeminiModel[];
 }
 
-export const useModels = (apiKey: string | null) => {
-  // The state now holds the new grouped structure
+interface UseModelsProps {
+    serviceProvider: 'google' | 'local';
+    localProviderType: 'lm-studio' | 'ollama';
+    apiKey: string | null;
+    lmStudioUrl: string;
+    ollamaUrl: string;
+}
+
+export const useModels = ({ serviceProvider, localProviderType, apiKey, lmStudioUrl, ollamaUrl }: UseModelsProps) => {
   const [models, setModels] = useState<GroupedModels>({ preview: [], stable: [] });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // If there's no API key, reset the state and do nothing.
-    if (!apiKey) {
-      setModels({ preview: [], stable: [] });
-      setIsLoading(false); // Ensure loading is turned off if key is cleared
-      return;
-    }
+  const loadModels = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    setModels({ preview: [], stable: [] });
 
-    const loadModels = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        // fetchModels will now return the { preview: [], stable: [] } object
-        const fetchedModels = await fetchModels(apiKey);
-        setModels(fetchedModels);
-      } catch (err: any) {
+    try {
+        if (serviceProvider === 'google' && apiKey) {
+            const fetchedModels = await fetchGoogleModels(apiKey);
+            setModels(fetchedModels);
+        } else if (serviceProvider === 'local') {
+            let fetchedModels: GeminiModel[] = [];
+            if (localProviderType === 'lm-studio' && lmStudioUrl) {
+                fetchedModels = await fetchLMStudioModels(lmStudioUrl);
+            } else if (localProviderType === 'ollama' && ollamaUrl) {
+                fetchedModels = await fetchOllamaModels(ollamaUrl);
+            }
+            setModels({ preview: [], stable: fetchedModels });
+        }
+    } catch (err: any) {
         setError(err.message || 'An unknown error occurred while fetching models.');
-        // Ensure state is reset on error
         setModels({ preview: [], stable: [] });
-      } finally {
+    } finally {
         setIsLoading(false);
-      }
-    };
+    }
+  }, [serviceProvider, localProviderType, apiKey, lmStudioUrl, ollamaUrl]);
 
+  useEffect(() => {
     loadModels();
-  }, [apiKey]); // This effect re-runs only when the apiKey changes
+  }, [loadModels]);
 
-  return { models, isLoading, error };
+  return { models, isLoading, error, refetch: loadModels };
 };

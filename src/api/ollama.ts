@@ -1,4 +1,4 @@
-// src/api/lm-studio.ts
+// src/api/ollama.ts
 
 import {
   SYSTEM_PROMPT,
@@ -18,22 +18,22 @@ import {
 } from '../utils/translationUtils';
 import { extractJson } from '../utils/apiUtils';
 import { LANGUAGE_CODE_MAP } from '../constants';
-import JSON5 from 'json5';
+
 
 /**
- * Attempts to repair a malformed JSON string by sending it back to the model
+ * Attempts to repair a malformed JSON string by sending it back to the Ollama model
  * with specific instructions to fix it.
- * @param serverUrl The URL of the LM Studio server.
+ * @param serverUrl The URL of the Ollama server.
  * @param modelName The model to use for the repair.
  * @param brokenJson The malformed JSON string.
  * @returns A promise that resolves to the parsed JSON object.
  */
-async function repairAndParseJsonWithLMStudio(
+async function repairAndParseJsonWithOllama(
     serverUrl: string,
     modelName: string,
     brokenJson: string
 ): Promise<any> {
-    console.warn("HootSpot: Attempting to repair malformed JSON from LM Studio...");
+    console.warn("HootSpot: Attempting to repair malformed JSON from Ollama...");
     try {
         const payload = {
             model: modelName,
@@ -41,9 +41,13 @@ async function repairAndParseJsonWithLMStudio(
                 { role: "system", content: JSON_REPAIR_SYSTEM_PROMPT },
                 { role: "user", content: brokenJson }
             ],
-            temperature: 0.0, // Use 0 temperature for deterministic repair
+            format: "json", // Ask Ollama to ensure the output is JSON
+            stream: false,
+            options: {
+                temperature: 0.0,
+            }
         };
-        const response = await fetch(`${serverUrl}/v1/chat/completions`, {
+        const response = await fetch(`${serverUrl}/api/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
@@ -54,89 +58,66 @@ async function repairAndParseJsonWithLMStudio(
         }
 
         const data = await response.json();
-        const repairedContent = data.choices[0]?.message?.content;
+        const repairedContent = data.message?.content;
         if (!repairedContent) {
             throw new Error("KEY::error_unexpected_json_structure::Received an unexpected JSON structure from the API.");
         }
 
-        // Extract JSON from the repaired content, in case the model added markdown fences again
+        // Ollama with format: "json" should return clean JSON, but we extract just in case.
         const repairedJson = extractJson(repairedContent);
-        return JSON.parse(repairedJson); // Parse the hopefully fixed JSON
+        return JSON.parse(repairedJson);
 
     } catch (e: any) {
         console.error("--- HootSpot JSON REPAIR FAILED ---");
-        console.error("Original broken JSON from LM Studio:", brokenJson);
-        // Throw a specific, user-facing error.
+        console.error("Original broken JSON from Ollama:", brokenJson);
         throw new Error(`KEY::error_analysis_failed::Failed to analyze text: Failed to parse or repair the model's response. Details: ${e.message}`);
     }
 }
 
-
-export const fetchLMStudioModels = async (serverUrl: string): Promise<GeminiModel[]> => {
+export const fetchOllamaModels = async (serverUrl: string): Promise<GeminiModel[]> => {
   try {
-    const response = await fetch(`${serverUrl}/v1/models`);
+    const response = await fetch(`${serverUrl}/api/tags`);
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error?.message || `HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(errorText || `HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
-
-    if (!data.data || !Array.isArray(data.data)) {
-        console.warn("LM Studio API did not return a models array. Response:", data);
+    if (!data.models || !Array.isArray(data.models)) {
+        console.warn("Ollama API did not return a models array. Response:", data);
         return [];
     }
-
-    return data.data.map((model: any) => ({
-      name: model.id,
-      displayName: model.id,
+    return data.models.map((model: any) => ({
+      name: model.name,
+      displayName: model.name,
       supportedGenerationMethods: ["generateContent"],
       version: "1.0",
     }));
-
   } catch (error) {
-    console.error("Failed to fetch LM Studio models:", error);
+    console.error("Failed to fetch Ollama models:", error);
     throw error;
   }
 };
 
-export const testLMStudioConnection = async (
+export const testOllamaConnection = async (
     serverUrl: string,
     modelName: string
 ): Promise<void> => {
-    if (!serverUrl || !modelName) {
-        throw new Error("KEY::error_local_server_config_missing::LM Studio server URL and Model Name must be configured.");
-    }
+    if (!serverUrl || !modelName) throw new Error("KEY::error_local_server_config_missing::LM Studio server URL and Model Name must be configured.");
     try {
-        const response = await fetch(`${serverUrl}/v1/chat/completions`, {
+        const response = await fetch(`${serverUrl}/api/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 model: modelName,
                 messages: [{ role: 'user', content: 'Hello' }],
-                max_tokens: 5,
+                options: {"num_ctx": 5, "temperature": 0}
             }),
         });
-
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
-            const errorMessage = errorData.error?.message || response.statusText;
-            if (errorMessage.includes("model_not_found")) {
-                 throw new Error(`KEY::error_local_model_not_loaded_exact::Model Not Found: The server could not find the model '${modelName}'. Please ensure it is loaded in LM Studio.`);
-            }
-            throw new Error(`KEY::error_local_model_not_loaded::The model '${modelName}' might not be loaded. Details: ${errorMessage}`);
+            throw new Error(`KEY::error_local_model_not_loaded::The model '${modelName}' might not be loaded. Details: ${errorData.error || response.statusText}`);
         }
-
-        const data = await response.json();
-        if (!data.choices || data.choices.length === 0) {
-            throw new Error("KEY::test_query_returned_empty::Test query returned empty or invalid response.");
-        }
-        const respondingModel = data.model;
-        if (respondingModel && !respondingModel.toLowerCase().includes(modelName.toLowerCase())) {
-            throw new Error(`KEY::error_local_model_mismatch::Model Mismatch: Server responded with '${respondingModel}' instead of the requested '${modelName}'. Please ensure the correct model is loaded in LM Studio.`);
-        }
-
     } catch (error: any) {
-        if (error.message.includes('error_local_model_mismatch')) throw error;
         if (error instanceof TypeError || error.message.includes('Failed to fetch')) {
             throw new Error(`KEY::error_local_server_connection::Could not connect to LM Studio server at ${serverUrl}. Ensure the server is running and the URL is correct.`);
         }
@@ -144,7 +125,7 @@ export const testLMStudioConnection = async (
     }
 };
 
-export const analyzeTextWithLMStudio = async (
+export const analyzeTextWithOllama = async (
     textToAnalyze: string,
     serverUrl: string,
     modelName: string
@@ -158,42 +139,38 @@ export const analyzeTextWithLMStudio = async (
             { role: "system", content: SYSTEM_PROMPT },
             { role: "user", content: `Please analyze the following text: ${textToAnalyze}` }
         ],
-        temperature: 0,
-        max_tokens: 8192,
+        format: "json",
+        stream: false,
+        options: {"temperature": 0}
     };
     try {
-        const response = await fetch(`${serverUrl}/v1/chat/completions`, {
+        const response = await fetch(`${serverUrl}/api/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
         });
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(`KEY::error_local_model_not_loaded::The model '${modelName}' might not be loaded. Details: ${errorData.error?.message || response.statusText}`);
+            throw new Error(`KEY::error_local_model_not_loaded::The model '${modelName}' might not be loaded. Details: ${errorData.error || response.statusText}`);
         }
         const data = await response.json();
-        const content = data.choices[0]?.message?.content;
+        const content = data.message?.content;
         if (!content) throw new Error("KEY::error_unexpected_json_structure::Received an unexpected JSON structure from the API.");
 
         const jsonStr = extractJson(content);
         let parsedData;
 
         try {
-            // STAGE 1: Try the fast, strict, standard parser first.
+            // First attempt to parse
             parsedData = JSON.parse(jsonStr);
-        } catch (strictError) {
-            try {
-                // STAGE 2: If it fails, try the forgiving, non-LLM parser.
-                parsedData = JSON5.parse(jsonStr);
-            } catch (lenientError) {
-                // STAGE 3: If all else fails, use the expensive but powerful LLM repair.
-                parsedData = await repairAndParseJsonWithLMStudio(serverUrl, modelName, jsonStr);
-            }
+        } catch (error) {
+            // Fallback to repair function
+            parsedData = await repairAndParseJsonWithOllama(serverUrl, modelName, jsonStr);
         }
 
         if (typeof parsedData.analysis_summary === 'string' && Array.isArray(parsedData.findings)) {
             parsedData.findings.sort((a: GeminiFinding, b: GeminiFinding) => {
-                return (textToAnalyze.indexOf(a.specific_quote) - textToAnalyze.indexOf(b.specific_quote));
+                return textToAnalyze.indexOf(a.specific_quote) - textToAnalyze.indexOf(b.specific_quote);
             });
             return parsedData;
         } else {
@@ -201,12 +178,12 @@ export const analyzeTextWithLMStudio = async (
         }
     } catch (error: any) {
         if (error instanceof TypeError) throw new Error(`KEY::error_local_server_connection::Could not connect to LM Studio server at ${serverUrl}. Ensure the server is running and the URL is correct.`);
-        console.error("Error analyzing text with LM Studio:", error);
-        throw error; // Re-throw the (potentially new) error
+        console.error("Error analyzing text with Ollama:", error);
+        throw error;
     }
 };
 
-export const generateRebuttalWithLMStudio = async (
+export const generateRebuttalWithOllama = async (
     sourceText: string,
     analysis: GeminiAnalysisResponse,
     serverUrl: string,
@@ -214,7 +191,8 @@ export const generateRebuttalWithLMStudio = async (
     languageCode: LanguageCode
 ): Promise<string> => {
     if (!serverUrl || !modelName) throw new Error("KEY::error_local_server_config_missing::LM Studio server URL and Model Name must be configured.");
-    if (!sourceText || !analysis) throw new Error("Source text and analysis are required to generate a rebuttal.");
+    if (!sourceText.trim() || !analysis) throw new Error("Source text and analysis are required to generate a rebuttal.");
+
     const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
     const languageName = languageMap[languageCode] || languageCode;
 
@@ -227,25 +205,23 @@ export const generateRebuttalWithLMStudio = async (
             { role: "system", content: systemPrompt },
             { role: "user", content: userContent }
         ],
-        temperature: 0.7,
-        max_tokens: 8192,
+        stream: false,
+        options: {"temperature": 0.7}
     };
-    const response = await fetch(`${serverUrl}/v1/chat/completions`, {
+    const response = await fetch(`${serverUrl}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
     });
     if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(`KEY::error_local_model_not_loaded::The model '${modelName}' might not be loaded. Details: ${errorData.error?.message || response.statusText}`);
+        throw new Error(`KEY::error_local_model_not_loaded::The model '${modelName}' might not be loaded. Details: ${errorData.error || "Unknown"}`);
     }
     const data = await response.json();
-    const content = data.choices[0]?.message?.content;
-    if (!content) throw new Error("KEY::error_unexpected_json_structure::Received an unexpected JSON structure from the API.");
-    return content.trim();
+    return (data.message?.content || '').trim();
 };
 
-export const translateUIWithLMStudio = async (
+export const translateUIWithOllama = async (
     serverUrl: string,
     modelName: string,
     languageCode: LanguageCode,
@@ -256,10 +232,7 @@ export const translateUIWithLMStudio = async (
     const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
     const languageName = languageMap[languageCode] || languageCode;
 
-    // Parse the base translations JSON
     const baseTranslations = JSON.parse(jsonToTranslate);
-
-    // Use translation utilities for token efficiency
     const { numberedJson, numberToKeyMap } = createNumberedJsonForTranslation(baseTranslations);
     const contentToTranslate = JSON.stringify(numberedJson);
 
@@ -270,28 +243,28 @@ export const translateUIWithLMStudio = async (
             { role: "system", content: TRANSLATION_SYSTEM_PROMPT },
             { role: "user", content: userPrompt }
         ],
-        temperature: 0.2,
-        max_tokens: 8192,
+        format: "json",
+        stream: false,
+        options: {"temperature": 0.2}
     };
-    const response = await fetch(`${serverUrl}/v1/chat/completions`, {
+    const response = await fetch(`${serverUrl}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
     });
     if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(`KEY::error_local_model_not_loaded::The model '${modelName}' might not be loaded. Details: ${errorData.error?.message || response.statusText}`);
+        throw new Error(`KEY::error_local_model_not_loaded::The model '${modelName}' might not be loaded. Details: ${errorData.error || "Unknown"}`);
     }
     const data = await response.json();
-    const content = data.choices[0]?.message?.content;
+    const content = data.message?.content;
     if (!content) throw new Error("KEY::error_unexpected_json_structure::Received an unexpected JSON structure from the API.");
 
-    // Reconstruct the translated JSON with original keys
     const translatedNumbered = JSON.parse(extractJson(content));
     return reconstructTranslatedJson(translatedNumbered, numberToKeyMap);
 };
 
-export const translateAnalysisResultWithLMStudio = async (
+export const translateAnalysisResultWithOllama = async (
     analysis: GeminiAnalysisResponse,
     serverUrl: string,
     modelName: string,
@@ -300,6 +273,7 @@ export const translateAnalysisResultWithLMStudio = async (
     if (!serverUrl || !modelName) throw new Error("KEY::error_local_server_config_missing::LM Studio server URL and Model Name must be configured.");
     const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
     const languageName = languageMap[targetLanguage] || targetLanguage;
+
     const systemPrompt = ANALYSIS_TRANSLATION_PROMPT.replace('{language}', languageName);
 
     const flatSource = flattenAnalysisForTranslation(analysis);
@@ -312,19 +286,20 @@ export const translateAnalysisResultWithLMStudio = async (
             { role: "system", content: systemPrompt },
             { role: "user", content: contentToTranslate }
         ],
-        temperature: 0.2,
-        max_tokens: 8192,
+        format: "json",
+        stream: false,
+        options: {"temperature": 0.2}
     };
-    const response = await fetch(`${serverUrl}/v1/chat/completions`, {
+    const response = await fetch(`${serverUrl}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
     });
 
-    if (!response.ok) throw new Error(`KEY::error_translation_failed::Failed to translate analysis result: LM Studio: ${response.statusText}`);
+    if (!response.ok) throw new Error(`KEY::error_translation_failed::Failed to translate analysis result: Ollama: ${response.statusText}`);
 
     const data = await response.json();
-    const content = data.choices[0]?.message?.content;
+    const content = data.message?.content;
     if (!content) throw new Error("KEY::error_unexpected_json_structure::Received an unexpected JSON structure from the API.");
 
     const translatedNumbered = JSON.parse(extractJson(content));
@@ -333,7 +308,7 @@ export const translateAnalysisResultWithLMStudio = async (
     return reconstructAnalysisFromTranslation(analysis, translatedFlat);
 };
 
-export const translateTextWithLMStudio = async (
+export const translateTextWithOllama = async (
     textToTranslate: string,
     serverUrl: string,
     modelName: string,
@@ -343,6 +318,7 @@ export const translateTextWithLMStudio = async (
     if (!serverUrl || !modelName) throw new Error("KEY::error_local_server_config_missing::LM Studio server URL and Model Name must be configured.");
     const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
     const languageName = languageMap[targetLanguage] || targetLanguage;
+
     const systemPrompt = SIMPLE_TEXT_TRANSLATION_PROMPT.replace('{language}', languageName);
     const payload = {
         model: modelName,
@@ -350,14 +326,15 @@ export const translateTextWithLMStudio = async (
             { role: "system", content: systemPrompt },
             { role: "user", content: textToTranslate }
         ],
-        temperature: 0.2,
+        stream: false,
+        options: {"temperature": 0.2}
     };
-    const response = await fetch(`${serverUrl}/v1/chat/completions`, {
+    const response = await fetch(`${serverUrl}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
     });
-    if (!response.ok) throw new Error(`KEY::error_rebuttal_translation_failed::Failed to translate rebuttal: LM Studio: ${response.statusText}`);
+    if (!response.ok) throw new Error(`KEY::error_rebuttal_translation_failed::Failed to translate rebuttal: Ollama: ${response.statusText}`);
     const data = await response.json();
-    return (data.choices[0]?.message?.content || '').trim();
+    return (data.message?.content || '').trim();
 };

@@ -1,7 +1,7 @@
 // src/App.tsx
 
 import React, { useEffect, useRef } from 'react';
-import ApiKeyManager from './components/ApiKeyManager';
+import ConfigurationManager from './components/ConfigurationManager';
 import TextAnalyzer from './components/TextAnalyzer';
 import AnalysisReport from './components/analysis/AnalysisReport';
 import LanguageSwitcher from './components/LanguageSwitcher';
@@ -9,72 +9,62 @@ import { useTranslation } from './i18n';
 import { useModels } from './hooks/useModels';
 import { useConfig } from './hooks/useConfig';
 import { useAnalysis } from './hooks/useAnalysis';
-import { useTranslationManager } from './hooks/useTranslationManager';
 import { HootSpotLogoIcon, SunIcon, MoonIcon } from './assets/icons';
 import Tooltip from './components/common/Tooltip';
+import { useTranslationManager } from './hooks/useTranslationManager';
+import { GEMINI_MODEL_NAME } from './config/api-prompts';
 
 const App: React.FC = () => {
   const { t } = useTranslation();
   const {
-    serviceProvider,
-    setServiceProvider,
-    apiKey,
-    apiKeyInput,
-    setApiKeyInput,
+    serviceProvider, setServiceProvider,
+    localProviderType, setLocalProviderType,
+    apiKeyInput, setApiKeyInput,
     debouncedApiKey,
-    selectedModel,
-    setSelectedModel,
-    lmStudioUrl,
-    setLmStudioUrl,
-    lmStudioModel,
-    setLmStudioModel,
+    selectedModel, setSelectedModel,
+    lmStudioUrl, setLmStudioUrl,
+    lmStudioModel, setLmStudioModel,
+    ollamaUrl, setOllamaUrl,
+    ollamaModel, setOllamaModel,
     maxCharLimit,
-    isNightMode,
-    setIsNightMode,
-    includeRebuttalInJson,
-    setIncludeRebuttalInJson,
-    includeRebuttalInPdf,
-    setIncludeRebuttalInPdf,
-    isConfigCollapsed,
-    setIsConfigCollapsed,
-    isCurrentProviderConfigured,
-    handleMaxCharLimitSave,
+    isNightMode, setIsNightMode,
+    includeRebuttalInJson, setIncludeRebuttalInJson,
+    includeRebuttalInPdf, setIncludeRebuttalInPdf,
+    isConfigCollapsed, setIsConfigCollapsed,
+    isCurrentProviderConfigured, isTesting, testStatus,
+    saveAndTestConfig, handleMaxCharLimitSave,
+    invalidateConfig,
   } = useConfig();
 
-  const { models, isLoading: areModelsLoading, error: modelsError } = useModels(serviceProvider === 'google' ? debouncedApiKey : null);
+  const { models, isLoading: areModelsLoading, error: modelsError, refetch: refetchModels } = useModels({
+    serviceProvider, localProviderType,
+    apiKey: debouncedApiKey,
+    lmStudioUrl, ollamaUrl
+  });
 
   const {
-    isLoading,
-    error,
-    analysisResult,
-    currentTextAnalyzed,
-    textToAnalyze,
-    setTextToAnalyze,
-    setPendingAnalysis,
-    isTranslating,
-    handleAnalyzeText,
-    handleJsonLoad,
-    analysisReportRef,
-    displayedAnalysis,
+    isTranslatingRebuttal, handleRebuttalUpdate, displayedRebuttal,
+    translationError: translationErrorObject, loadRebuttal, clearTranslationError,
+  } = useTranslationManager({
+      serviceProvider, localProviderType,
+      apiKey: apiKeyInput,
+      googleModel: selectedModel,
+      lmStudioConfig: { url: lmStudioUrl, model: lmStudioModel },
+      ollamaConfig: { url: ollamaUrl, model: ollamaModel },
+      isCurrentProviderConfigured,
+  });
+
+  const {
+    isLoading, error: analysisErrorObject, analysisResult,
+    currentTextAnalyzed, textToAnalyze, setTextToAnalyze,
+    setPendingAnalysis, isTranslating, handleAnalyzeText,
+    handleJsonLoad, analysisReportRef, displayedAnalysis, clearError: clearAnalysisError,
   } = useAnalysis(
-    serviceProvider,
-    apiKey,
-    lmStudioUrl,
-    lmStudioModel,
-    selectedModel,
-    isCurrentProviderConfigured,
-    setIsConfigCollapsed
-  );
-
-  const {
-    isTranslatingRebuttal,
-    handleRebuttalUpdate,
-    displayedRebuttal,
-    translationError,
-  } = useTranslationManager(
-    apiKey,
-    selectedModel,
-    serviceProvider
+    serviceProvider, localProviderType,
+    apiKeyInput, lmStudioUrl, lmStudioModel,
+    ollamaUrl, ollamaModel, selectedModel,
+    isCurrentProviderConfigured, setIsConfigCollapsed,
+    loadRebuttal
   );
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -82,10 +72,39 @@ const App: React.FC = () => {
   const lastAction = useRef<'PUSH' | 'APPEND'>('PUSH');
 
   useEffect(() => {
+    let modelList, currentSelection, setSelection;
+    if (serviceProvider === 'google') {
+        modelList = [...models.stable, ...models.preview];
+        currentSelection = selectedModel;
+        setSelection = setSelectedModel;
+    } else {
+        modelList = models.stable;
+        if (localProviderType === 'lm-studio') {
+            currentSelection = lmStudioModel;
+            setSelection = setLmStudioModel;
+        } else { // ollama
+            currentSelection = ollamaModel;
+            setSelection = setOllamaModel;
+        }
+    }
+    // Logic to select a default model if the current one becomes invalid
+    if (modelList.length > 0 && setSelection && !modelList.some(m => m.name === currentSelection)) {
+        // 1. Try to find the app's default Gemini model.
+        const preferredDefault = modelList.find(m => m.name === GEMINI_MODEL_NAME);
+        if (preferredDefault) {
+            setSelection(preferredDefault.name);
+        } else {
+            // 2. If the preferred default isn't available, fall back to the first model in the list.
+            setSelection(modelList[0].name);
+        }
+    }
+  }, [models, serviceProvider, localProviderType, selectedModel, setSelectedModel, lmStudioModel, setLmStudioModel, ollamaModel, setOllamaModel]);
+
+  useEffect(() => {
     const messageListener = (request: any) => {
-      textWasSetProgrammatically.current = true;
       if (request.type === 'PUSH_TEXT_TO_PANEL' && request.text) {
         lastAction.current = 'PUSH';
+        textWasSetProgrammatically.current = true;
         setTextToAnalyze(request.text);
         if (request.autoAnalyze) {
           if (isCurrentProviderConfigured) {
@@ -96,16 +115,17 @@ const App: React.FC = () => {
         }
       } else if (request.type === 'APPEND_TEXT_TO_PANEL' && request.text) {
         lastAction.current = 'APPEND';
-        setTextToAnalyze(prevText => `${prevText}${prevText.trim() ? '\n\n' : ''}${request.text}`);
+        textWasSetProgrammatically.current = true;
+        setTextToAnalyze(prevText => `${prevText.trim() ? `${prevText}\n\n` : ''}${request.text}`);
       }
     };
     chrome.runtime.onMessage.addListener(messageListener);
     chrome.runtime.sendMessage({ type: 'PULL_INITIAL_TEXT' }, (response) => {
       if (chrome.runtime.lastError) { return; }
       if (response?.text) {
-        textWasSetProgrammatically.current = true;
         lastAction.current = 'PUSH';
-        setTextToAnalyze(response.text);
+        textWasSetProgrammatically.current = true;
+        setTextToAnalyze(prev => (prev === '' ? response.text : prev));
         if (response.autoAnalyze) {
           if (isCurrentProviderConfigured) {
             setPendingAnalysis({ text: response.text });
@@ -116,7 +136,25 @@ const App: React.FC = () => {
       }
     });
     return () => { chrome.runtime.onMessage.removeListener(messageListener); };
-  }, [isCurrentProviderConfigured, serviceProvider, setPendingAnalysis, setTextToAnalyze, setIsConfigCollapsed]);
+  }, [isCurrentProviderConfigured, setPendingAnalysis, setTextToAnalyze, setIsConfigCollapsed]);
+
+  useEffect(() => {
+    if (analysisErrorObject?.type === 'config') {
+      invalidateConfig(analysisErrorObject.message);
+      clearAnalysisError();
+    }
+  }, [analysisErrorObject, invalidateConfig, clearAnalysisError]);
+
+  useEffect(() => {
+    if (translationErrorObject?.type === 'config') {
+      invalidateConfig(translationErrorObject.message);
+      clearTranslationError();
+    }
+  }, [translationErrorObject, invalidateConfig, clearTranslationError]);
+
+  const generalAnalysisError = analysisErrorObject?.type === 'general' ? analysisErrorObject.message : null;
+  const generalTranslationError = translationErrorObject?.type === 'general' ? translationErrorObject.message : null;
+  const combinedError = generalAnalysisError || generalTranslationError;
 
   useEffect(() => {
     if (textWasSetProgrammatically.current) {
@@ -131,126 +169,103 @@ const App: React.FC = () => {
     }
   }, [textToAnalyze]);
 
-  const combinedError = error || translationError;
-  const isBusy = isLoading || (serviceProvider === 'google' && areModelsLoading);
+  const isBusy = isLoading || areModelsLoading;
 
   return (
-    <div className="relative flex flex-col h-screen bg-app-bg-light dark:bg-app-bg-dark">
-      <div className="absolute top-2 right-4 z-10 flex items-center space-x-2">
-        <button onClick={() => setIsNightMode(!isNightMode)} className="p-1.5 text-text-subtle-light dark:text-text-subtle-dark hover:bg-container-border-light dark:hover:bg-container-border-dark rounded-full focus:outline-none" title={t('night_mode_toggle_tooltip')}>
-          {isNightMode ? <SunIcon className="w-5 h-5 text-sun-icon-light" /> : <MoonIcon className="w-5 h-5 text-moon-icon-light" />}
+    <div className="relative flex flex-col h-screen bg-gray-100 dark:bg-gray-600">
+      <div className="absolute top-2 right-4 z-20 flex items-center space-x-2">
+        <button onClick={() => setIsNightMode(!isNightMode)} className="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full focus:outline-none" title={t('night_mode_toggle_tooltip')}>
+          {isNightMode ? <SunIcon className="w-5 h-5 text-amber-500" /> : <MoonIcon className="w-5 h-5 text-gray-600" />}
         </button>
         <LanguageSwitcher />
       </div>
-      <div className="flex flex-col flex-1 w-full p-2 md:p-4 overflow-y-auto text-text-main-light dark:text-text-main-dark">
+      <div className="flex flex-col flex-1 w-full p-2 md:p-4 overflow-y-auto text-gray-800 dark:text-gray-50">
         <header className="mb-1 text-left">
           <div className="inline-flex items-center justify-center">
-             <HootSpotLogoIcon className="w-9 h-9 md:w-13 md:h-13 text-logo-icon-light dark:text-logo-icon-dark mr-2 md:mr-3 ml-2.5" />
+             <HootSpotLogoIcon className="w-9 h-9 md:w-13 md:h-13 text-blue-600 dark:text-blue-400 mr-2 md:mr-3 ml-2.5" />
             <div>
-                <h1 className="text-lg md:text-3xl font-semibold text-text-main-light dark:text-text-main-dark">{t('app_title')}</h1>
+                <h1 className="text-lg md:text-3xl font-semibold text-gray-800 dark:text-gray-50">{t('app_title')}</h1>
             </div>
           </div>
         </header>
 
         <main className="flex-grow">
-          <ApiKeyManager
-            serviceProvider={serviceProvider}
-            onServiceProviderChange={setServiceProvider}
-            apiKeyInput={apiKeyInput}
-            onApiKeyInputChange={setApiKeyInput}
-            currentMaxCharLimit={maxCharLimit}
-            onMaxCharLimitSave={handleMaxCharLimitSave}
-            models={models}
-            selectedModel={selectedModel}
-            onModelChange={setSelectedModel}
-            areModelsLoading={areModelsLoading}
-            modelsError={modelsError}
-            lmStudioUrl={lmStudioUrl}
-            onLmStudioUrlChange={setLmStudioUrl}
-            lmStudioModel={lmStudioModel}
-            onLmStudioModelChange={setLmStudioModel}
-            isNightMode={isNightMode}
-            onNightModeChange={setIsNightMode}
-            includeRebuttalInJson={includeRebuttalInJson}
-            onIncludeRebuttalInJsonChange={setIncludeRebuttalInJson}
-            includeRebuttalInPdf={includeRebuttalInPdf}
-            onIncludeRebuttalInPdfChange={setIncludeRebuttalInPdf}
-            onConfigured={(configured) => {
-                if (configured) setIsConfigCollapsed(true);
-            }}
+          <ConfigurationManager
+            serviceProvider={serviceProvider} onServiceProviderChange={setServiceProvider}
+            localProviderType={localProviderType} onLocalProviderTypeChange={setLocalProviderType}
+            apiKeyInput={apiKeyInput} onApiKeyInputChange={setApiKeyInput}
+            lmStudioUrl={lmStudioUrl} onLmStudioUrlChange={setLmStudioUrl}
+            lmStudioModel={lmStudioModel} onLmStudioModelChange={setLmStudioModel}
+            ollamaUrl={ollamaUrl} onOllamaUrlChange={setOllamaUrl}
+            ollamaModel={ollamaModel} onOllamaModelChange={setOllamaModel}
+            models={models} googleModel={selectedModel} onGoogleModelChange={setSelectedModel}
+            areModelsLoading={areModelsLoading} modelsError={modelsError} onRefetchModels={refetchModels}
+            currentMaxCharLimit={maxCharLimit} onMaxCharLimitSave={handleMaxCharLimitSave}
+            isNightMode={isNightMode} onNightModeChange={setIsNightMode}
+            includeRebuttalInJson={includeRebuttalInJson} onIncludeRebuttalInJsonChange={setIncludeRebuttalInJson}
+            includeRebuttalInPdf={includeRebuttalInPdf} onIncludeRebuttalInPdfChange={setIncludeRebuttalInPdf}
             isCurrentProviderConfigured={isCurrentProviderConfigured}
-            isCollapsed={isConfigCollapsed}
-            onToggleCollapse={() => setIsConfigCollapsed(!isConfigCollapsed)}
+            isCollapsed={isConfigCollapsed} onToggleCollapse={() => setIsConfigCollapsed(!isConfigCollapsed)}
+            isTesting={isTesting} testStatus={testStatus} onSave={saveAndTestConfig}
           />
           <TextAnalyzer
             ref={textareaRef}
             text={textToAnalyze}
-            onTextChange={(newText) => {
-                setTextToAnalyze(newText);
-            }}
+            onTextChange={setTextToAnalyze}
             onAnalyze={handleAnalyzeText}
             isLoading={isBusy}
             maxCharLimit={maxCharLimit}
             onJsonLoad={handleJsonLoad}
             hasApiKey={isCurrentProviderConfigured}
           />
-          {(isLoading || isTranslating) && (
-            <div className="my-4 p-3 rounded-md text-sm bg-info-bg-light text-info-text-light border border-info-border-light dark:bg-info-bg-dark dark:text-info-text-dark dark:border-info-border-dark flex items-center justify-center">
-              <div className="spinner w-5 h-5 border-t-link-light mr-2"></div>
-              {areModelsLoading ? t('config_model_loading') : (isLoading ? t('analyzer_button_analyzing') : t('info_translating_results'))}
-            </div>
-          )}
-          {isTranslatingRebuttal && (
-            <div className="my-4 p-3 rounded-md text-sm bg-info-bg-light text-info-text-light border border-info-border-light dark:bg-info-bg-dark dark:text-info-text-dark dark:border-info-border-dark flex items-center justify-center">
-              <div className="spinner w-5 h-5 border-t-link-light mr-2"></div>
-              {t('info_translating_rebuttal')}
+          {(isLoading || isTranslating || isTranslatingRebuttal) && (
+            <div className="my-4 p-3 rounded-md text-sm bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700 flex items-center justify-center">
+              <div className="spinner w-5 h-5 border-t-blue-600 mr-2"></div>
+              {areModelsLoading ? t('config_model_loading') : (isLoading ? t('analyzer_button_analyzing') : (isTranslating ? t('info_translating_results') : t('info_translating_rebuttal')))}
             </div>
           )}
           {combinedError && (
-            <div className="my-6 p-4 bg-error-bg-light border border-error-border-light text-error-text-light dark:bg-error-bg-dark dark:text-error-text-dark dark:border-error-border-dark rounded-md shadow-md" role="alert">
+            <div className="my-6 p-4 bg-red-100 border border-red-300 text-red-700 dark:bg-red-900/50 dark:text-red-300 dark:border-red-500 rounded-md shadow-md" role="alert">
               <strong className="font-bold">{t('error_prefix')}</strong>
               <span>{t(combinedError) || combinedError}</span>
             </div>
           )}
           <div ref={analysisReportRef} className="mt-2">
-            {(!isLoading && !isTranslating && !error && displayedAnalysis) && (
+            {(!isLoading && !isTranslating && !combinedError && displayedAnalysis) && (
                <AnalysisReport
                     analysis={displayedAnalysis}
                     sourceText={currentTextAnalyzed}
-                    apiKey={apiKey}
-                    selectedModel={selectedModel}
                     rebuttal={displayedRebuttal}
                     isTranslatingRebuttal={isTranslatingRebuttal}
                     onRebuttalUpdate={handleRebuttalUpdate}
                     includeRebuttalInJson={includeRebuttalInJson}
                     includeRebuttalInPdf={includeRebuttalInPdf}
                     serviceProvider={serviceProvider}
-                    lmStudioUrl={lmStudioUrl}
-                    lmStudioModel={lmStudioModel}
+                    localProviderType={localProviderType}
+                    apiKey={apiKeyInput}
+                    googleModel={selectedModel}
+                    lmStudioConfig={{ url: lmStudioUrl, model: lmStudioModel }}
+                    ollamaConfig={{ url: ollamaUrl, model: ollamaModel }}
+                    isCurrentProviderConfigured={isCurrentProviderConfigured}
                />
             )}
           </div>
-          {!isBusy && !error && !analysisResult && currentTextAnalyzed && !isCurrentProviderConfigured && (
-            <div className="mt-4 p-4 bg-warning-bg-light border border-warning-border-light text-warning-text-light dark:bg-warning-bg-dark dark:text-warning-text-dark dark:border-warning-border-dark rounded-md shadow-md">
-                {t('analyzer_no_api_key_warning')}
-            </div>
-          )}
-          {!isBusy && !error && !analysisResult && !currentTextAnalyzed && isCurrentProviderConfigured && (
-            <div className="mt-4 p-6 bg-panel-bg-light border border-panel-border-light text-text-subtle-light dark:bg-panel-bg-dark dark:border-panel-border-dark dark:text-text-subtle-dark rounded-lg shadow-md text-center">
+          {!isBusy && !combinedError && !analysisResult && !currentTextAnalyzed && isCurrentProviderConfigured && (
+            <div className="mt-4 p-6 bg-white border border-gray-200 text-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 rounded-lg shadow-md text-center">
                 <p className="text-lg">{t('info_enter_text_to_analyze')}</p>
                 <p className="text-sm mt-2">{t('info_uncover_patterns')}</p>
             </div>
           )}
         </main>
-        <footer className="mt-auto pt-6 text-center text-sm text-text-subtle-light dark:text-text-subtle-dark">
-          <p>
+        <footer className="mt-auto pt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+          <div>
             {t('app_footer_copyright', { year: new Date().getFullYear() })}
             <Tooltip content={t('app_footer_responsibility')}>
               <span className="ml-2 underline decoration-dotted cursor-pointer">
                 {t('app_footer_disclaimer_label')}
               </span>
             </Tooltip>
-          </p>
+          </div>
         </footer>
       </div>
     </div>

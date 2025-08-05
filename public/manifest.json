@@ -14,7 +14,8 @@
   "host_permissions": [
     "<all_urls>",
     "http://localhost/*",
-    "http://127.0.0.1/*"
+    "http://127.0.0.1/*",
+    "http://localhost:11434/*"
   ],
   "action": {
     "default_icon": {
@@ -48,7 +49,7 @@
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://generativelanguage.googleapis.com http://localhost:* http://127.0.0.1:*;",
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://generativelanguage.googleapis.com http://localhost:* http://127.0.0.1:* http://localhost:11434/*;",
     "sandbox": "sandbox allow-scripts; script-src 'self' 'unsafe-eval' blob:;"
   },
   "sandbox": {

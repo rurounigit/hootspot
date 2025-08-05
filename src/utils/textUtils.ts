@@ -30,8 +30,10 @@ export const wrapSvgText = (text: string, availableWidth: number, fontSize: numb
     const testLineWidth = context.measureText(testLine).width;
 
     if (testLineWidth <= availableWidth) {
+      // The current line plus the new word fits, so append it.
       currentLine = testLine;
     } else {
+      // The line is full.
       if (currentLine) {
         lines.push(currentLine);
       }
@@ -39,24 +41,31 @@ export const wrapSvgText = (text: string, availableWidth: number, fontSize: numb
       const wordWidth = context.measureText(word).width;
 
       if (wordWidth <= availableWidth) {
+        // The new word can start on its own line.
         currentLine = word;
       } else {
+        // The word itself is too long and must be broken at the character level.
         let tempWord = '';
         for (let i = 0; i < word.length; i++) {
           const char = word[i];
           const nextTempWord = tempWord + char;
+          // Check if the substring plus a hyphen still fits.
           if (context.measureText(nextTempWord + '-').width <= availableWidth) {
             tempWord = nextTempWord;
           } else {
+            // The character overflows, so push the previous fitting substring with a hyphen.
             lines.push(tempWord + '-');
+            // Start the new tempWord with the current character.
             tempWord = char;
           }
         }
+        // The remainder of the word becomes the new current line.
         currentLine = tempWord;
       }
     }
   }
 
+  // Add the final constructed line to the array.
   if (currentLine) {
     lines.push(currentLine);
   }
@@ -66,13 +75,7 @@ export const wrapSvgText = (text: string, availableWidth: number, fontSize: numb
 
 
 /**
- * Calculates the optimal font size for a text to fit inside a circle using binary search
- * and a geometrically-aware validation check.
- *
- * @param text The text to be fitted.
- * @param radius The radius of the containing circle.
- * @param options An object containing padding and font size constraints.
- * @returns An object containing the optimal `fontSize` and the `lines` of wrapped text.
+ * Calculates the optimal font size for a text to fit inside a circle.
  */
 export const calculateOptimalFontSize = (
   text: string,
@@ -84,12 +87,10 @@ export const calculateOptimalFontSize = (
   }
 ): { fontSize: number; lines: string[] } => {
   const { minFont, maxFontSize, paddingFactor } = options;
-  // FIX: Added a null check for 'context' to satisfy the compiler.
   if (!text || radius <= 0 || !context) return { fontSize: minFont, lines: [] };
 
   let low = minFont;
   let high = maxFontSize;
-
   let bestFit = { fontSize: minFont, lines: wrapSvgText(text, radius * 2 * paddingFactor, minFont) };
 
   while (low <= high) {
