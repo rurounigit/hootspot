@@ -182,12 +182,10 @@ export const analyzeTextWithLMStudio = async (
             // STAGE 1: Try the fast, strict, standard parser first.
             parsedData = JSON.parse(jsonStr);
         } catch (strictError) {
-            console.warn("HootSpot: Standard JSON.parse failed. Attempting with lenient parser (JSON5)...");
             try {
                 // STAGE 2: If it fails, try the forgiving, non-LLM parser.
                 parsedData = JSON5.parse(jsonStr);
             } catch (lenientError) {
-                console.warn("HootSpot: Lenient parser (JSON5) also failed. Falling back to LLM-based repair.");
                 // STAGE 3: If all else fails, use the expensive but powerful LLM repair.
                 parsedData = await repairAndParseJsonWithLMStudio(serverUrl, modelName, jsonStr);
             }
