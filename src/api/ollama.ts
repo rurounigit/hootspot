@@ -197,6 +197,9 @@ export const generateRebuttalWithOllama = async (
     languageCode: LanguageCode,
     t: TFunction
 ): Promise<string> => {
+    if (!serverUrl || !modelName) throw new Error(`KEY::error_local_server_config_missing::${t('error_local_server_config_missing')}`);
+    if (!sourceText.trim() || !analysis) throw new Error(t('error_rebuttal_generation_failed', { message: 'Source text and analysis are required to generate a rebuttal.' }));
+
     const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
     const languageName = languageMap[languageCode] || languageCode;
 
@@ -232,6 +235,8 @@ export const translateUIWithOllama = async (
     jsonToTranslate: string,
     t: TFunction,
 ): Promise<Record<string, string>> => {
+    if (!serverUrl || !modelName) throw new Error(`KEY::error_local_server_config_missing::${t('error_local_server_config_missing')}`);
+
     const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
     const languageName = languageMap[languageCode] || languageCode;
 

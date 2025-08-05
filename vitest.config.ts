@@ -12,6 +12,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts', // A setup file for global mocks
     css: true,
+    include: ['src/**/*.{test,spec}.{ts,tsx}'], // Only include tests in src/ directory
     coverage: {
       provider: 'v8', // or 'istanbul'
       reporter: ['text', 'json', 'html'], // Generate multiple reports
