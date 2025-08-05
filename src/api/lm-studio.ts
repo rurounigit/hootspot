@@ -18,6 +18,7 @@ import {
 } from '../utils/translationUtils';
 import { extractJson } from '../utils/apiUtils';
 import { LANGUAGE_CODE_MAP } from '../constants';
+import JSON5 from 'json5';
 
 /**
  * Attempts to repair a malformed JSON string by sending it back to the model
@@ -178,11 +179,18 @@ export const analyzeTextWithLMStudio = async (
         let parsedData;
 
         try {
-            // First attempt to parse the extracted JSON directly
+            // STAGE 1: Try the fast, strict, standard parser first.
             parsedData = JSON.parse(jsonStr);
-        } catch (error) {
-            // If parsing fails, attempt to repair it
-            parsedData = await repairAndParseJsonWithLMStudio(serverUrl, modelName, jsonStr);
+        } catch (strictError) {
+            console.warn("HootSpot: Standard JSON.parse failed. Attempting with lenient parser (JSON5)...");
+            try {
+                // STAGE 2: If it fails, try the forgiving, non-LLM parser.
+                parsedData = JSON5.parse(jsonStr);
+            } catch (lenientError) {
+                console.warn("HootSpot: Lenient parser (JSON5) also failed. Falling back to LLM-based repair.");
+                // STAGE 3: If all else fails, use the expensive but powerful LLM repair.
+                parsedData = await repairAndParseJsonWithLMStudio(serverUrl, modelName, jsonStr);
+            }
         }
 
         if (typeof parsedData.analysis_summary === 'string' && Array.isArray(parsedData.findings)) {
