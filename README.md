@@ -2,7 +2,7 @@
 
 ![HootSpot AI Logo](public/images/icons/icon128_onwhite.png)
 
-**HootSpot is a Chrome Extension that empowers you to identify and understand a wide range of psychological, rhetorical, and political manipulation tactics in any text, leveraging the power of Google Gemini API or your own local Language Models via LM Studio.**
+**HootSpot is a Chrome Extension that empowers you to identify and understand a wide range of psychological, rhetorical, and political manipulation tactics in any text, leveraging the power of the Google Gemini API or your own local Language Models via LM Studio or Ollama.**
 
 **It runs as a "side panel" in your browser, allowing you to select text from any webpage or paste it directly to receive an instant, in-depth analysis of its underlying messaging and potential manipulative techniques. Your API key and local server configurations are stored locally, ensuring your privacy.**
 
@@ -22,16 +22,17 @@ Initially, I was relying on a 'Dictionary of Rhetorical Manipulation' that I had
 ## Key Features
 
 *   **Advanced Rhetorical Analysis**: Leverages the area of expertise of any great LLM: Being trained on a vast variety of texts, and a deep understanding of written communication patterns.
-*   **Flexible AI Service Provider**: Choose between using the powerful **Google Gemini API** (cloud-based) or connecting to your own **local Language Models (LLMs)** running via an **LM Studio** server, giving you control over data privacy and computational resources.
+*   **Flexible AI Service Provider**: Choose between using the powerful **Google Gemini API** (cloud-based) or connecting to your own **local Language Models (LLMs)** running via an **LM Studio** or **Ollama** server, giving you control over data privacy and computational resources.
 *   **Interactive Visualization**: Generates a dynamic bubble chart using **D3.js** to visualize the strength, frequency, and categories of detected tactics, providing an immediate "Manipulation Profile" of the text.
 *   **Comprehensive & Actionable Reports**: Outputs a report including an AI-generated summary, color-coded highlights in the source text, and detailed card-based explanations for each detected pattern.
 *   **Export and Save Findings**: Easily save your analysis. Download a PDF report, including highlights and the visual bubble chart. You can also export the raw analysis as a JSON file and load it back into the extension later.
 *   **Seamless Context Menu & Keyboard Integration**: Right-click any selected text to instantly send it to the HootSpot side panel for analysis, replacement, or appending. For even faster workflow, use keyboard shortcuts (`Alt+Shift+A`, `Alt+Shift+S`, `Alt+Shift+D`) to perform these actions without clicking.
-*   **Flexible AI Model Selection**: When using Google Gemini, choose from a list of Google Gemini models that are automatically fetched and updated. Models are conveniently grouped into "Stable" and "Preview" categories, allowing you to balance speed, cost, and analytical power.
+*   **Flexible AI Model Selection**: When using Google Gemini, choose from a list of Google Gemini models that are automatically fetched and updated. When using a local provider, fetch a list of all available models loaded in LM Studio or pulled in Ollama.
 *   **Privacy-First & Customizable**: Your API key and custom settings are stored securely and locally in your browser's `localStorage`. Configure your experience by setting a custom character limit for analysis to manage API usage and costs.
 *   **Full Internationalization (i18n)**: The user interface is available in English, German, French, and Spanish out of the box.
 *   **AI-Powered Language Management**: A unique feature that allows you to use the Gemini API to translate the extension's entire interface into any language. Simply provide a language code (e.g., "it" for Italian), and the AI generates the necessary translation files.
 *   **AI-Powered Rebuttals**: Generate concise counter-arguments to analyzed text, leveraging the AI's understanding of the original text's manipulative patterns (experimental feature).
+*   **Customizable Interface**: Includes a **Night Mode** for comfortable viewing in low-light environments.
 
 ## Demo
 
@@ -130,7 +131,7 @@ During my lifetime I have dedicated my life to this struggle of the African peop
   <img src="public/images/examples/trump-pattern-02.jpg" alt="Highlighted text of Trump's speech" width="40%">
   <img src="public/images/examples/trump-pattern-03.jpg" alt="Highlighted text of Trump's speech" width="40%">
   <img src="public/images/examples/trump-pattern-04.jpg" alt="Highlighted text of Trump's speech" width="40%">
-  <img src/images/examples/trump-pattern-05.jpg" alt="Highlighted text of Trump's speech" width="40%">
+  <img src="public/images/examples/trump-pattern-05.jpg" alt="Highlighted text of Trump's speech" width="40%">
   <br><br>
 
   *Rebuttal*
@@ -143,8 +144,8 @@ During my lifetime I have dedicated my life to this struggle of the African peop
 HootSpot is built as a modern Manifest V3 Chrome Extension with a modular, hook-based React architecture.
 
 1.  **Input**: A user selects text and uses the context menu, keyboard shortcut, or pastes text directly into the side panel's text area.
-2.  **Request**: The `background.ts` service worker or the UI (`App.tsx`) initiates the analysis. `App.tsx` coordinates state using custom hooks. The core logic resides in `useAnalysis.ts`, which, based on the provider chosen in `useConfig.ts`, calls the appropriate function in the API layer (`src/api/google.ts` or `src/api/lm-studio.ts`). The request sends the user's text and the relevant system prompt from `src/config/api-prompts.ts`.
-3.  **Analysis**: The **AI model (from Google Gemini or LM Studio)** acts as an expert in linguistics and psychology. It analyzes the text for manipulative patterns and returns a structured JSON response.
+2.  **Request**: The `background.ts` service worker or the UI (`App.tsx`) initiates the analysis. `App.tsx` coordinates state using custom hooks. The core logic resides in `useAnalysis.ts`, which, based on the provider chosen in `useConfig.ts`, calls the appropriate function in the API layer (`src/api/google/analysis.ts`, `src/api/lm-studio.ts`, or `src/api/ollama.ts`). The request sends the user's text and the relevant system prompt from `src/config/api-prompts.ts`.
+3.  **Analysis**: The **AI model (from Google Gemini, LM Studio, or Ollama)** acts as an expert in linguistics and psychology. It analyzes the text for manipulative patterns and returns a structured JSON response.
 4.  **Response Handling**: The API modules in `src/api/` contain robust logic to parse the API's response. This includes extracting JSON from markdown code blocks and even attempting to self-heal malformed JSON to handle various model outputs gracefully.
 5.  **Rendering**: The `useAnalysis` hook updates the application state with the analysis result. This triggers a re-render in the React frontend, where `App.tsx` passes the result to the `AnalysisReport` component. This component then renders the full interactive report, including the D3.js bubble chart (`ManipulationBubbleChart.tsx`) and the highlighted source text.
 6.  **PDF Generation**: For PDF exports, the app uses a sandboxed `iframe` (`pdf-generator.html`) for security. It renders an off-screen, high-resolution version of the bubble chart using `html2canvas` and constructs the PDF with `@react-pdf/renderer` in the sandbox, preventing direct access to sensitive resources.
@@ -188,7 +189,7 @@ If you want to run the project locally for development or testing, follow these 
 ## Getting Started
 
 1.  **First-Time Setup: Configure your AI Service Provider**
-    HootSpot allows you to choose between using the cloud-based Google Gemini API or connecting to a local AI model server running via LM Studio.
+    HootSpot allows you to choose between using the cloud-based Google Gemini API or connecting to a local AI model server.
 
     *   Click the **HootSpot AI icon** in your Chrome toolbar to open the side panel.
     *   Expand the **"Configuration"** section.
@@ -200,7 +201,11 @@ If you want to run the project locally for development or testing, follow these 
     *   Optionally, select your preferred analysis model from the dropdown.
     *   Click **"Save & Test Configuration"**. The extension will validate the key and save your settings.
 
-    ### Option B: Configure with LM Studio (Local Model)
+    ### Option B: Configure with a Local Provider (LM Studio or Ollama)
+    *   In HootSpot's Configuration section, select "Local" under "Service Provider".
+    *   Choose your desired local server type: **LM Studio** or **Ollama**.
+
+    #### For LM Studio:
     *   **Download and Install LM Studio**: Get LM Studio from [lmstudio.ai](https://lmstudio.ai/).
     *   **Download a Model**: Within LM Studio, go to the "Discover" tab and download a compatible model (e.g., a GGUF or MLX model like `gemma-3n-E2B-it-text-GGUF` or `gemma-3n-E2B-it-MLX-4bit` or `lfm2-1.2b` GGUF or MLX).
     *   **Start Local Inference Server**: In "Power User" or "Developer" Mode, Go to the "Developer" tab in LM Studio. Select your downloaded model from the dropdown, then click "Load Model". Note the "Server URL" (e.g., `http://localhost:1234`).
@@ -209,11 +214,21 @@ If you want to run the project locally for development or testing, follow these 
             *   Auto unload unused JIT loaded models:A model that was loaded Just-in-time (JIT) to serve an API request will be automatically unloaded after being unused for some duration (TTL). You would want this to be disabled to avoid long loading times.
             *   Only Keep Last JIT Loaded Model: Ensure at most 1 model is loaded via JIT at any given time (unloads previous model). This is useful if you want to make sure you don't have too many models loaded at once via JIT.
 
-    *   In HootSpot's Configuration section:
-        *   Select "LM Studio (Local)" under "Service Provider".
-        *   Enter the full **Local Server URL** (e.g., `http://localhost:1234`) into the corresponding field.
-        *   Enter the **exact Model Name** you loaded in LM Studio. This name must precisely match the file name of the loaded model in LM Studio.
-    *   Click **"Save & Test Configuration"**. The extension will attempt to connect to your local server and validate the model.
+    *   In HootSpot's Configuration:
+        *   Enter the full **Local Server URL** from LM Studio.
+        *   Click **"Refresh List"** to fetch all models loaded on your server.
+        *   Select your desired model from the dropdown.
+    *   Click **"Save & Test Configuration"**.
+
+    #### For Ollama:
+    *   **Install Ollama**: Follow the instructions at [ollama.ai](https://ollama.ai/).
+    *   **Pull a Model**: Open your terminal and run `ollama pull <model_name>` (e.g., `ollama pull gemma`).
+    *   **Configure CORS**: See the detailed **"Configuring Ollama for HootSpot"** section below. This is a mandatory one-time setup.
+    *   In HootSpot's Configuration:
+        *   The default **Ollama Server URL** (`http://localhost:11434`) is pre-filled.
+        *   Click **"Refresh List"** to fetch all models you have pulled.
+        *   Select your desired model from the dropdown.
+    *   Click **"Save & Test Configuration"**.
 
 2.  **Analyze Text from Any Webpage (Recommended Workflow)**
     *   Highlight any text on a webpage.
@@ -325,9 +340,8 @@ Ensure Ollama is fully quit, as described in the developer section above.
 3.  Paste the following content into the file, replacing `<YOUR_EXTENSION_ID>` with your actual ID.
     ```ini
     [Service]
-    Environment="OLLAMA_ORIGINS=chrome-extension://<YOUR_EXTENSION_ID}"
-    ```
-4.  Save the file and exit (`Ctrl+X`, then `Y`, then `Enter`).
+    Environment="OLLAMA_ORIGINS=chrome-extension://<YOUR_EXTENSION_ID>"
+    ```4.  Save the file and exit (`Ctrl+X`, then `Y`, then `Enter`).
 5.  Reload the systemd configuration and restart the Ollama service:
     ```bash
     sudo systemctl daemon-reload
@@ -348,8 +362,9 @@ Once configured with one of these methods, HootSpot will be able to securely con
 │   └── manifest.json      # Core Chrome Extension configuration
 └── src/                   # Main application source code
     ├── api/               # All external API communication logic
-    │   ├── google.ts      # Functions for interacting with the Google Gemini API
-    │   └── lm-studio.ts   # Functions for interacting with a local LM Studio server
+    │   ├── google/        # Functions for interacting with the Google Gemini API
+    │   ├── lm-studio.ts   # Functions for interacting with a local LM Studio server
+    │   └── ollama.ts      # Functions for interacting with a local Ollama server
     ├── assets/            # SVG icons and other static assets used in the app
     │   └── icons.tsx      # React components for all SVG icons
     ├── components/        # React components, organized by feature
@@ -387,7 +402,7 @@ Once configured with one of these methods, HootSpot will be able to securely con
 *   **Platform**: [Chrome Extension (Manifest V3)](https://developer.chrome.com/docs/extensions)
 *   **AI**: [Google Gemini API](https://ai.google.dev/) (via `@google/genai`)
 *   **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-*   **Local LLM Integration**: [LM Studio](https://lmstudio.ai/) (for running models locally via a compatible API server)
+*   **Local LLM Integration**: [LM Studio](https://lmstudio.ai/), [Ollama](https://ollama.ai/)
 *   **Charting**: [D3.js](https://d3js.org/)
 *   **PDF Generation**: [@react-pdf/renderer](https://react-pdf.org/) & [html2canvas](https://html2canvas.hertzen.com/)
 *   **Internationalization**: Custom i18n provider (`src/i18n.tsx`)
@@ -404,7 +419,7 @@ Contributions are welcome! If you have suggestions for improving the system prom
 
 ## Disclaimer
 
-This tool is intended for educational and analytical purposes. The analysis is generated by an AI and may not always be perfectly accurate or complete. The user is **solely responsible for all costs and resource usage** incurred from their chosen AI service provider (Google Gemini API or local LM Studio server).
+This tool is intended for educational and analytical purposes. The analysis is generated by an AI and may not always be perfectly accurate or complete. The user is **solely responsible for all costs and resource usage** incurred from their chosen AI service provider (Google Gemini API or local server).
 
 ## License
 
