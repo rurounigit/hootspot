@@ -59,9 +59,9 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({
         translatedNumberedJson = await translateUI(apiKey, code, jsonToSend, t);
       } else if (serviceProvider === 'local') {
         if (localProviderType === 'lm-studio') {
-          translatedNumberedJson = await translateUIWithLMStudio(lmStudioConfig.url, lmStudioConfig.model, code, jsonToSend, t);
+          translatedNumberedJson = await translateUIWithLMStudio(lmStudioConfig.url, lmStudioConfig.model, code, jsonToSend);
         } else { // Ollama
-          translatedNumberedJson = await translateUIWithOllama(ollamaConfig.url, ollamaConfig.model, code, jsonToSend, t);
+          translatedNumberedJson = await translateUIWithOllama(ollamaConfig.url, ollamaConfig.model, code, jsonToSend);
         }
       } else {
         throw new Error("Translation provider not properly configured.");

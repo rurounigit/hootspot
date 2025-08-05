@@ -124,11 +124,11 @@ export const useConfig = () => {
         localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel);
       } else {
         if (localProviderType === 'lm-studio') {
-          await testLMStudioConnection(lmStudioUrl.trim(), lmStudioModel, t);
+          await testLMStudioConnection(lmStudioUrl.trim(), lmStudioModel);
           localStorage.setItem(LM_STUDIO_URL_KEY, lmStudioUrl.trim());
           localStorage.setItem(LM_STUDIO_MODEL_KEY, lmStudioModel);
         } else { // ollama
-          await testOllamaConnection(ollamaUrl.trim(), ollamaModel, t);
+          await testOllamaConnection(ollamaUrl.trim(), ollamaModel);
           localStorage.setItem(OLLAMA_URL_KEY, ollamaUrl.trim());
           localStorage.setItem(OLLAMA_MODEL_KEY, ollamaModel);
         }

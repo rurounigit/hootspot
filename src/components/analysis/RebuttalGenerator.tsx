@@ -43,9 +43,9 @@ const RebuttalGenerator: React.FC<RebuttalGeneratorProps> = ({
                 result = await generateRebuttalGoogle(apiKey, sourceText, analysis, googleModel, language);
             } else { // Local Provider
                 if (localProviderType === 'lm-studio') {
-                    result = await generateRebuttalWithLMStudio(sourceText, analysis, lmStudioConfig.url, lmStudioConfig.model, language, t);
+                    result = await generateRebuttalWithLMStudio(sourceText, analysis, lmStudioConfig.url, lmStudioConfig.model, language);
                 } else { // Ollama
-                    result = await generateRebuttalWithOllama(sourceText, analysis, ollamaConfig.url, ollamaConfig.model, language, t);
+                    result = await generateRebuttalWithOllama(sourceText, analysis, ollamaConfig.url, ollamaConfig.model, language);
                 }
             }
             onUpdate(result);

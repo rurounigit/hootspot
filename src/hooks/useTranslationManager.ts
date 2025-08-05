@@ -59,9 +59,9 @@ export const useTranslationManager = (config: UseTranslationManagerConfig) => {
         translatedText = await translateWithGoogle(config.apiKey, textToTranslate, targetLang, config.googleModel, t);
       } else { // Local provider
         if (config.localProviderType === 'lm-studio') {
-          translatedText = await translateTextWithLMStudio(textToTranslate, config.lmStudioConfig.url, config.lmStudioConfig.model, targetLang, t);
+          translatedText = await translateTextWithLMStudio(textToTranslate, config.lmStudioConfig.url, config.lmStudioConfig.model, targetLang);
         } else { // Ollama
-          translatedText = await translateTextWithOllama(textToTranslate, config.ollamaConfig.url, config.ollamaConfig.model, targetLang, t);
+          translatedText = await translateTextWithOllama(textToTranslate, config.ollamaConfig.url, config.ollamaConfig.model, targetLang);
         }
       }
       setTranslatedRebuttals(prev => ({ ...prev, [targetLang]: translatedText }));

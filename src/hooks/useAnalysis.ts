@@ -62,9 +62,9 @@ export const useAnalysis = (
               translatedResult = await translateWithGoogle(apiKey, analysis, targetLang, selectedModel, t);
           } else { // Local provider
               if (localProviderType === 'lm-studio') {
-                  translatedResult = await translateAnalysisResultWithLMStudio(analysis, lmStudioUrl, lmStudioModel, targetLang, t);
+                  translatedResult = await translateAnalysisResultWithLMStudio(analysis, lmStudioUrl, lmStudioModel, targetLang);
               } else { // Ollama
-                  translatedResult = await translateAnalysisResultWithOllama(analysis, ollamaUrl, ollamaModel, targetLang, t);
+                  translatedResult = await translateAnalysisResultWithOllama(analysis, ollamaUrl, ollamaModel, targetLang);
               }
           }
           setTranslatedResults(prev => ({ ...prev, [targetLang]: translatedResult }));
@@ -106,9 +106,9 @@ export const useAnalysis = (
         result = await analyzeWithGoogle(apiKey, text, selectedModel);
       } else {
         if (localProviderType === 'lm-studio') {
-          result = await analyzeTextWithLMStudio(text, lmStudioUrl, lmStudioModel, t);
+          result = await analyzeTextWithLMStudio(text, lmStudioUrl, lmStudioModel);
         } else {
-          result = await analyzeTextWithOllama(text, ollamaUrl, ollamaModel, t);
+          result = await analyzeTextWithOllama(text, ollamaUrl, ollamaModel);
         }
       }
       setAnalysisResult(result);
