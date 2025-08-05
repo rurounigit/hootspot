@@ -404,8 +404,11 @@ Once configured with one of these methods, HootSpot will be able to securely con
 *   **Styling**: [Tailwind CSS](https://tailwindcss.com/)
 *   **Local LLM Integration**: [LM Studio](https://lmstudio.ai/), [Ollama](https://ollama.ai/)
 *   **Charting**: [D3.js](https://d3js.org/)
+*   **JSON Parsing**: [JSON5](https://json5.org/) (For robust, lenient parsing of AI responses)
 *   **PDF Generation**: [@react-pdf/renderer](https://react-pdf.org/) & [html2canvas](https://html2canvas.hertzen.com/)
 *   **Internationalization**: Custom i18n provider (`src/i18n.tsx`)
+
+Of course. Here is the updated "Tech Stack" section for your `README.md` with the addition of JSON5.
 
 ## Contributing
 
