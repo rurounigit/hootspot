@@ -13,7 +13,7 @@ export const fetchModels = async (apiKey: string, showAllVersions: boolean = fal
     if (!Array.isArray(data.models)) {
         if (data.error) throw new Error(data.error.message);
         console.warn("API did not return a models array. Response:", data);
-        return { preview: [], stable: [] };
+        return { preview: [], stable: [], experimental: [] };
     }
 
     const filteredModels = (data.models as GeminiModel[]).filter(model => {
@@ -28,9 +28,20 @@ export const fetchModels = async (apiKey: string, showAllVersions: boolean = fal
       return true;
     });
 
-    const uniqueModels = showAllVersions
-      ? filteredModels
+    const processedModels = showAllVersions
+      ? (() => {
+          // When "Show all versions" is checked, remove exact duplicates based on the VISIBLE displayName.
+          const modelMap = new Map<string, GeminiModel>();
+          for (const model of filteredModels) {
+            // *** THE FIX IS HERE: We now use displayName as the key ***
+            if (!modelMap.has(model.displayName)) {
+              modelMap.set(model.displayName, model);
+            }
+          }
+          return Array.from(modelMap.values());
+        })()
       : (() => {
+          // When unchecked, perform version deduplication based on the base name.
           const modelMap = new Map<string, GeminiModel>();
           filteredModels.forEach(model => {
             const baseName = model.displayName.toLowerCase()
@@ -67,9 +78,9 @@ export const fetchModels = async (apiKey: string, showAllVersions: boolean = fal
         return b.displayName.localeCompare(a.displayName);
     };
 
-    const preview = uniqueModels.filter(m => m.displayName.toLowerCase().includes('preview')).sort(sorter);
-    const experimental = uniqueModels.filter(m => m.displayName.toLowerCase().includes('exp')).sort(sorter);
-    const stable = uniqueModels.filter(m =>
+    const preview = processedModels.filter(m => m.displayName.toLowerCase().includes('preview')).sort(sorter);
+    const experimental = processedModels.filter(m => m.displayName.toLowerCase().includes('exp')).sort(sorter);
+    const stable = processedModels.filter(m =>
       !m.displayName.toLowerCase().includes('preview') &&
       !m.displayName.toLowerCase().includes('exp')
     ).sort(sorter);

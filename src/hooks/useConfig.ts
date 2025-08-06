@@ -14,7 +14,6 @@ import { testApiKey } from '../api/google/utils';
 import { testLMStudioConnection } from '../api/lm-studio';
 import { testOllamaConnection } from '../api/ollama';
 
-// ++ START: Added helper function for synchronous initialization ++
 const getInitialVerifiedState = (): boolean => {
   const providerInStorage = (localStorage.getItem(SERVICE_PROVIDER_KEY) as 'google' | 'local') || 'google';
   const localTypeInStorage = (localStorage.getItem(LOCAL_PROVIDER_TYPE_KEY) as 'lm-studio' | 'ollama') || 'lm-studio';
@@ -31,12 +30,10 @@ const getInitialVerifiedState = (): boolean => {
   }
   return isInitiallyVerified;
 };
-// ++ END: Added helper function for synchronous initialization ++
 
 export const useConfig = () => {
   const { t } = useTranslation();
 
-  // --- State Declarations ---
   const [serviceProvider, setServiceProviderState] = useState<'google' | 'local'>(() => (localStorage.getItem(SERVICE_PROVIDER_KEY) as 'google' | 'local') || 'google');
   const [localProviderType, setLocalProviderTypeState] = useState<'lm-studio' | 'ollama'>(() => (localStorage.getItem(LOCAL_PROVIDER_TYPE_KEY) as 'lm-studio' | 'ollama') || 'lm-studio');
   const [apiKeyInput, setApiKeyInputState] = useState<string>(() => localStorage.getItem(API_KEY_STORAGE_KEY) || '');
@@ -45,7 +42,6 @@ export const useConfig = () => {
   const [lmStudioModel, setLmStudioModelState] = useState<string>(() => localStorage.getItem(LM_STUDIO_MODEL_KEY) || '');
   const [ollamaUrl, setOllamaUrlState] = useState<string>(() => localStorage.getItem(OLLAMA_URL_KEY) || 'http://localhost:11434');
   const [ollamaModel, setOllamaModelState] = useState<string>(() => localStorage.getItem(OLLAMA_MODEL_KEY) || '');
-  // -- MODIFIED: Initialize state synchronously using the new helper function --
   const [isVerified, setIsVerified] = useState(getInitialVerifiedState);
   const [isTesting, setIsTesting] = useState(false);
   const [testStatus, setTestStatus] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
@@ -59,43 +55,29 @@ export const useConfig = () => {
   );
   const [isConfigCollapsed, setIsConfigCollapsed] = useState(false);
 
-
-  // --- Effects ---
-
-  // -- MODIFIED: Simplified useEffect for one-time setup --
   useEffect(() => {
-    // isVerified is now correct on initial render, so just sync the UI state to it.
     setIsConfigCollapsed(isVerified);
-
     const storedMaxCharLimit = localStorage.getItem(MAX_CHAR_LIMIT_STORAGE_KEY);
     if (storedMaxCharLimit) {
       setMaxCharLimit(parseInt(storedMaxCharLimit, 10) || DEFAULT_MAX_CHAR_LIMIT);
     }
-  }, []); // Empty array ensures this runs only once on mount.
+  }, []);
 
-
-  // Debounce API key for model fetching
   useEffect(() => {
     const handler = setTimeout(() => { setDebouncedApiKey(apiKeyInput.trim()); }, 500);
     return () => clearTimeout(handler);
   }, [apiKeyInput]);
 
-   // These wrappers explicitly set the verified state to false when a user makes a change.
   const setAndDirty = <T extends (...args: any[]) => void>(setter: T) => (...args: Parameters<T>): void => {
       setter(...args);
       setIsVerified(false);
       setTestStatus(null);
   };
 
-  const setShowAllVersions = setAndDirty(setShowAllVersionsState);
-
-  // Sync simple settings to localStorage
   useEffect(() => { document.documentElement.classList.toggle('dark', isNightMode); localStorage.setItem(NIGHT_MODE_STORAGE_KEY, String(isNightMode)); }, [isNightMode]);
   useEffect(() => { localStorage.setItem(INCLUDE_REBUTTAL_JSON_KEY, String(includeRebuttalInJson)); }, [includeRebuttalInJson]);
   useEffect(() => { localStorage.setItem(INCLUDE_REBUTTAL_PDF_KEY, String(includeRebuttalInPdf)); }, [includeRebuttalInPdf]);
   useEffect(() => { localStorage.setItem(SHOW_ALL_VERSIONS_KEY, String(showAllVersions)); }, [showAllVersions]);
-
-
 
   const setServiceProvider = setAndDirty(setServiceProviderState);
   const setLocalProviderType = setAndDirty(setLocalProviderTypeState);
@@ -105,8 +87,8 @@ export const useConfig = () => {
   const setLmStudioModel = setAndDirty(setLmStudioModelState);
   const setOllamaUrl = setAndDirty(setOllamaUrlState);
   const setOllamaModel = setAndDirty(setOllamaModelState);
+  const setShowAllVersions = setAndDirty(setShowAllVersionsState);
 
-  // --- Save and Test Logic ---
   const handleMaxCharLimitSave = useCallback((newLimit: number) => {
     localStorage.setItem(MAX_CHAR_LIMIT_STORAGE_KEY, newLimit.toString());
     setMaxCharLimit(newLimit);
@@ -139,7 +121,6 @@ export const useConfig = () => {
           localStorage.setItem(OLLAMA_MODEL_KEY, ollamaModel);
         }
       }
-      // On success, save provider settings and mark as verified
       localStorage.setItem(SERVICE_PROVIDER_KEY, serviceProvider);
       localStorage.setItem(LOCAL_PROVIDER_TYPE_KEY, localProviderType);
       setIsVerified(true);

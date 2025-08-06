@@ -25,6 +25,8 @@
   "config_model_error": "Error al cargar los modelos",
   "config_model_stable_group": "Modelos Estables",
   "config_model_preview_group": "Modelos de Vista Previa",
+  "config_model_experimental_group": "Modelos Experimentales",
+  "config_show_all_versions_label": "Todas Las Versiónes ",
   "config_button_save_test": "Guardar y Probar Configuración",
   "config_night_mode": "Modo Nocturno",
   "config_include_rebuttal_json": "Incluir refutación en JSON",
