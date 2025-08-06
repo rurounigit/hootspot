@@ -1,3 +1,4 @@
+// src/types/api.ts
 export interface GeminiFinding {
   pattern_name: string;
   display_name: string; // The translated name for UI display
@@ -45,4 +46,10 @@ export interface GeminiModel {
   displayName: string;
   supportedGenerationMethods: string[];
   version: string;
+}
+
+export interface GroupedModels {
+  preview: GeminiModel[];
+  stable: GeminiModel[];
+  experimental?: GeminiModel[]; // Added experimental category
 }

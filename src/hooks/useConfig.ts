@@ -6,7 +6,7 @@ import {
   API_KEY_STORAGE_KEY, MAX_CHAR_LIMIT_STORAGE_KEY, SELECTED_MODEL_STORAGE_KEY,
   NIGHT_MODE_STORAGE_KEY, INCLUDE_REBUTTAL_JSON_KEY, INCLUDE_REBUTTAL_PDF_KEY,
   SERVICE_PROVIDER_KEY, LM_STUDIO_URL_KEY, LM_STUDIO_MODEL_KEY,
-  LOCAL_PROVIDER_TYPE_KEY, OLLAMA_URL_KEY, OLLAMA_MODEL_KEY
+  LOCAL_PROVIDER_TYPE_KEY, OLLAMA_URL_KEY, OLLAMA_MODEL_KEY, SHOW_ALL_VERSIONS_KEY
 } from '../config/storage-keys';
 import { GEMINI_MODEL_NAME } from '../config/api-prompts';
 import { DEFAULT_MAX_CHAR_LIMIT } from '../constants';
@@ -54,6 +54,9 @@ export const useConfig = () => {
   const [isNightMode, setIsNightMode] = useState<boolean>(() => localStorage.getItem(NIGHT_MODE_STORAGE_KEY) === 'true');
   const [includeRebuttalInJson, setIncludeRebuttalInJson] = useState<boolean>(() => localStorage.getItem(INCLUDE_REBUTTAL_JSON_KEY) === 'true');
   const [includeRebuttalInPdf, setIncludeRebuttalInPdf] = useState<boolean>(() => localStorage.getItem(INCLUDE_REBUTTAL_PDF_KEY) === 'true');
+  const [showAllVersions, setShowAllVersionsState] = useState<boolean>(() =>
+    localStorage.getItem(SHOW_ALL_VERSIONS_KEY) === 'true'
+  );
   const [isConfigCollapsed, setIsConfigCollapsed] = useState(false);
 
 
@@ -77,19 +80,22 @@ export const useConfig = () => {
     return () => clearTimeout(handler);
   }, [apiKeyInput]);
 
-  // Sync simple settings to localStorage
-  useEffect(() => { document.documentElement.classList.toggle('dark', isNightMode); localStorage.setItem(NIGHT_MODE_STORAGE_KEY, String(isNightMode)); }, [isNightMode]);
-  useEffect(() => { localStorage.setItem(INCLUDE_REBUTTAL_JSON_KEY, String(includeRebuttalInJson)); }, [includeRebuttalInJson]);
-  useEffect(() => { localStorage.setItem(INCLUDE_REBUTTAL_PDF_KEY, String(includeRebuttalInPdf)); }, [includeRebuttalInPdf]);
-
-
-  // --- State Change Handlers (THE FIX) ---
-  // These wrappers explicitly set the verified state to false when a user makes a change.
+   // These wrappers explicitly set the verified state to false when a user makes a change.
   const setAndDirty = <T extends (...args: any[]) => void>(setter: T) => (...args: Parameters<T>): void => {
       setter(...args);
       setIsVerified(false);
       setTestStatus(null);
   };
+
+  const setShowAllVersions = setAndDirty(setShowAllVersionsState);
+
+  // Sync simple settings to localStorage
+  useEffect(() => { document.documentElement.classList.toggle('dark', isNightMode); localStorage.setItem(NIGHT_MODE_STORAGE_KEY, String(isNightMode)); }, [isNightMode]);
+  useEffect(() => { localStorage.setItem(INCLUDE_REBUTTAL_JSON_KEY, String(includeRebuttalInJson)); }, [includeRebuttalInJson]);
+  useEffect(() => { localStorage.setItem(INCLUDE_REBUTTAL_PDF_KEY, String(includeRebuttalInPdf)); }, [includeRebuttalInPdf]);
+  useEffect(() => { localStorage.setItem(SHOW_ALL_VERSIONS_KEY, String(showAllVersions)); }, [showAllVersions]);
+
+
 
   const setServiceProvider = setAndDirty(setServiceProviderState);
   const setLocalProviderType = setAndDirty(setLocalProviderTypeState);
@@ -165,6 +171,7 @@ export const useConfig = () => {
     isNightMode, setIsNightMode,
     includeRebuttalInJson, setIncludeRebuttalInJson,
     includeRebuttalInPdf, setIncludeRebuttalInPdf,
+    showAllVersions, setShowAllVersions,
     isConfigCollapsed, setIsConfigCollapsed,
     isTesting, testStatus,
     isCurrentProviderConfigured: isVerified,

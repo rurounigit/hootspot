@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useTranslation } from '../../i18n';
-import { GroupedModels } from '../../hooks/useModels';
+import { GroupedModels } from '../../types/api';
 import { InfoIcon, ExternalLinkIcon } from '../../assets/icons';
 
 interface GoogleConfigProps {
@@ -52,8 +52,9 @@ const GoogleConfig: React.FC<GoogleConfigProps> = ({
           {!areModelsLoading && !modelsError && allModelsEmpty && <option>Enter API Key to see models</option>}
           {!areModelsLoading && !modelsError && (<>
               {models.preview.length > 0 && ( <optgroup label={t('config_model_preview_group')}> {models.preview.map(model => ( <option key={model.name} value={model.name}> {model.displayName} </option> ))} </optgroup> )}
-              {models.stable.length > 0 && ( <optgroup label={t('config_model_stable_group')}> {models.stable.map(model => ( <option key={model.name} value={model.name}> {model.displayName} </option>))} </optgroup> )}
-          </>)}
+    {models.stable.length > 0 && ( <optgroup label={t('config_model_stable_group')}> {models.stable.map(model => ( <option key={model.name} value={model.name}> {model.displayName} </option>))} </optgroup> )}
+    {models.experimental && models.experimental.length > 0 && ( <optgroup label={t('config_model_experimental_group')}> {models.experimental.map(model => ( <option key={model.name} value={model.name}> {model.displayName} </option> ))} </optgroup> )}
+  </>)}
         </select>
         {modelsError && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{modelsError}</p>}
       </div>

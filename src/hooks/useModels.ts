@@ -5,24 +5,21 @@ import { GeminiModel } from '../types/api';
 import { fetchModels as fetchGoogleModels } from '../api/google/models';
 import { fetchLMStudioModels } from '../api/lm-studio';
 import { fetchOllamaModels } from '../api/ollama';
-
-export interface GroupedModels {
-  preview: GeminiModel[];
-  stable: GeminiModel[];
-}
-
+import { GroupedModels } from '../types/api';
 interface UseModelsProps {
     serviceProvider: 'google' | 'local';
     localProviderType: 'lm-studio' | 'ollama';
     apiKey: string | null;
     lmStudioUrl: string;
     ollamaUrl: string;
+    deduplicateVersions: boolean; // New prop
 }
 
-export const useModels = ({ serviceProvider, localProviderType, apiKey, lmStudioUrl, ollamaUrl }: UseModelsProps) => {
+export const useModels = ({ serviceProvider, localProviderType, apiKey, lmStudioUrl, ollamaUrl, deduplicateVersions }: UseModelsProps) => {
   const [models, setModels] = useState<GroupedModels>({ preview: [], stable: [] });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deduplicateVersionsState, setDeduplicateVersions] = useState(false); // New state
 
   const loadModels = useCallback(async () => {
     setIsLoading(true);
@@ -31,7 +28,7 @@ export const useModels = ({ serviceProvider, localProviderType, apiKey, lmStudio
 
     try {
         if (serviceProvider === 'google' && apiKey) {
-            const fetchedModels = await fetchGoogleModels(apiKey);
+            const fetchedModels = await fetchGoogleModels(apiKey, !deduplicateVersions); // Pass negated value to align with API's showAllVersions
             setModels(fetchedModels);
         } else if (serviceProvider === 'local') {
             let fetchedModels: GeminiModel[] = [];
@@ -48,11 +45,18 @@ export const useModels = ({ serviceProvider, localProviderType, apiKey, lmStudio
     } finally {
         setIsLoading(false);
     }
-  }, [serviceProvider, localProviderType, apiKey, lmStudioUrl, ollamaUrl]);
+  }, [serviceProvider, localProviderType, apiKey, lmStudioUrl, ollamaUrl, deduplicateVersions]);
 
   useEffect(() => {
     loadModels();
   }, [loadModels]);
 
-  return { models, isLoading, error, refetch: loadModels };
+  return {
+    models,
+    isLoading,
+    error,
+    refetch: loadModels,
+    deduplicateVersions: deduplicateVersionsState,
+    setDeduplicateVersions
+  };
 };

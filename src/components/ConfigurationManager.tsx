@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { SaveIcon, SettingsIcon } from '../assets/icons';
 import { useTranslation } from '../i18n';
 import LanguageManager from './LanguageManager';
-import { GroupedModels } from '../hooks/useModels';
+import { GroupedModels } from '../types/api';
 import GoogleConfig from './config/GoogleConfig';
 import LocalProviderConfig from './config/LocalProviderConfig';
 import GeneralSettings from './config/GeneralSettings';

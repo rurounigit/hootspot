@@ -3,7 +3,7 @@
 import React from 'react';
 import { useTranslation } from '../../i18n';
 import { InfoIcon } from '../../assets/icons';
-import { GroupedModels } from '../../hooks/useModels';
+import { GroupedModels } from '../../types/api';
 
 interface LMStudioConfigProps {
   lmStudioUrl: string;
