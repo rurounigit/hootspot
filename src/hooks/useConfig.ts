@@ -87,7 +87,13 @@ export const useConfig = () => {
   const setLmStudioModel = setAndDirty(setLmStudioModelState);
   const setOllamaUrl = setAndDirty(setOllamaUrlState);
   const setOllamaModel = setAndDirty(setOllamaModelState);
-  const setShowAllVersions = setAndDirty(setShowAllVersionsState);
+
+  // *** THE FIX IS HERE ***
+  // We create a specific handler for the 'showAllVersions' toggle that does NOT call setAndDirty.
+  const setShowAllVersions = (value: boolean) => {
+    setShowAllVersionsState(value);
+  };
+  // The line `const setShowAllVersions = setAndDirty(setShowAllVersionsState);` has been removed.
 
   const handleMaxCharLimitSave = useCallback((newLimit: number) => {
     localStorage.setItem(MAX_CHAR_LIMIT_STORAGE_KEY, newLimit.toString());
@@ -152,7 +158,7 @@ export const useConfig = () => {
     isNightMode, setIsNightMode,
     includeRebuttalInJson, setIncludeRebuttalInJson,
     includeRebuttalInPdf, setIncludeRebuttalInPdf,
-    showAllVersions, setShowAllVersions,
+    showAllVersions, setShowAllVersions, // This now correctly points to our new, safe function
     isConfigCollapsed, setIsConfigCollapsed,
     isTesting, testStatus,
     isCurrentProviderConfigured: isVerified,

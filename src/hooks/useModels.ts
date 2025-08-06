@@ -48,12 +48,22 @@ export const useModels = ({ serviceProvider, localProviderType, apiKey, lmStudio
   }, [serviceProvider, localProviderType, apiKey, lmStudioUrl, ollamaUrl, showAllVersions]);
 
   useEffect(() => {
-    // Only load Google models if an API key is present.
-    // Local models are loaded if their respective URL is present.
-    if ( (serviceProvider === 'google' && apiKey) || (serviceProvider === 'local' && (lmStudioUrl || ollamaUrl) ) ) {
+    // Determine if the necessary conditions to fetch models are met.
+    const shouldFetch = (serviceProvider === 'google' && apiKey) || (serviceProvider === 'local' && (lmStudioUrl || ollamaUrl));
+
+    if (shouldFetch) {
+      // If conditions are met, call the function that handles the API request.
       loadModels();
+    } else {
+      // **This is the crucial part that was missing.**
+      // If conditions are NOT met (e.g., the API key was just cleared),
+      // explicitly reset the hook's state to its clean, initial values.
+      // This prevents stale errors or model lists from being shown.
+      setIsLoading(false);
+      setError(null);
+      setModels({ preview: [], stable: [], experimental: [] });
     }
-  }, [loadModels, serviceProvider, apiKey, lmStudioUrl, ollamaUrl]);
+  }, [serviceProvider, apiKey, lmStudioUrl, ollamaUrl, loadModels]);
 
   return {
     models,
