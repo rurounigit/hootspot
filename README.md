@@ -408,8 +408,6 @@ Once configured with one of these methods, HootSpot will be able to securely con
 *   **PDF Generation**: [@react-pdf/renderer](https://react-pdf.org/) & [html2canvas](https://html2canvas.hertzen.com/)
 *   **Internationalization**: Custom i18n provider (`src/i18n.tsx`)
 
-Of course. Here is the updated "Tech Stack" section for your `README.md` with the addition of JSON5.
-
 ## Contributing
 
 Contributions are welcome! If you have suggestions for improving the system prompt, adding features, or fixing bugs, please feel free to open an issue or submit a pull request.
