@@ -9,9 +9,9 @@
     "message": "Añadir texto seleccionado a HootSpot"
   },
   "extName": {
-    "message": "Extensión Analizador de Texto IA HootSpot"
+    "message": "HootSpot - Encuentra patrones psicológicos y retóricos"
   },
   "extDescription": {
-    "message": "Una aplicación para analizar texto en busca de patrones psicológicos y retóricos usando la API de Gemini. Los usuarios proporcionan su propia clave de API."
+    "message": "Herramienta barra lateral para analizar texto en busca de patrones psicológicos y retóricos utilizando la API de Gemini o un LLM local a través de LM Studio / Ollama."
   }
 }

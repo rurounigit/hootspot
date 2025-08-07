@@ -9,9 +9,9 @@
     "message": "Ajouter le texte sélectionné à HootSpot"
   },
   "extName": {
-    "message": "Extension Analyseur de Texte IA HootSpot"
+    "message": "HootSpot - Identifier les schémas psychologiques et rhétoriques"
   },
   "extDescription": {
-    "message": "Une application pour analyser du texte à la recherche de schémas psychologiques et rhétoriques à l'aide de l'API Gemini. Les utilisateurs fournissent leur propre clé API."
+    "message": "Outil barre latérale pour analyser le texte à la recherche de modèles psychologiques et rhétoriques à l'aide de l'API Gemini ou d'un LLM local via LM Studio / Ollama."
   }
 }
