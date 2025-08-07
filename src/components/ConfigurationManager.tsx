@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { SaveIcon, SettingsIcon } from '../assets/icons';
 import { useTranslation } from '../i18n';
 import LanguageManager from './LanguageManager';
-import { GroupedModels } from '../hooks/useModels';
+import { GroupedModels } from '../types/api';
 import GoogleConfig from './config/GoogleConfig';
 import LocalProviderConfig from './config/LocalProviderConfig';
 import GeneralSettings from './config/GeneralSettings';
@@ -43,6 +43,8 @@ interface ConfigurationManagerProps {
   onIncludeRebuttalInJsonChange: (value: boolean) => void;
   includeRebuttalInPdf: boolean;
   onIncludeRebuttalInPdfChange: (value: boolean) => void;
+  showAllVersions: boolean;
+  onShowAllVersionsChange: (value: boolean) => void;
 
   isCurrentProviderConfigured: boolean;
   isCollapsed: boolean;
@@ -63,6 +65,7 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
     areModelsLoading, modelsError, onRefetchModels,
     isCurrentProviderConfigured, isCollapsed, onToggleCollapse,
     isTesting, testStatus, onSave,
+    showAllVersions, onShowAllVersionsChange
   } = props;
   const { t } = useTranslation();
   const [localError, setLocalError] = useState<string | null>(null);
@@ -71,17 +74,14 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
 
   const isFormValid = () => {
     if (isGoogleProvider) return apiKeyInput.trim() !== '';
-    // Local provider
     if (localProviderType === 'lm-studio') {
       return lmStudioUrl.trim() !== '' && lmStudioModel.trim() !== '';
     }
-    // Ollama
     return ollamaUrl.trim() !== '' && ollamaModel.trim() !== '';
   };
 
-  const isSaveDisabled = isTesting || !isFormValid() || (areModelsLoading && !models.stable.length && !models.preview.length) || !!modelsError;
+  const isSaveDisabled = isTesting || !isFormValid() || (areModelsLoading && !models.stable.length && !models.preview.length && !(models.experimental && models.experimental.length)) || !!modelsError;
 
-  // ... (rest of the component logic is largely the same)
   useEffect(() => {
     if (isCollapsed) {
         setLocalError(null);
@@ -107,7 +107,6 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
   return (
     <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-700">
       <div className="flex justify-between items-center mb-4">
-        {/* ... Header ... */}
         <div className="flex items-center"><SettingsIcon className="w-6 h-6 mr-2 text-blue-600 dark:text-blue-400" /><h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300">{t('config_title')}</h2></div>
         <button onClick={onToggleCollapse} className="text-blue-600 hover:text-blue-800" aria-label={isCollapsed ? t('config_toggle_expand') : t('config_toggle_collapse')}>
           {isCollapsed ? (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>) : (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" /></svg>)}
@@ -143,6 +142,8 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
               onModelChange={onGoogleModelChange}
               areModelsLoading={areModelsLoading}
               modelsError={modelsError}
+              showAllVersions={showAllVersions}
+              onShowAllVersionsChange={onShowAllVersionsChange}
             />
           ) : (
             <LocalProviderConfig

@@ -12,11 +12,11 @@
     "description": "Context menu item to append selected text to the side panel."
   },
   "extName": {
-    "message": "HootSpot",
+    "message": "HootSpot - Find psychological and rhetorical patterns",
     "description": "The name of the extension."
   },
   "extDescription": {
-    "message": "Extension to analyze text for psychological and rhetorical patterns using the Gemini API or a local LLM via LM Studio.",
+    "message": "Side panel tool to analyze text for psychological and rhetorical patterns with Gemini API or a local LLM via LM Studio / Ollama.",
     "description": "The description of the extension."
   }
 }

@@ -12,13 +12,16 @@ export const SERVICE_PROVIDER_KEY = 'hootspot-service-provider';
 
 // === Keys for Local Providers ===
 
+// Key to remember which local provider is selected
+export const LOCAL_PROVIDER_TYPE_KEY = 'hootspot-local-provider-type';
+
 // Keys for LM Studio
 export const LM_STUDIO_URL_KEY = 'hootspot-lmstudio-url';
 export const LM_STUDIO_MODEL_KEY = 'hootspot-lmstudio-model';
 
-// ADDED: Key to remember which local provider is selected
-export const LOCAL_PROVIDER_TYPE_KEY = 'hootspot-local-provider-type';
-
-// ADDED: New keys for Ollama configuration
+// Ollama configuration
 export const OLLAMA_URL_KEY = 'hootspot-ollama-url';
 export const OLLAMA_MODEL_KEY = 'hootspot-ollama-model';
+
+// Deduplication toggle for google api model selection
+export const SHOW_ALL_VERSIONS_KEY = 'hootspot-show-all-versions';

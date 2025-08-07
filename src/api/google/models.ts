@@ -1,8 +1,7 @@
 // src/api/google/models.ts
-import { GeminiModel } from "../../types/api";
-import { GroupedModels } from "../../hooks/useModels";
+import { GeminiModel, GroupedModels } from "../../types/api";
 
-export const fetchModels = async (apiKey: string): Promise<GroupedModels> => {
+export const fetchModels = async (apiKey: string, showAllVersions: boolean = false): Promise<GroupedModels> => {
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
     if (!response.ok) {
@@ -14,7 +13,7 @@ export const fetchModels = async (apiKey: string): Promise<GroupedModels> => {
     if (!Array.isArray(data.models)) {
         if (data.error) throw new Error(data.error.message);
         console.warn("API did not return a models array. Response:", data);
-        return { preview: [], stable: [] };
+        return { preview: [], stable: [], experimental: [] };
     }
 
     const filteredModels = (data.models as GeminiModel[]).filter(model => {
@@ -23,30 +22,41 @@ export const fetchModels = async (apiKey: string): Promise<GroupedModels> => {
 
       if (!model.supportedGenerationMethods.includes("generateContent")) return false;
       if (name.includes("embedding") || name.includes("aqa") || name.includes("imagen") || name.includes("tts") || name.includes("vision")) return false;
-      if (displayName.includes("exp")) return false;
       if (displayName.includes("gemini 1.0")) return false;
       if (displayName.includes("cursor testing")) return false;
 
       return true;
     });
 
-    const modelMap = new Map<string, GeminiModel>();
+    const processedModels = showAllVersions
+      ? (() => {
+          // When "Show all versions" is checked, remove exact duplicates based on the VISIBLE displayName.
+          const modelMap = new Map<string, GeminiModel>();
+          for (const model of filteredModels) {
+            // *** THE FIX IS HERE: We now use displayName as the key ***
+            if (!modelMap.has(model.displayName)) {
+              modelMap.set(model.displayName, model);
+            }
+          }
+          return Array.from(modelMap.values());
+        })()
+      : (() => {
+          // When unchecked, perform version deduplication based on the base name.
+          const modelMap = new Map<string, GeminiModel>();
+          filteredModels.forEach(model => {
+            const baseName = model.displayName.toLowerCase()
+              .replace(/(\s\d{3})$/, '')
+              .replace(/(\s\d{2}-\d{2})$/, '')
+              .replace(/(-latest)$/, '')
+              .trim();
 
-    filteredModels.forEach(model => {
-      const baseName = model.displayName.toLowerCase()
-        .replace(/(\s\d{3})$/, '')
-        .replace(/(\s\d{2}-\d{2})$/, '')
-        .replace(/(-latest)$/, '')
-        .trim();
-
-      const existingModel = modelMap.get(baseName);
-
-      if (!existingModel || model.version > existingModel.version) {
-        modelMap.set(baseName, model);
-      }
-    });
-
-    const uniqueModels = Array.from(modelMap.values());
+            const existingModel = modelMap.get(baseName);
+            if (!existingModel || model.version > existingModel.version) {
+              modelMap.set(baseName, model);
+            }
+          });
+          return Array.from(modelMap.values());
+        })();
 
     const sorter = (a: GeminiModel, b: GeminiModel): number => {
         const aIsGemini = a.displayName.toLowerCase().includes('gemini');
@@ -68,10 +78,14 @@ export const fetchModels = async (apiKey: string): Promise<GroupedModels> => {
         return b.displayName.localeCompare(a.displayName);
     };
 
-    const preview = uniqueModels.filter(m => m.displayName.toLowerCase().includes('preview')).sort(sorter);
-    const stable = uniqueModels.filter(m => !m.displayName.toLowerCase().includes('preview')).sort(sorter);
+    const preview = processedModels.filter(m => m.displayName.toLowerCase().includes('preview')).sort(sorter);
+    const experimental = processedModels.filter(m => m.displayName.toLowerCase().includes('exp')).sort(sorter);
+    const stable = processedModels.filter(m =>
+      !m.displayName.toLowerCase().includes('preview') &&
+      !m.displayName.toLowerCase().includes('exp')
+    ).sort(sorter);
 
-    return { preview, stable };
+    return { preview, stable, experimental };
 
   } catch (error) {
     console.error("Failed to fetch models:", error);

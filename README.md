@@ -1,6 +1,6 @@
 # HootSpot AI Text Analyzer
 
-![HootSpot AI Logo](public/images/icons/icon128_onwhite.png)
+ <img src="public/images/icons/icon.png" alt="HootSpot Icon" width="30%">
 
 **HootSpot is a Chrome Extension that empowers you to identify and understand a wide range of psychological, rhetorical, and political manipulation tactics in any text, leveraging the power of the Google Gemini API or your own local Language Models via LM Studio or Ollama.**
 
@@ -407,8 +407,6 @@ Once configured with one of these methods, HootSpot will be able to securely con
 *   **JSON Parsing**: [JSON5](https://json5.org/) (For robust, lenient parsing of AI responses)
 *   **PDF Generation**: [@react-pdf/renderer](https://react-pdf.org/) & [html2canvas](https://html2canvas.hertzen.com/)
 *   **Internationalization**: Custom i18n provider (`src/i18n.tsx`)
-
-Of course. Here is the updated "Tech Stack" section for your `README.md` with the addition of JSON5.
 
 ## Contributing
 

@@ -9,9 +9,9 @@
     "message": "Ausgewählten Text zu HootSpot hinzufügen"
   },
   "extName": {
-    "message": "HootSpot KI Text-Analysator Erweiterung"
+    "message": "HootSpot – Psychologische und rhetorische Muster finden"
   },
   "extDescription": {
-    "message": "Eine Anwendung zur Analyse von Texten auf psychologische und rhetorische Muster mit der Gemini API. Benutzer stellen ihren eigenen API-Schlüssel zur Verfügung."
+    "message": "Sidebar-Tool zur Analyse von Texten auf psychologische und rhetorische Muster mit der Gemini API oder via lokaler KI mit LM Studio / Ollama."
   }
 }

@@ -30,6 +30,7 @@ const App: React.FC = () => {
     isNightMode, setIsNightMode,
     includeRebuttalInJson, setIncludeRebuttalInJson,
     includeRebuttalInPdf, setIncludeRebuttalInPdf,
+    showAllVersions, setShowAllVersions,
     isConfigCollapsed, setIsConfigCollapsed,
     isCurrentProviderConfigured, isTesting, testStatus,
     saveAndTestConfig, handleMaxCharLimitSave,
@@ -39,7 +40,8 @@ const App: React.FC = () => {
   const { models, isLoading: areModelsLoading, error: modelsError, refetch: refetchModels } = useModels({
     serviceProvider, localProviderType,
     apiKey: debouncedApiKey,
-    lmStudioUrl, ollamaUrl
+    lmStudioUrl, ollamaUrl,
+    showAllVersions
   });
 
   const {
@@ -74,7 +76,7 @@ const App: React.FC = () => {
   useEffect(() => {
     let modelList, currentSelection, setSelection;
     if (serviceProvider === 'google') {
-        modelList = [...models.stable, ...models.preview];
+        modelList = [...models.stable, ...models.preview, ...(models.experimental || [])];
         currentSelection = selectedModel;
         setSelection = setSelectedModel;
     } else {
@@ -87,14 +89,11 @@ const App: React.FC = () => {
             setSelection = setOllamaModel;
         }
     }
-    // Logic to select a default model if the current one becomes invalid
     if (modelList.length > 0 && setSelection && !modelList.some(m => m.name === currentSelection)) {
-        // 1. Try to find the app's default Gemini model.
         const preferredDefault = modelList.find(m => m.name === GEMINI_MODEL_NAME);
         if (preferredDefault) {
             setSelection(preferredDefault.name);
         } else {
-            // 2. If the preferred default isn't available, fall back to the first model in the list.
             setSelection(modelList[0].name);
         }
     }
@@ -204,6 +203,7 @@ const App: React.FC = () => {
             isNightMode={isNightMode} onNightModeChange={setIsNightMode}
             includeRebuttalInJson={includeRebuttalInJson} onIncludeRebuttalInJsonChange={setIncludeRebuttalInJson}
             includeRebuttalInPdf={includeRebuttalInPdf} onIncludeRebuttalInPdfChange={setIncludeRebuttalInPdf}
+            showAllVersions={showAllVersions} onShowAllVersionsChange={setShowAllVersions}
             isCurrentProviderConfigured={isCurrentProviderConfigured}
             isCollapsed={isConfigCollapsed} onToggleCollapse={() => setIsConfigCollapsed(!isConfigCollapsed)}
             isTesting={isTesting} testStatus={testStatus} onSave={saveAndTestConfig}
