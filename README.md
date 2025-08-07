@@ -1,6 +1,6 @@
 # HootSpot AI Text Analyzer
 
-![HootSpot AI Logo](public/images/icons/icon128_onwhite.png)
+![HootSpot AI Logo](public/images/icons/icon128.png)
 
 **HootSpot is a Chrome Extension that empowers you to identify and understand a wide range of psychological, rhetorical, and political manipulation tactics in any text, leveraging the power of the Google Gemini API or your own local Language Models via LM Studio or Ollama.**
 
