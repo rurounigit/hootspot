@@ -9,13 +9,17 @@ import LocalProviderConfig from './config/LocalProviderConfig';
 import GeneralSettings from './config/GeneralSettings';
 
 interface ConfigurationManagerProps {
-  serviceProvider: 'google' | 'local' | 'cloud';
+  serviceProvider: 'cloud' | 'local';
   onServiceProviderChange: (provider: 'cloud' | 'local') => void;
+  cloudProvider: 'google' | 'openrouter';
+  onCloudProviderChange: (provider: 'google' | 'openrouter') => void;
   localProviderType: 'lm-studio' | 'ollama';
   onLocalProviderTypeChange: (type: 'lm-studio' | 'ollama') => void;
 
   apiKeyInput: string;
   onApiKeyInputChange: (key: string) => void;
+  openRouterApiKey: string;
+  onOpenRouterApiKeyChange: (key: string) => void;
 
   lmStudioUrl: string;
   onLmStudioUrlChange: (url: string) => void;
@@ -30,6 +34,8 @@ interface ConfigurationManagerProps {
   models: GroupedModels;
   googleModel: string;
   onGoogleModelChange: (model: string) => void;
+  openRouterModel: string;
+  onOpenRouterModelChange: (model: string) => void;
 
   areModelsLoading: boolean;
   modelsError: string | null;
@@ -73,7 +79,12 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
   const isCloudProvider = serviceProvider === 'cloud';
 
   const isFormValid = () => {
-    if (isCloudProvider) return apiKeyInput.trim() !== '';
+    if (isCloudProvider) {
+      if (props.cloudProvider === 'google') {
+        return props.apiKeyInput.trim() !== '';
+      }
+      return props.openRouterApiKey.trim() !== '';
+    }
     if (localProviderType === 'lm-studio') {
       return lmStudioUrl.trim() !== '' && lmStudioModel.trim() !== '';
     }
@@ -88,13 +99,18 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
         return;
     }
     if (isCloudProvider) {
-      if (!apiKeyInput.trim()) setLocalError(t('error_api_key_empty'));
-      else setLocalError(null);
+      if (props.cloudProvider === 'google' && !props.apiKeyInput.trim()) {
+        setLocalError(t('error_api_key_empty'));
+      } else if (props.cloudProvider === 'openrouter' && !props.openRouterApiKey.trim()) {
+        setLocalError(t('error_api_key_empty'));
+      } else {
+        setLocalError(null);
+      }
     } else {
       if (!isFormValid()) setLocalError(t('error_local_server_config_missing'));
       else setLocalError(null);
     }
-  }, [isCollapsed, serviceProvider, apiKeyInput, lmStudioUrl, lmStudioModel, ollamaUrl, ollamaModel, t]);
+  }, [isCollapsed, serviceProvider, props.cloudProvider, props.apiKeyInput, props.openRouterApiKey, lmStudioUrl, lmStudioModel, ollamaUrl, ollamaModel, t]);
 
   const renderCollapsedStatus = () => {
     const providerName = isCloudProvider ? 'Cloud' : (localProviderType === 'ollama' ? 'Ollama' : 'LM Studio');
@@ -189,8 +205,10 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
 
           <LanguageManager
             serviceProvider={serviceProvider}
+            cloudProvider={props.cloudProvider}
             localProviderType={localProviderType}
             apiKey={apiKeyInput}
+            openRouterApiKey={props.openRouterApiKey}
             lmStudioConfig={{ url: lmStudioUrl, model: lmStudioModel }}
             ollamaConfig={{ url: ollamaUrl, model: ollamaModel }}
             isCurrentProviderConfigured={isCurrentProviderConfigured}

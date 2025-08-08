@@ -14,6 +14,7 @@ interface LanguageManagerProps {
   cloudProvider: 'google' | 'openrouter';
   localProviderType: 'lm-studio' | 'ollama';
   apiKey: string | null;
+  openRouterApiKey: string | null;
   lmStudioConfig: { url: string; model: string; };
   ollamaConfig: { url: string; model: string; };
   isCurrentProviderConfigured: boolean;
@@ -21,8 +22,10 @@ interface LanguageManagerProps {
 
 const LanguageManager: React.FC<LanguageManagerProps> = ({
   serviceProvider,
+  cloudProvider,
   localProviderType,
   apiKey,
+  openRouterApiKey,
   lmStudioConfig,
   ollamaConfig,
   isCurrentProviderConfigured
@@ -53,11 +56,16 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({
       // Use the utility to create the numbered JSON and the map
       const { numberedJson, numberToKeyMap } = createNumberedJsonForTranslation(baseTranslations);
 
-      let translatedNumberedJson: Record<string, string>;
+      let translatedNumberedJson: Record<string, string> | undefined;
       const jsonToSend = JSON.stringify(numberedJson);
 
-      if (serviceProvider === 'google' && apiKey) {
-        translatedNumberedJson = await translateUI(apiKey, code, jsonToSend, t);
+      if (serviceProvider === 'cloud') {
+        if (cloudProvider === 'google' && apiKey) {
+          translatedNumberedJson = await translateUI(apiKey, code, jsonToSend, t);
+        } else if (cloudProvider === 'openrouter' && openRouterApiKey) {
+          // TODO: Implement OpenRouter translation
+          throw new Error('OpenRouter translation is not yet implemented.');
+        }
       } else if (serviceProvider === 'local') {
         if (localProviderType === 'lm-studio') {
           translatedNumberedJson = await translateUIWithLMStudio(lmStudioConfig.url, lmStudioConfig.model, code, jsonToSend);
@@ -65,6 +73,10 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({
           translatedNumberedJson = await translateUIWithOllama(ollamaConfig.url, ollamaConfig.model, code, jsonToSend);
         }
       } else {
+        throw new Error("Translation provider not properly configured.");
+      }
+
+      if (!translatedNumberedJson) {
         throw new Error("Translation provider not properly configured.");
       }
 
