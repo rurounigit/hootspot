@@ -4,13 +4,13 @@ import { SaveIcon, SettingsIcon } from '../assets/icons';
 import { useTranslation } from '../i18n';
 import LanguageManager from './LanguageManager';
 import { GroupedModels } from '../types/api';
-import GoogleConfig from './config/GoogleConfig';
+import CloudConfig from './config/CloudConfig';
 import LocalProviderConfig from './config/LocalProviderConfig';
 import GeneralSettings from './config/GeneralSettings';
 
 interface ConfigurationManagerProps {
-  serviceProvider: 'google' | 'local';
-  onServiceProviderChange: (provider: 'google' | 'local') => void;
+  serviceProvider: 'google' | 'local' | 'cloud';
+  onServiceProviderChange: (provider: 'cloud' | 'local') => void;
   localProviderType: 'lm-studio' | 'ollama';
   onLocalProviderTypeChange: (type: 'lm-studio' | 'ollama') => void;
 
@@ -70,10 +70,10 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
   const { t } = useTranslation();
   const [localError, setLocalError] = useState<string | null>(null);
 
-  const isGoogleProvider = serviceProvider === 'google';
+  const isCloudProvider = serviceProvider === 'cloud';
 
   const isFormValid = () => {
-    if (isGoogleProvider) return apiKeyInput.trim() !== '';
+    if (isCloudProvider) return apiKeyInput.trim() !== '';
     if (localProviderType === 'lm-studio') {
       return lmStudioUrl.trim() !== '' && lmStudioModel.trim() !== '';
     }
@@ -87,7 +87,7 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
         setLocalError(null);
         return;
     }
-    if (isGoogleProvider) {
+    if (isCloudProvider) {
       if (!apiKeyInput.trim()) setLocalError(t('error_api_key_empty'));
       else setLocalError(null);
     } else {
@@ -97,7 +97,7 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
   }, [isCollapsed, serviceProvider, apiKeyInput, lmStudioUrl, lmStudioModel, ollamaUrl, ollamaModel, t]);
 
   const renderCollapsedStatus = () => {
-    const providerName = isGoogleProvider ? 'Google' : (localProviderType === 'ollama' ? 'Ollama' : 'LM Studio');
+    const providerName = isCloudProvider ? 'Cloud' : (localProviderType === 'ollama' ? 'Ollama' : 'LM Studio');
     if (isCurrentProviderConfigured) {
       return <p className="text-sm text-green-600 dark:text-green-400">{t('config_status_configured', { provider: providerName })}</p>;
     }
@@ -124,26 +124,32 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('config_provider_title')}</label>
             <div className="flex rounded-md shadow-sm">
-              <button onClick={() => onServiceProviderChange('google')} className={`flex-1 px-4 py-2 text-sm font-medium rounded-l-md focus:outline-none ${isGoogleProvider ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}>
-                {t('config_provider_google')}
+              <button onClick={() => onServiceProviderChange('cloud')} className={`flex-1 px-4 py-2 text-sm font-medium rounded-l-md focus:outline-none ${isCloudProvider ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}>
+                {t('config_provider_cloud')}
               </button>
-              <button onClick={() => onServiceProviderChange('local')} className={`flex-1 px-4 py-2 text-sm font-medium rounded-r-md focus:outline-none ${!isGoogleProvider ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}>
+              <button onClick={() => onServiceProviderChange('local')} className={`flex-1 px-4 py-2 text-sm font-medium rounded-r-md focus:outline-none ${!isCloudProvider ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}>
                 {t('config_provider_local')}
               </button>
             </div>
           </div>
 
-          {isGoogleProvider ? (
-            <GoogleConfig
-              apiKeyInput={apiKeyInput}
-              onApiKeyInputChange={onApiKeyInputChange}
-              models={models}
-              selectedModel={googleModel}
-              onModelChange={onGoogleModelChange}
-              areModelsLoading={areModelsLoading}
-              modelsError={modelsError}
-              showAllVersions={showAllVersions}
-              onShowAllVersionsChange={onShowAllVersionsChange}
+          {isCloudProvider ? (
+            <CloudConfig
+              cloudProvider={props.cloudProvider}
+              onCloudProviderChange={props.onCloudProviderChange}
+              apiKeyInput={props.apiKeyInput}
+              onApiKeyInputChange={props.onApiKeyInputChange}
+              models={props.models}
+              googleModel={props.googleModel}
+              onGoogleModelChange={props.onGoogleModelChange}
+              areModelsLoading={props.areModelsLoading}
+              modelsError={props.modelsError}
+              showAllVersions={props.showAllVersions}
+              onShowAllVersionsChange={props.onShowAllVersionsChange}
+              openRouterApiKey={props.openRouterApiKey}
+              onOpenRouterApiKeyChange={props.onOpenRouterApiKeyChange}
+              openRouterModel={props.openRouterModel}
+              onOpenRouterModelChange={props.onOpenRouterModelChange}
             />
           ) : (
             <LocalProviderConfig

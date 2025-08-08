@@ -25,3 +25,10 @@ export const OLLAMA_MODEL_KEY = 'hootspot-ollama-model';
 
 // Deduplication toggle for google api model selection
 export const SHOW_ALL_VERSIONS_KEY = 'hootspot-show-all-versions';
+
+// Key to remember which cloud provider is selected
+export const CLOUD_PROVIDER_KEY = 'hootspot-cloud-provider';
+
+// Keys for OpenRouter
+export const OPEN_ROUTER_API_KEY_STORAGE_KEY = 'hootspot-openrouter-api-key';
+export const OPEN_ROUTER_MODEL_KEY = 'hootspot-openrouter-model';

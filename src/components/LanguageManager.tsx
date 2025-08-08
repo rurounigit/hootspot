@@ -10,7 +10,8 @@ import { translateUIWithOllama } from '../api/ollama';
 import { createNumberedJsonForTranslation, reconstructTranslatedJson } from '../utils/translationUtils';
 
 interface LanguageManagerProps {
-  serviceProvider: 'google' | 'local';
+  serviceProvider: 'cloud' | 'local';
+  cloudProvider: 'google' | 'openrouter';
   localProviderType: 'lm-studio' | 'ollama';
   apiKey: string | null;
   lmStudioConfig: { url: string; model: string; };

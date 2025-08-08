@@ -6,21 +6,28 @@ import {
   API_KEY_STORAGE_KEY, MAX_CHAR_LIMIT_STORAGE_KEY, SELECTED_MODEL_STORAGE_KEY,
   NIGHT_MODE_STORAGE_KEY, INCLUDE_REBUTTAL_JSON_KEY, INCLUDE_REBUTTAL_PDF_KEY,
   SERVICE_PROVIDER_KEY, LM_STUDIO_URL_KEY, LM_STUDIO_MODEL_KEY,
-  LOCAL_PROVIDER_TYPE_KEY, OLLAMA_URL_KEY, OLLAMA_MODEL_KEY, SHOW_ALL_VERSIONS_KEY
+  LOCAL_PROVIDER_TYPE_KEY, OLLAMA_URL_KEY, OLLAMA_MODEL_KEY, SHOW_ALL_VERSIONS_KEY,
+  CLOUD_PROVIDER_KEY, OPEN_ROUTER_API_KEY_STORAGE_KEY, OPEN_ROUTER_MODEL_KEY
 } from '../config/storage-keys';
 import { GEMINI_MODEL_NAME } from '../config/api-prompts';
 import { DEFAULT_MAX_CHAR_LIMIT } from '../constants';
 import { testApiKey } from '../api/google/utils';
 import { testLMStudioConnection } from '../api/lm-studio';
 import { testOllamaConnection } from '../api/ollama';
+import { testOpenRouterConnection } from '../api/open-router';
 
 const getInitialVerifiedState = (): boolean => {
-  const providerInStorage = (localStorage.getItem(SERVICE_PROVIDER_KEY) as 'google' | 'local') || 'google';
+  const providerInStorage = (localStorage.getItem(SERVICE_PROVIDER_KEY) as 'cloud' | 'local') || 'cloud';
   const localTypeInStorage = (localStorage.getItem(LOCAL_PROVIDER_TYPE_KEY) as 'lm-studio' | 'ollama') || 'lm-studio';
+  const cloudProviderInStorage = (localStorage.getItem(CLOUD_PROVIDER_KEY) as 'google' | 'openrouter') || 'google';
 
   let isInitiallyVerified = false;
-  if (providerInStorage === 'google') {
-    isInitiallyVerified = !!localStorage.getItem(API_KEY_STORAGE_KEY);
+  if (providerInStorage === 'cloud') {
+    if (cloudProviderInStorage === 'google') {
+      isInitiallyVerified = !!localStorage.getItem(API_KEY_STORAGE_KEY);
+    } else { // 'openrouter'
+      isInitiallyVerified = !!localStorage.getItem(OPEN_ROUTER_API_KEY_STORAGE_KEY);
+    }
   } else { // 'local'
     if (localTypeInStorage === 'lm-studio') {
       isInitiallyVerified = !!localStorage.getItem(LM_STUDIO_URL_KEY) && !!localStorage.getItem(LM_STUDIO_MODEL_KEY);
@@ -34,10 +41,13 @@ const getInitialVerifiedState = (): boolean => {
 export const useConfig = () => {
   const { t } = useTranslation();
 
-  const [serviceProvider, setServiceProviderState] = useState<'google' | 'local'>(() => (localStorage.getItem(SERVICE_PROVIDER_KEY) as 'google' | 'local') || 'google');
+    const [serviceProvider, setServiceProviderState] = useState<'cloud' | 'local'>(() => (localStorage.getItem(SERVICE_PROVIDER_KEY) as 'cloud' | 'local') || 'cloud');
+  const [cloudProvider, setCloudProviderState] = useState<'google' | 'openrouter'>(() => (localStorage.getItem(CLOUD_PROVIDER_KEY) as 'google' | 'openrouter') || 'google');
   const [localProviderType, setLocalProviderTypeState] = useState<'lm-studio' | 'ollama'>(() => (localStorage.getItem(LOCAL_PROVIDER_TYPE_KEY) as 'lm-studio' | 'ollama') || 'lm-studio');
   const [apiKeyInput, setApiKeyInputState] = useState<string>(() => localStorage.getItem(API_KEY_STORAGE_KEY) || '');
-  const [selectedModel, setSelectedModelState] = useState<string>(() => localStorage.getItem(SELECTED_MODEL_STORAGE_KEY) || GEMINI_MODEL_NAME);
+  const [openRouterApiKey, setOpenRouterApiKeyState] = useState<string>(() => localStorage.getItem(OPEN_ROUTER_API_KEY_STORAGE_KEY) || '');
+  const [googleModel, setGoogleModelState] = useState<string>(() => localStorage.getItem(SELECTED_MODEL_STORAGE_KEY) || GEMINI_MODEL_NAME);
+  const [openRouterModel, setOpenRouterModelState] = useState<string>(() => localStorage.getItem(OPEN_ROUTER_MODEL_KEY) || '');
   const [lmStudioUrl, setLmStudioUrlState] = useState<string>(() => localStorage.getItem(LM_STUDIO_URL_KEY) || 'http://localhost:1234');
   const [lmStudioModel, setLmStudioModelState] = useState<string>(() => localStorage.getItem(LM_STUDIO_MODEL_KEY) || '');
   const [ollamaUrl, setOllamaUrlState] = useState<string>(() => localStorage.getItem(OLLAMA_URL_KEY) || 'http://localhost:11434');
@@ -80,20 +90,20 @@ export const useConfig = () => {
   useEffect(() => { localStorage.setItem(SHOW_ALL_VERSIONS_KEY, String(showAllVersions)); }, [showAllVersions]);
 
   const setServiceProvider = setAndDirty(setServiceProviderState);
+  const setCloudProvider = setAndDirty(setCloudProviderState);
   const setLocalProviderType = setAndDirty(setLocalProviderTypeState);
   const setApiKeyInput = setAndDirty(setApiKeyInputState);
-  const setSelectedModel = setAndDirty(setSelectedModelState);
+  const setOpenRouterApiKey = setAndDirty(setOpenRouterApiKeyState);
+  const setGoogleModel = setAndDirty(setGoogleModelState);
+  const setOpenRouterModel = setAndDirty(setOpenRouterModelState);
   const setLmStudioUrl = setAndDirty(setLmStudioUrlState);
   const setLmStudioModel = setAndDirty(setLmStudioModelState);
   const setOllamaUrl = setAndDirty(setOllamaUrlState);
   const setOllamaModel = setAndDirty(setOllamaModelState);
 
-  // *** THE FIX IS HERE ***
-  // We create a specific handler for the 'showAllVersions' toggle that does NOT call setAndDirty.
   const setShowAllVersions = (value: boolean) => {
     setShowAllVersionsState(value);
   };
-  // The line `const setShowAllVersions = setAndDirty(setShowAllVersionsState);` has been removed.
 
   const handleMaxCharLimitSave = useCallback((newLimit: number) => {
     localStorage.setItem(MAX_CHAR_LIMIT_STORAGE_KEY, newLimit.toString());
@@ -111,12 +121,19 @@ export const useConfig = () => {
     setTestStatus(null);
 
     try {
-      if (serviceProvider === 'google') {
-        const trimmedApiKey = apiKeyInput.trim();
-        await testApiKey(trimmedApiKey, t, selectedModel);
-        localStorage.setItem(API_KEY_STORAGE_KEY, trimmedApiKey);
-        localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel);
-      } else {
+      if (serviceProvider === 'cloud') {
+        if (cloudProvider === 'google') {
+          const trimmedApiKey = apiKeyInput.trim();
+          await testApiKey(trimmedApiKey, t, googleModel);
+          localStorage.setItem(API_KEY_STORAGE_KEY, trimmedApiKey);
+          localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, googleModel);
+        } else { // openrouter
+          const trimmedApiKey = openRouterApiKey.trim();
+          await testOpenRouterConnection(trimmedApiKey, openRouterModel);
+          localStorage.setItem(OPEN_ROUTER_API_KEY_STORAGE_KEY, trimmedApiKey);
+          localStorage.setItem(OPEN_ROUTER_MODEL_KEY, openRouterModel);
+        }
+      } else { // local
         if (localProviderType === 'lm-studio') {
           await testLMStudioConnection(lmStudioUrl.trim(), lmStudioModel);
           localStorage.setItem(LM_STUDIO_URL_KEY, lmStudioUrl.trim());
@@ -128,6 +145,7 @@ export const useConfig = () => {
         }
       }
       localStorage.setItem(SERVICE_PROVIDER_KEY, serviceProvider);
+      localStorage.setItem(CLOUD_PROVIDER_KEY, cloudProvider);
       localStorage.setItem(LOCAL_PROVIDER_TYPE_KEY, localProviderType);
       setIsVerified(true);
       setTestStatus(null);
@@ -140,16 +158,19 @@ export const useConfig = () => {
       setIsTesting(false);
     }
   }, [
-    serviceProvider, localProviderType, apiKeyInput, selectedModel,
+    serviceProvider, cloudProvider, localProviderType, apiKeyInput, googleModel, openRouterApiKey, openRouterModel,
     lmStudioUrl, lmStudioModel, ollamaUrl, ollamaModel, t
   ]);
 
   return {
     serviceProvider, setServiceProvider,
+    cloudProvider, setCloudProvider,
     localProviderType, setLocalProviderType,
     apiKeyInput, setApiKeyInput,
+    openRouterApiKey, setOpenRouterApiKey,
     debouncedApiKey,
-    selectedModel, setSelectedModel,
+    googleModel, setGoogleModel,
+    openRouterModel, setOpenRouterModel,
     lmStudioUrl, setLmStudioUrl,
     lmStudioModel, setLmStudioModel,
     ollamaUrl, setOllamaUrl,
@@ -158,7 +179,7 @@ export const useConfig = () => {
     isNightMode, setIsNightMode,
     includeRebuttalInJson, setIncludeRebuttalInJson,
     includeRebuttalInPdf, setIncludeRebuttalInPdf,
-    showAllVersions, setShowAllVersions, // This now correctly points to our new, safe function
+    showAllVersions, setShowAllVersions,
     isConfigCollapsed, setIsConfigCollapsed,
     isTesting, testStatus,
     isCurrentProviderConfigured: isVerified,

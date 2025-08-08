@@ -7,11 +7,12 @@ import { useTranslation } from '../i18n';
 interface TextAnalyzerProps {
   text: string;
   onTextChange: (text: string) => void;
-  onAnalyze: (text: string) => void;
-  onJsonLoad: (file: File) => void;
+  onAnalyze: () => void;
   isLoading: boolean;
   maxCharLimit: number;
+  onJsonLoad: (data: any) => void;
   hasApiKey: boolean;
+  serviceProvider: 'cloud' | 'local';
 }
 
 const TextAnalyzer = forwardRef<HTMLTextAreaElement, TextAnalyzerProps>(

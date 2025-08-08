@@ -26,8 +26,9 @@ const getCleanErrorMessage = (errorMessage: string): string => {
 };
 
 // Define a comprehensive config interface for the hook
-interface UseTranslationManagerConfig {
-  serviceProvider: 'google' | 'local';
+interface UseTranslationManagerProps {
+  serviceProvider: 'cloud' | 'local';
+  cloudProvider: 'google' | 'openrouter';
   localProviderType: 'lm-studio' | 'ollama';
   apiKey: string | null;
   googleModel: string;

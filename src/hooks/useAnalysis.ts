@@ -28,7 +28,8 @@ const getCleanErrorMessage = (errorMessage: string): string => {
 };
 
 export const useAnalysis = (
-  serviceProvider: 'google' | 'local',
+  serviceProvider: 'cloud' | 'local',
+  cloudProvider: 'google' | 'openrouter',
   localProviderType: 'lm-studio' | 'ollama',
   apiKey: string | null,
   lmStudioUrl: string,

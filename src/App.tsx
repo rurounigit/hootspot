@@ -18,8 +18,12 @@ const App: React.FC = () => {
   const { t } = useTranslation();
   const {
     serviceProvider, setServiceProvider,
+    cloudProvider, setCloudProvider,
     localProviderType, setLocalProviderType,
     apiKeyInput, setApiKeyInput,
+    openRouterApiKey, setOpenRouterApiKey,
+    googleModel, setGoogleModel,
+    openRouterModel, setOpenRouterModel,
     debouncedApiKey,
     selectedModel, setSelectedModel,
     lmStudioUrl, setLmStudioUrl,
@@ -38,8 +42,9 @@ const App: React.FC = () => {
   } = useConfig();
 
   const { models, isLoading: areModelsLoading, error: modelsError, refetch: refetchModels } = useModels({
-    serviceProvider, localProviderType,
+    serviceProvider, cloudProvider, localProviderType,
     apiKey: debouncedApiKey,
+    openRouterApiKey: openRouterApiKey,
     lmStudioUrl, ollamaUrl,
     showAllVersions
   });
@@ -191,8 +196,11 @@ const App: React.FC = () => {
         <main className="flex-grow">
           <ConfigurationManager
             serviceProvider={serviceProvider} onServiceProviderChange={setServiceProvider}
+            cloudProvider={cloudProvider} onCloudProviderChange={setCloudProvider}
             localProviderType={localProviderType} onLocalProviderTypeChange={setLocalProviderType}
             apiKeyInput={apiKeyInput} onApiKeyInputChange={setApiKeyInput}
+            openRouterApiKey={openRouterApiKey} onOpenRouterApiKeyChange={setOpenRouterApiKey}
+            openRouterModel={openRouterModel} onOpenRouterModelChange={setOpenRouterModel}
             lmStudioUrl={lmStudioUrl} onLmStudioUrlChange={setLmStudioUrl}
             lmStudioModel={lmStudioModel} onLmStudioModelChange={setLmStudioModel}
             ollamaUrl={ollamaUrl} onOllamaUrlChange={setOllamaUrl}
@@ -217,6 +225,7 @@ const App: React.FC = () => {
             maxCharLimit={maxCharLimit}
             onJsonLoad={handleJsonLoad}
             hasApiKey={isCurrentProviderConfigured}
+            serviceProvider={serviceProvider}
           />
           {(isLoading || isTranslating || isTranslatingRebuttal) && (
             <div className="my-4 p-3 rounded-md text-sm bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700 flex items-center justify-center">

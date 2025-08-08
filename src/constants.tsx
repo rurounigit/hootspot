@@ -1,3 +1,5 @@
+export const OPENROUTER_API_BASE_URL = 'https://openrouter.ai/api/v1';
+
 // src/constants.tsx
 
 export const DEFAULT_MAX_CHAR_LIMIT = 6000;

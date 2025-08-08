@@ -12,14 +12,15 @@ import { useAnalysisReportData } from '../../hooks/useAnalysisReportData';
 
 // Updated props for clarity and consistency
 interface AnalysisReportProps {
-  analysis: GeminiAnalysisResponse;
-  sourceText: string | null;
-  rebuttal: string | null;
+  analysis: any;
+  sourceText: string;
+  rebuttal: string;
   isTranslatingRebuttal: boolean;
-  onRebuttalUpdate: (newRebuttal: string) => void;
+  onRebuttalUpdate: (rebuttal: string) => void;
   includeRebuttalInJson: boolean;
   includeRebuttalInPdf: boolean;
-  serviceProvider: 'google' | 'local';
+  serviceProvider: 'cloud' | 'local';
+  cloudProvider: 'google' | 'openrouter';
   localProviderType: 'lm-studio' | 'ollama';
   apiKey: string | null;
   googleModel: string;

@@ -6,16 +6,20 @@ import { fetchModels as fetchGoogleModels } from '../api/google/models';
 import { fetchLMStudioModels } from '../api/lm-studio';
 import { fetchOllamaModels } from '../api/ollama';
 
+import { getOpenRouterModels } from '../api/open-router';
+
 interface UseModelsProps {
-    serviceProvider: 'google' | 'local';
+    serviceProvider: 'cloud' | 'local';
+    cloudProvider: 'google' | 'openrouter';
     localProviderType: 'lm-studio' | 'ollama';
     apiKey: string | null;
+    openRouterApiKey: string | null;
     lmStudioUrl: string;
     ollamaUrl: string;
     showAllVersions: boolean;
 }
 
-export const useModels = ({ serviceProvider, localProviderType, apiKey, lmStudioUrl, ollamaUrl, showAllVersions }: UseModelsProps) => {
+export const useModels = ({ serviceProvider, cloudProvider, localProviderType, apiKey, openRouterApiKey, lmStudioUrl, ollamaUrl, showAllVersions }: UseModelsProps) => {
   const [models, setModels] = useState<GroupedModels>({ preview: [], stable: [], experimental: [] });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,9 +30,14 @@ export const useModels = ({ serviceProvider, localProviderType, apiKey, lmStudio
     setModels({ preview: [], stable: [], experimental: [] });
 
     try {
-        if (serviceProvider === 'google' && apiKey) {
-            const fetchedModels = await fetchGoogleModels(apiKey, showAllVersions);
-            setModels(fetchedModels);
+        if (serviceProvider === 'cloud') {
+            if (cloudProvider === 'google' && apiKey) {
+                const fetchedModels = await fetchGoogleModels(apiKey, showAllVersions);
+                setModels(fetchedModels);
+            } else if (cloudProvider === 'openrouter' && openRouterApiKey) {
+                const fetchedModels = await getOpenRouterModels(openRouterApiKey);
+                setModels({ preview: [], stable: fetchedModels, experimental: [] });
+            }
         } else if (serviceProvider === 'local') {
             let fetchedModels: GeminiModel[] = [];
             if (localProviderType === 'lm-studio' && lmStudioUrl) {
@@ -45,11 +54,11 @@ export const useModels = ({ serviceProvider, localProviderType, apiKey, lmStudio
     } finally {
         setIsLoading(false);
     }
-  }, [serviceProvider, localProviderType, apiKey, lmStudioUrl, ollamaUrl, showAllVersions]);
+  }, [serviceProvider, cloudProvider, localProviderType, apiKey, openRouterApiKey, lmStudioUrl, ollamaUrl, showAllVersions]);
 
   useEffect(() => {
     // Determine if the necessary conditions to fetch models are met.
-    const shouldFetch = (serviceProvider === 'google' && apiKey) || (serviceProvider === 'local' && (lmStudioUrl || ollamaUrl));
+    const shouldFetch = (serviceProvider === 'cloud' && ((cloudProvider === 'google' && apiKey) || (cloudProvider === 'openrouter' && openRouterApiKey))) || (serviceProvider === 'local' && (lmStudioUrl || ollamaUrl));
 
     if (shouldFetch) {
       // If conditions are met, call the function that handles the API request.
@@ -63,7 +72,7 @@ export const useModels = ({ serviceProvider, localProviderType, apiKey, lmStudio
       setError(null);
       setModels({ preview: [], stable: [], experimental: [] });
     }
-  }, [serviceProvider, apiKey, lmStudioUrl, ollamaUrl, loadModels]);
+  }, [serviceProvider, cloudProvider, apiKey, openRouterApiKey, lmStudioUrl, ollamaUrl, loadModels]);
 
   return {
     models,
