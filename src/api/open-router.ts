@@ -96,6 +96,7 @@ export const translateAnalysisResultWithOpenRouter = async (
         { role: 'user', content: JSON.stringify(analysis) },
       ],
       response_format: { type: 'json_object' },
+      temperature: 0.2,
     }),
   });
 
@@ -132,6 +133,7 @@ export const generateRebuttalWithOpenRouter = async (
       messages: [
         { role: 'system', content: systemPrompt },
       ],
+      temperature: 0.2,
     }),
   });
 
