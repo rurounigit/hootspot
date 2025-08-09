@@ -3,6 +3,7 @@ import React from 'react';
 import { useTranslation } from '../../i18n';
 import GoogleConfig from './GoogleConfig';
 import OpenRouterConfig from './OpenRouterConfig';
+import { InfoIcon, ExternalLinkIcon } from '../../assets/icons';
 import { GroupedModels } from '../../types/api';
 
 interface CloudConfigProps {
@@ -29,16 +30,39 @@ const CloudConfig: React.FC<CloudConfigProps> = (props) => {
 
   return (
     <div>
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('config_api_provider_label')}</label>
-        <div className="flex rounded-md shadow-sm">
-          <button onClick={() => props.onCloudProviderChange('google')} className={`flex-1 px-4 py-2 text-sm font-medium rounded-l-md focus:outline-none ${isGoogleProvider ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}>
-            Google API
-          </button>
-          <button onClick={() => props.onCloudProviderChange('openrouter')} className={`flex-1 px-4 py-2 text-sm font-medium rounded-r-md focus:outline-none ${!isGoogleProvider ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}>
-            OpenRouter
-          </button>
+      <div className={`mb-4 p-4 bg-blue-50 border border-blue-200 rounded-md dark:bg-blue-900 dark:border-blue-700 ${isGoogleProvider ? 'block' : 'hidden'}`}>
+        <div className="flex items-start">
+          <InfoIcon className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm text-blue-800 dark:text-blue-300">{t('config_api_key_info')}</p>
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-sm font-medium inline-flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
+              {t('config_get_api_key')} <ExternalLinkIcon className="w-4 h-4 ml-1" />
+            </a>
+          </div>
         </div>
+      </div>
+      <div className={`mb-4 p-4 bg-blue-50 border border-blue-200 rounded-md dark:bg-blue-900 dark:border-blue-700 ${!isGoogleProvider ? 'block' : 'hidden'}`}>
+        <div className="flex items-start">
+          <InfoIcon className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm text-blue-800 dark:text-blue-300">{t('config_openrouter_api_key_info')}</p>
+            <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-sm font-medium inline-flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
+              {t('config_openrouter_get_api_key')} <ExternalLinkIcon className="w-4 h-4 ml-1" />
+            </a>
+          </div>
+        </div>
+      </div>
+      <div className="mb-4">
+        <label htmlFor="cloudProviderType" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('config_api_provider_label')}</label>
+        <select
+          id="cloudProviderType"
+          value={props.cloudProvider}
+          onChange={(e) => props.onCloudProviderChange(e.target.value as 'google' | 'openrouter')}
+          className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-50"
+        >
+          <option value="google">Google API</option>
+          <option value="openrouter">OpenRouter</option>
+        </select>
       </div>
 
       {isGoogleProvider ? (
