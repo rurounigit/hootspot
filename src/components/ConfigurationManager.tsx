@@ -71,7 +71,8 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
     areModelsLoading, modelsError, onRefetchModels,
     isCurrentProviderConfigured, isCollapsed, onToggleCollapse,
     isTesting, testStatus, onSave,
-    showAllVersions, onShowAllVersionsChange
+    showAllVersions, onShowAllVersionsChange,
+    openRouterModel // Added prop
   } = props;
   const { t } = useTranslation();
   const [localError, setLocalError] = useState<string | null>(null);
@@ -210,6 +211,7 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
             localProviderType={localProviderType}
             apiKey={apiKeyInput}
             openRouterApiKey={props.openRouterApiKey}
+            openRouterModelName={openRouterModel} // Added prop
             lmStudioConfig={{ url: lmStudioUrl, model: lmStudioModel }}
             ollamaConfig={{ url: ollamaUrl, model: ollamaModel }}
             isCurrentProviderConfigured={isCurrentProviderConfigured}

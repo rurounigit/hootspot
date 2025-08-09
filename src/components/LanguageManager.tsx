@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useTranslation } from '../i18n';
 import { translateUI } from '../api/google/translation';
 import { translateUIWithLMStudio } from '../api/lm-studio';
+import { translateUI as translateUIWithOpenRouter } from '../api/openrouter/translation'; // Added import
 import { AddIcon } from '../assets/icons';
 import { defaultLanguages } from '../i18n';
 import { translateUIWithOllama } from '../api/ollama';
@@ -15,6 +16,7 @@ interface LanguageManagerProps {
   localProviderType: 'lm-studio' | 'ollama';
   apiKey: string | null;
   openRouterApiKey: string | null;
+  openRouterModelName: string; // Added prop
   lmStudioConfig: { url: string; model: string; };
   ollamaConfig: { url: string; model: string; };
   isCurrentProviderConfigured: boolean;
@@ -26,6 +28,7 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({
   localProviderType,
   apiKey,
   openRouterApiKey,
+  openRouterModelName, // Added prop
   lmStudioConfig,
   ollamaConfig,
   isCurrentProviderConfigured
@@ -63,8 +66,7 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({
         if (cloudProvider === 'google' && apiKey) {
           translatedNumberedJson = await translateUI(apiKey, code, jsonToSend, t);
         } else if (cloudProvider === 'openrouter' && openRouterApiKey) {
-          // TODO: Implement OpenRouter translation
-          throw new Error('OpenRouter translation is not yet implemented.');
+          translatedNumberedJson = await translateUIWithOpenRouter(openRouterApiKey, code, jsonToSend, openRouterModelName, t);
         }
       } else if (serviceProvider === 'local') {
         if (localProviderType === 'lm-studio') {
