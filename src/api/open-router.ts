@@ -37,6 +37,7 @@ export const testOpenRouterConnection = async (apiKey: string, model: string) =>
     body: JSON.stringify({
       model,
       messages: [{ role: 'user', content: 'Hello' }],
+      max_tokens: 5,
     }),
   });
 
@@ -60,7 +61,7 @@ export const analyzeTextWithOpenRouter = async (apiKey: string, text: string, mo
         { role: 'user', content: text },
       ],
       response_format: { type: 'json_object' },
-      temperature: 0.2,
+      temperature: 0,
     }),
   });
 

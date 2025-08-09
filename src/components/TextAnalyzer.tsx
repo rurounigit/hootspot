@@ -7,7 +7,7 @@ import { useTranslation } from '../i18n';
 interface TextAnalyzerProps {
   text: string;
   onTextChange: (text: string) => void;
-  onAnalyze: () => void;
+  onAnalyze: (text: string) => void;
   isLoading: boolean;
   maxCharLimit: number;
   onJsonLoad: (data: any) => void;
