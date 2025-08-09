@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from '../i18n';
 import { translateText as translateWithGoogle } from '../api/google/translation';
+import { translateText as translateWithOpenRouter } from '../api/openrouter/translation';
 import { translateTextWithLMStudio } from '../api/lm-studio';
 import { translateTextWithOllama } from '../api/ollama';
 
@@ -26,12 +27,14 @@ const getCleanErrorMessage = (errorMessage: string): string => {
 };
 
 // Define a comprehensive config interface for the hook
-interface UseTranslationManagerProps {
+interface UseTranslationManagerConfig {
   serviceProvider: 'cloud' | 'local';
   cloudProvider: 'google' | 'openrouter';
   localProviderType: 'lm-studio' | 'ollama';
   apiKey: string | null;
+  openRouterApiKey: string | null;
   googleModel: string;
+  openRouterModel: string;
   lmStudioConfig: { url: string; model: string; };
   ollamaConfig: { url: string; model: string; };
   isCurrentProviderConfigured: boolean;
@@ -41,7 +44,7 @@ export const useTranslationManager = (config: UseTranslationManagerConfig) => {
   const { t, language } = useTranslation();
   const [rebuttal, setRebuttal] = useState<{ text: string; lang: string; } | null>(null);
   const [translatedRebuttals, setTranslatedRebuttals] = useState<Record<string, string>>({});
-  const [isTranslatingRebuttal, setIsTranslatingRebuttal] = useState(false); // string is language code
+  const [isTranslatingRebuttal, setIsTranslatingRebuttal] = useState(false);
   const [translationError, setTranslationError] = useState<{ message: string, type: 'config' | 'general' } | null>(null);
 
   const inflightRequests = useRef<Record<string, boolean>>({});
@@ -55,9 +58,14 @@ export const useTranslationManager = (config: UseTranslationManagerConfig) => {
 
     try {
       let translatedText: string;
-      if (config.serviceProvider === 'google') {
-        if (!config.apiKey) throw new Error(t('error_api_key_not_configured'));
-        translatedText = await translateWithGoogle(config.apiKey, textToTranslate, targetLang, config.googleModel, t);
+      if (config.serviceProvider === 'cloud') {
+        if (config.cloudProvider === 'google') {
+          if (!config.apiKey) throw new Error(t('error_api_key_not_configured'));
+          translatedText = await translateWithGoogle(config.apiKey, textToTranslate, targetLang, config.googleModel, t);
+        } else { // openrouter
+          if (!config.openRouterApiKey) throw new Error(t('error_api_key_not_configured'));
+          translatedText = await translateWithOpenRouter(config.openRouterApiKey, textToTranslate, targetLang, config.openRouterModel, t);
+        }
       } else { // Local provider
         if (config.localProviderType === 'lm-studio') {
           translatedText = await translateTextWithLMStudio(textToTranslate, config.lmStudioConfig.url, config.lmStudioConfig.model, targetLang);
@@ -92,18 +100,15 @@ export const useTranslationManager = (config: UseTranslationManagerConfig) => {
 
 
   const handleRebuttalUpdate = (newRebuttal: string) => {
-    // When a new rebuttal is generated, it becomes the canonical version in the current language.
     const canonicalRebuttal = { text: newRebuttal, lang: language };
     setRebuttal(canonicalRebuttal);
-    // The cache is reset with only the new, just-generated text.
     setTranslatedRebuttals({ [language]: newRebuttal });
-    // All old in-flight requests are now obsolete.
     inflightRequests.current = {};
   };
 
   const loadRebuttal = (loaded: { text: string; lang: string }) => {
     setRebuttal(loaded);
-    setTranslatedRebuttals({}); // Reset translations to force re-translation if needed
+    setTranslatedRebuttals({});
     inflightRequests.current = {};
   };
 
@@ -124,4 +129,91 @@ export const useTranslationManager = (config: UseTranslationManagerConfig) => {
     translationError: translationError,
     clearTranslationError,
   };
+};
+
+
+// ---
+// NEW: A hook specifically for managing UI language translations.
+// ---
+import { useConfig } from './useConfig';
+import { translateUI as translateUIGoogle } from '../api/google/translation';
+import { translateUI as translateUIOpenRouter } from '../api/openrouter/translation';
+import { translateUIWithLMStudio } from '../api/lm-studio';
+import { translateUIWithOllama } from '../api/ollama';
+import { LanguageCode } from '../i18n';
+
+export const useLanguageManager = () => {
+    const { t, setLanguage, language, addTranslations } = useTranslation();
+    const { config, isCurrentProviderConfigured } = useConfig();
+    const [isTranslating, setIsTranslating] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [showConfirmation, setShowConfirmation] = useState(false);
+    const [targetLang, setTargetLang] = useState<LanguageCode | null>(null);
+
+    const handleTranslateLanguage = async (lang: LanguageCode) => {
+        if (!isCurrentProviderConfigured) {
+            setError(t('lang_manager_error_config_needed'));
+            return;
+        }
+        setTargetLang(lang);
+        setShowConfirmation(true);
+    };
+
+    const confirmTranslation = async () => {
+        if (!targetLang) return;
+        setShowConfirmation(false);
+        setIsTranslating(true);
+        setError(null);
+
+        try {
+            const baseLangPath = `/locales/en.json`;
+            const response = await fetch(baseLangPath);
+            const baseTranslations = await response.text();
+
+            let translatedStrings: Record<string, string>;
+
+            if (config.serviceProvider === 'cloud') {
+                if (config.cloudProvider === 'google') {
+                    if (!config.apiKey) throw new Error(t('error_api_key_not_configured'));
+                    translatedStrings = await translateUIGoogle(config.apiKey, targetLang, baseTranslations, t);
+                } else { // openrouter
+                    if (!config.openRouterApiKey) throw new Error(t('error_api_key_not_configured'));
+                    translatedStrings = await translateUIOpenRouter(config.openRouterApiKey, targetLang, baseTranslations, config.openRouterModel, t);
+                }
+            } else {
+                if (config.localProvider.type === 'lm-studio') {
+                    translatedStrings = await translateUIWithLMStudio(config.localProvider.lmStudio.url, config.localProvider.lmStudio.model, targetLang, baseTranslations);
+                } else { // Ollama
+                    translatedStrings = await translateUIWithOllama(config.localProvider.ollama.url, config.localProvider.ollama.model, targetLang, baseTranslations);
+                }
+            }
+
+            addTranslations(targetLang, translatedStrings);
+            setLanguage(targetLang);
+
+        } catch (err: any) {
+            const rawMessage = (err as Error).message;
+            const cleanMessage = getCleanErrorMessage(rawMessage);
+            setError(cleanMessage);
+        } finally {
+            setIsTranslating(false);
+            setTargetLang(null);
+        }
+    };
+
+    const cancelTranslation = () => {
+        setShowConfirmation(false);
+        setTargetLang(null);
+    };
+
+    return {
+        isTranslating,
+        error,
+        showConfirmation,
+        handleTranslateLanguage,
+        confirmTranslation,
+        cancelTranslation,
+        targetLang,
+        currentLanguage: language,
+    };
 };

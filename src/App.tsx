@@ -52,13 +52,15 @@ const App: React.FC = () => {
     ? googleModel
     : openRouterModel;
 
-  const {
+    const {
     isTranslatingRebuttal, handleRebuttalUpdate, displayedRebuttal,
     translationError: translationErrorObject, loadRebuttal, clearTranslationError,
   } = useTranslationManager({
       serviceProvider, cloudProvider, localProviderType,
       apiKey: apiKeyInput,
+      openRouterApiKey: openRouterApiKey,
       googleModel: googleModel,
+      openRouterModel: openRouterModel,
       lmStudioConfig: { url: lmStudioUrl, model: lmStudioModel },
       ollamaConfig: { url: ollamaUrl, model: ollamaModel },
       isCurrentProviderConfigured,

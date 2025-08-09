@@ -5,7 +5,8 @@ import { analyzeText as analyzeWithGoogle } from '../api/google/analysis';
 import { translateAnalysisResult as translateWithGoogle } from '../api/google/translation';
 import { analyzeTextWithLMStudio, translateAnalysisResultWithLMStudio } from '../api/lm-studio';
 import { analyzeTextWithOllama, translateAnalysisResultWithOllama } from '../api/ollama';
-import { analyzeTextWithOpenRouter, translateAnalysisResultWithOpenRouter } from '../api/open-router';
+import { analyzeText as analyzeTextWithOpenRouter } from '../api/openrouter/analysis';
+import { translateAnalysisResult as translateAnalysisResultWithOpenRouter } from '../api/openrouter/translation';
 import { GeminiAnalysisResponse } from '../types/api';
 
 const CONFIG_ERROR_KEYS = [
@@ -67,7 +68,7 @@ export const useAnalysis = (
               translatedResult = await translateWithGoogle(apiKey, analysis, targetLang, selectedModel, t);
             } else {
               if (!openRouterApiKey) throw new Error(t('error_api_key_not_configured'));
-              translatedResult = await translateAnalysisResultWithOpenRouter(openRouterApiKey, analysis, targetLang, openRouterModel);
+              translatedResult = await translateAnalysisResultWithOpenRouter(openRouterApiKey, analysis, targetLang, openRouterModel, t);
             }
           } else { // Local provider
               if (localProviderType === 'lm-studio') {

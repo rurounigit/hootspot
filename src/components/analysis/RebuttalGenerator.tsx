@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { generateRebuttal as generateRebuttalGoogle } from '../../api/google/analysis';
 import { generateRebuttalWithLMStudio } from '../../api/lm-studio';
 import { generateRebuttalWithOllama } from '../../api/ollama';
-import { generateRebuttalWithOpenRouter } from '../../api/open-router';
+import { generateRebuttal as generateRebuttalWithOpenRouter } from '../../api/openrouter/analysis';
 import { GeminiAnalysisResponse } from '../../types/api';
 import { useTranslation } from '../../i18n';
 import { SparklesIcon } from '../../assets/icons';

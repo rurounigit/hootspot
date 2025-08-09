@@ -14,7 +14,7 @@ import { DEFAULT_MAX_CHAR_LIMIT } from '../constants';
 import { testApiKey } from '../api/google/utils';
 import { testLMStudioConnection } from '../api/lm-studio';
 import { testOllamaConnection } from '../api/ollama';
-import { testOpenRouterConnection } from '../api/open-router';
+import { testApiKey as testOpenRouterConnection } from '../api/openrouter/utils';
 
 const getInitialVerifiedState = (): boolean => {
   const providerInStorage = (localStorage.getItem(SERVICE_PROVIDER_KEY) as 'cloud' | 'local') || 'cloud';
@@ -129,7 +129,7 @@ export const useConfig = () => {
           localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, googleModel);
         } else { // openrouter
           const trimmedApiKey = openRouterApiKey.trim();
-          await testOpenRouterConnection(trimmedApiKey, openRouterModel);
+          await testOpenRouterConnection(trimmedApiKey, t, openRouterModel);
           localStorage.setItem(OPEN_ROUTER_API_KEY_STORAGE_KEY, trimmedApiKey);
           localStorage.setItem(OPEN_ROUTER_MODEL_KEY, openRouterModel);
         }
