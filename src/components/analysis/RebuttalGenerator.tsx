@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { generateRebuttal as generateRebuttalGoogle } from '../../api/google/analysis';
 import { generateRebuttalWithLMStudio } from '../../api/lm-studio';
 import { generateRebuttalWithOllama } from '../../api/ollama';
+import { generateRebuttalWithOpenRouter } from '../../api/open-router';
 import { GeminiAnalysisResponse } from '../../types/api';
 import { useTranslation } from '../../i18n';
 import { SparklesIcon } from '../../assets/icons';
@@ -14,10 +15,13 @@ interface RebuttalGeneratorProps {
     rebuttalForDisplay: string | null;
     isTranslating: boolean;
     onUpdate: (newRebuttal: string) => void;
-    serviceProvider: 'google' | 'local';
+    serviceProvider: 'cloud' | 'local';
+    cloudProvider: 'google' | 'openrouter';
     localProviderType: 'lm-studio' | 'ollama';
     apiKey: string | null;
+    openRouterApiKey: string | null;
     googleModel: string;
+    openRouterModel: string;
     lmStudioConfig: { url: string; model: string; };
     ollamaConfig: { url: string; model: string; };
     isCurrentProviderConfigured: boolean;
@@ -25,7 +29,7 @@ interface RebuttalGeneratorProps {
 
 const RebuttalGenerator: React.FC<RebuttalGeneratorProps> = ({
     analysis, sourceText, rebuttalForDisplay, isTranslating, onUpdate,
-    serviceProvider, localProviderType, apiKey, googleModel,
+    serviceProvider, cloudProvider, localProviderType, apiKey, openRouterApiKey, googleModel, openRouterModel,
     lmStudioConfig, ollamaConfig, isCurrentProviderConfigured,
 }) => {
     const { t, language } = useTranslation();
@@ -38,9 +42,14 @@ const RebuttalGenerator: React.FC<RebuttalGeneratorProps> = ({
         setError(null);
         try {
             let result: string;
-            if (serviceProvider === 'google') {
-                if (!apiKey) throw new Error(t('error_api_key_not_configured'));
-                result = await generateRebuttalGoogle(apiKey, sourceText, analysis, googleModel, language);
+            if (serviceProvider === 'cloud') {
+                if (cloudProvider === 'google') {
+                    if (!apiKey) throw new Error(t('error_api_key_not_configured'));
+                    result = await generateRebuttalGoogle(apiKey, sourceText, analysis, googleModel, language);
+                } else {
+                    if (!openRouterApiKey) throw new Error(t('error_api_key_not_configured'));
+                    result = await generateRebuttalWithOpenRouter(openRouterApiKey, sourceText, analysis, openRouterModel, language);
+                }
             } else { // Local Provider
                 if (localProviderType === 'lm-studio') {
                     result = await generateRebuttalWithLMStudio(sourceText, analysis, lmStudioConfig.url, lmStudioConfig.model, language);

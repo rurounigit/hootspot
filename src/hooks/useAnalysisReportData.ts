@@ -14,12 +14,12 @@ function escapeRegex(string: string) {
 }
 
 export const useAnalysisReportData = (
-  analysis: GeminiAnalysisResponse,
+  analysis: GeminiAnalysisResponse | null,
   sourceText: string | null,
   chartWidth: number
 ) => {
-  const { findings } = analysis;
-  const hasFindings = findings && findings.length > 0;
+  const findings = analysis?.findings || [];
+  const hasFindings = findings.length > 0;
 
   const patternColorMap = useMemo(() => {
     const map = new Map<string, string>();

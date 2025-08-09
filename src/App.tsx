@@ -271,6 +271,8 @@ const App: React.FC = () => {
                     lmStudioConfig={{ url: lmStudioUrl, model: lmStudioModel }}
                     ollamaConfig={{ url: ollamaUrl, model: ollamaModel }}
                     isCurrentProviderConfigured={isCurrentProviderConfigured}
+                    openRouterApiKey={openRouterApiKey}
+                    openRouterModel={openRouterModel}
                />
             )}
           </div>

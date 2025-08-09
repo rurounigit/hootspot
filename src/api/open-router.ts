@@ -1,5 +1,5 @@
 import { OPENROUTER_API_BASE_URL } from '../constants';
-import { ANALYSIS_TRANSLATION_PROMPT, SYSTEM_PROMPT } from '../config/api-prompts';
+import { ANALYSIS_TRANSLATION_PROMPT, REBUTTAL_SYSTEM_PROMPT, SYSTEM_PROMPT } from '../config/api-prompts';
 import { GeminiAnalysisResponse } from '../types/api';
 import { extractJson } from '../utils/apiUtils';
 
@@ -60,6 +60,7 @@ export const analyzeTextWithOpenRouter = async (apiKey: string, text: string, mo
         { role: 'user', content: text },
       ],
       response_format: { type: 'json_object' },
+      temperature: 0.2,
     }),
   });
 
@@ -105,4 +106,39 @@ export const translateAnalysisResultWithOpenRouter = async (
   const rawJson = await response.json();
   const extractedJson = extractJson(rawJson.choices[0].message.content);
   return JSON.parse(extractedJson) as GeminiAnalysisResponse;
+};
+
+export const generateRebuttalWithOpenRouter = async (
+  apiKey: string,
+  sourceText: string,
+  analysis: GeminiAnalysisResponse,
+  model: string,
+  targetLang: string
+): Promise<string> => {
+  const systemPrompt = REBUTTAL_SYSTEM_PROMPT
+    .replace('{language}', targetLang)
+    .replace('{analysisJson}', JSON.stringify(analysis, null, 2))
+    .replace('{sourceText}', sourceText);
+
+  const response = await fetch(`${OPENROUTER_API_BASE_URL}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: 'system', content: systemPrompt },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(`OpenRouter rebuttal request failed: ${errorData.error.message}`);
+  }
+
+  const json = await response.json();
+  return json.choices[0].message.content;
 };

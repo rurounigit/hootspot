@@ -12,7 +12,7 @@ import { useAnalysisReportData } from '../../hooks/useAnalysisReportData';
 
 // Updated props for clarity and consistency
 interface AnalysisReportProps {
-  analysis: any;
+  analysis: GeminiAnalysisResponse | null;
   sourceText: string;
   rebuttal: string;
   isTranslatingRebuttal: boolean;
@@ -23,7 +23,9 @@ interface AnalysisReportProps {
   cloudProvider: 'google' | 'openrouter';
   localProviderType: 'lm-studio' | 'ollama';
   apiKey: string | null;
+  openRouterApiKey: string | null;
   googleModel: string;
+  openRouterModel: string;
   lmStudioConfig: { url: string; model: string; };
   ollamaConfig: { url: string; model: string; };
   isCurrentProviderConfigured: boolean;
@@ -32,8 +34,8 @@ interface AnalysisReportProps {
 const AnalysisReport: React.FC<AnalysisReportProps> = (props) => {
   const {
     analysis, sourceText, rebuttal, isTranslatingRebuttal, onRebuttalUpdate,
-    includeRebuttalInJson, includeRebuttalInPdf, serviceProvider, localProviderType,
-    apiKey, googleModel, lmStudioConfig, ollamaConfig, isCurrentProviderConfigured
+    includeRebuttalInJson, includeRebuttalInPdf, serviceProvider, cloudProvider, localProviderType,
+    apiKey, openRouterApiKey, googleModel, openRouterModel, lmStudioConfig, ollamaConfig, isCurrentProviderConfigured
   } = props;
 
   const [chartDimensions, setChartDimensions] = useState({ width: 0, height: 0 });
@@ -58,6 +60,10 @@ const AnalysisReport: React.FC<AnalysisReportProps> = (props) => {
       setActiveFindingId(null);
     }
   };
+
+  if (!analysis) {
+    return null;
+  }
 
   return (
     <div className="mt-4">
@@ -133,9 +139,12 @@ const AnalysisReport: React.FC<AnalysisReportProps> = (props) => {
           isTranslating={isTranslatingRebuttal}
           onUpdate={onRebuttalUpdate}
           serviceProvider={serviceProvider}
+          cloudProvider={cloudProvider}
           localProviderType={localProviderType}
           apiKey={apiKey}
+          openRouterApiKey={openRouterApiKey}
           googleModel={googleModel}
+          openRouterModel={openRouterModel}
           lmStudioConfig={lmStudioConfig}
           ollamaConfig={ollamaConfig}
           isCurrentProviderConfigured={isCurrentProviderConfigured}
