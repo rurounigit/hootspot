@@ -109,8 +109,7 @@ const LocalProviderConfig: React.FC<LocalProviderConfigProps> = ({
             </option>
           ))}
         </select>
-        {modelsError && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{modelsError}</p>}
-      </div>
+       </div>
     </>
   );
 };

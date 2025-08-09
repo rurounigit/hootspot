@@ -40,7 +40,7 @@ const OpenRouterConfig: React.FC<OpenRouterConfigProps> = ({
           <div>
             <p className="text-sm text-blue-800 dark:text-blue-300">{t('config_openrouter_api_key_info')}</p>
             <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-sm font-medium inline-flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-              {t('config_get_api_key')} <ExternalLinkIcon className="w-4 h-4 ml-1" />
+              {t('config_openrouter_get_api_key')} <ExternalLinkIcon className="w-4 h-4 ml-1" />
             </a>
           </div>
         </div>
@@ -61,7 +61,7 @@ const OpenRouterConfig: React.FC<OpenRouterConfigProps> = ({
         <select id="modelSelector" value={selectedModel} onChange={(e) => onModelChange(e.target.value)} disabled={areModelsLoading || allModelsEmpty} className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 dark:disabled:bg-gray-600 bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-50">
           {areModelsLoading && <option>{t('config_model_loading')}</option>}
           {modelsError && <option>{t('config_model_error')}</option>}
-          {!areModelsLoading && !modelsError && allModelsEmpty && <option>Enter API Key to see models</option>}
+          {!areModelsLoading && !modelsError && allModelsEmpty && <option>{t('config_openrouter_enter_api_key_to_see_models')}</option>}
           {!areModelsLoading && !modelsError &&
             filteredModels.map((model) => (
               <option key={model.name} value={model.name}>

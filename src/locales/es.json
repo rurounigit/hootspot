@@ -115,5 +115,7 @@
   "config_local_provider_type_label": "Proveedor Local",
   "config_ollama_server_url_label": "URL del Servidor Ollama",
   "config_ollama_info": "Ejecute Ollama localmente e ingrese los detalles del servidor aquí. Asegúrese de que el modelo que desea usar esté descargado y disponible.",
-  "config_ollama_model_name_label_dropdown": "Modelo (carga en Ollama)"
+  "config_ollama_model_name_label_dropdown": "Modelo (carga en Ollama)",
+  "config_openrouter_enter_api_key_to_see_models": "Ingrese la clave API para ver los modelos",
+  "config_openrouter_get_api_key": "Obtenga su clave API de OpenRouter"
 }
