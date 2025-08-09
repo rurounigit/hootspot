@@ -5,6 +5,7 @@ import { analyzeText as analyzeWithGoogle } from '../api/google/analysis';
 import { translateAnalysisResult as translateWithGoogle } from '../api/google/translation';
 import { analyzeTextWithLMStudio, translateAnalysisResultWithLMStudio } from '../api/lm-studio';
 import { analyzeTextWithOllama, translateAnalysisResultWithOllama } from '../api/ollama';
+import { analyzeTextWithOpenRouter, translateAnalysisResultWithOpenRouter } from '../api/open-router';
 import { GeminiAnalysisResponse } from '../types/api';
 
 const CONFIG_ERROR_KEYS = [
@@ -29,7 +30,6 @@ const getCleanErrorMessage = (errorMessage: string): string => {
 
 export const useAnalysis = (
   serviceProvider: 'cloud' | 'local',
-  cloudProvider: 'google' | 'openrouter',
   localProviderType: 'lm-studio' | 'ollama',
   apiKey: string | null,
   lmStudioUrl: string,
@@ -39,7 +39,10 @@ export const useAnalysis = (
   selectedModel: string,
   isCurrentProviderConfigured: boolean,
   setIsConfigCollapsed: (isCollapsed: boolean) => void,
-  onRebuttalLoad: (rebuttal: { text: string; lang: string }) => void
+  onRebuttalLoad: (rebuttal: { text: string; lang: string }) => void,
+  cloudProvider: 'google' | 'openrouter',
+  openRouterApiKey: string | null,
+  openRouterModel: string
 ) => {
   const { t, language } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
@@ -58,9 +61,14 @@ export const useAnalysis = (
       setError(null);
       try {
           let translatedResult: GeminiAnalysisResponse;
-          if (serviceProvider === 'google') {
+          if (serviceProvider === 'cloud') {
+            if (cloudProvider === 'google') {
               if (!apiKey) throw new Error(t('error_api_key_not_configured'));
               translatedResult = await translateWithGoogle(apiKey, analysis, targetLang, selectedModel, t);
+            } else {
+              if (!openRouterApiKey) throw new Error(t('error_api_key_not_configured'));
+              translatedResult = await translateAnalysisResultWithOpenRouter(openRouterApiKey, analysis, targetLang, openRouterModel);
+            }
           } else { // Local provider
               if (localProviderType === 'lm-studio') {
                   translatedResult = await translateAnalysisResultWithLMStudio(analysis, lmStudioUrl, lmStudioModel, targetLang);
@@ -83,7 +91,7 @@ export const useAnalysis = (
   }, [
       isCurrentProviderConfigured, serviceProvider, localProviderType,
       apiKey, selectedModel, language, t,
-      lmStudioUrl, lmStudioModel, ollamaUrl, ollamaModel
+      lmStudioUrl, lmStudioModel, ollamaUrl, ollamaModel, cloudProvider, openRouterApiKey, openRouterModel
   ]);
 
   const handleAnalyzeText = useCallback(async (text: string) => {
@@ -102,9 +110,14 @@ export const useAnalysis = (
 
     try {
       let result: GeminiAnalysisResponse;
-      if (serviceProvider === 'google') {
-        if (!apiKey) throw new Error('error_api_key_not_configured');
-        result = await analyzeWithGoogle(apiKey, text, selectedModel);
+      if (serviceProvider === 'cloud') {
+        if (cloudProvider === 'google') {
+          if (!apiKey) throw new Error('error_api_key_not_configured');
+          result = await analyzeWithGoogle(apiKey, text, selectedModel);
+        } else {
+          if (!openRouterApiKey) throw new Error('error_api_key_not_configured');
+          result = await analyzeTextWithOpenRouter(openRouterApiKey, text, openRouterModel);
+        }
       } else {
         if (localProviderType === 'lm-studio') {
           result = await analyzeTextWithLMStudio(text, lmStudioUrl, lmStudioModel);
@@ -132,7 +145,7 @@ export const useAnalysis = (
   }, [
     isCurrentProviderConfigured, serviceProvider, localProviderType,
     apiKey, selectedModel, lmStudioUrl, lmStudioModel,
-    ollamaUrl, ollamaModel, language, t, setIsConfigCollapsed, translateAnalysis, onRebuttalLoad
+    ollamaUrl, ollamaModel, language, t, setIsConfigCollapsed, translateAnalysis, onRebuttalLoad, cloudProvider, openRouterApiKey, openRouterModel
   ]);
 
   useEffect(() => {

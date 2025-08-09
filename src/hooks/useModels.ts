@@ -35,7 +35,13 @@ export const useModels = ({ serviceProvider, cloudProvider, localProviderType, a
                 const fetchedModels = await fetchGoogleModels(apiKey, showAllVersions);
                 setModels(fetchedModels);
             } else if (cloudProvider === 'openrouter' && openRouterApiKey) {
-                const fetchedModels = await getOpenRouterModels(openRouterApiKey);
+                const rawModels = await getOpenRouterModels(openRouterApiKey);
+                const fetchedModels: GeminiModel[] = rawModels.map((model: any) => ({
+                    name: model.id,
+                    displayName: model.name,
+                    supportedGenerationMethods: ["generateContent"],
+                    version: model.id, // No version info, use id as a stand-in
+                }));
                 setModels({ preview: [], stable: fetchedModels, experimental: [] });
             }
         } else if (serviceProvider === 'local') {
@@ -64,10 +70,8 @@ export const useModels = ({ serviceProvider, cloudProvider, localProviderType, a
       // If conditions are met, call the function that handles the API request.
       loadModels();
     } else {
-      // **This is the crucial part that was missing.**
       // If conditions are NOT met (e.g., the API key was just cleared),
       // explicitly reset the hook's state to its clean, initial values.
-      // This prevents stale errors or model lists from being shown.
       setIsLoading(false);
       setError(null);
       setModels({ preview: [], stable: [], experimental: [] });

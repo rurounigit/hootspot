@@ -25,7 +25,6 @@ const App: React.FC = () => {
     googleModel, setGoogleModel,
     openRouterModel, setOpenRouterModel,
     debouncedApiKey,
-    selectedModel, setSelectedModel,
     lmStudioUrl, setLmStudioUrl,
     lmStudioModel, setLmStudioModel,
     ollamaUrl, setOllamaUrl,
@@ -49,19 +48,23 @@ const App: React.FC = () => {
     showAllVersions
   });
 
+  const selectedModel = serviceProvider === 'cloud' && cloudProvider === 'google'
+    ? googleModel
+    : openRouterModel;
+
   const {
     isTranslatingRebuttal, handleRebuttalUpdate, displayedRebuttal,
     translationError: translationErrorObject, loadRebuttal, clearTranslationError,
   } = useTranslationManager({
-      serviceProvider, localProviderType,
+      serviceProvider, cloudProvider, localProviderType,
       apiKey: apiKeyInput,
-      googleModel: selectedModel,
+      googleModel: googleModel,
       lmStudioConfig: { url: lmStudioUrl, model: lmStudioModel },
       ollamaConfig: { url: ollamaUrl, model: ollamaModel },
       isCurrentProviderConfigured,
   });
 
-  const {
+  const { 
     isLoading, error: analysisErrorObject, analysisResult,
     currentTextAnalyzed, textToAnalyze, setTextToAnalyze,
     setPendingAnalysis, isTranslating, handleAnalyzeText,
@@ -71,7 +74,10 @@ const App: React.FC = () => {
     apiKeyInput, lmStudioUrl, lmStudioModel,
     ollamaUrl, ollamaModel, selectedModel,
     isCurrentProviderConfigured, setIsConfigCollapsed,
-    loadRebuttal
+    loadRebuttal,
+    cloudProvider,
+    openRouterApiKey,
+    openRouterModel
   );
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -79,11 +85,18 @@ const App: React.FC = () => {
   const lastAction = useRef<'PUSH' | 'APPEND'>('PUSH');
 
   useEffect(() => {
-    let modelList, currentSelection, setSelection;
-    if (serviceProvider === 'google') {
-        modelList = [...models.stable, ...models.preview, ...(models.experimental || [])];
-        currentSelection = selectedModel;
-        setSelection = setSelectedModel;
+    let modelList: any[] = [], currentSelection, setSelection;
+
+    if (serviceProvider === 'cloud') {
+        if (cloudProvider === 'google') {
+            modelList = [...models.stable, ...models.preview, ...(models.experimental || [])];
+            currentSelection = googleModel;
+            setSelection = setGoogleModel;
+        } else if (cloudProvider === 'openrouter') {
+            modelList = models.stable;
+            currentSelection = openRouterModel;
+            setSelection = setOpenRouterModel;
+        }
     } else {
         modelList = models.stable;
         if (localProviderType === 'lm-studio') {
@@ -94,15 +107,16 @@ const App: React.FC = () => {
             setSelection = setOllamaModel;
         }
     }
-    if (modelList.length > 0 && setSelection && !modelList.some(m => m.name === currentSelection)) {
+
+    if (modelList.length > 0 && setSelection && (!currentSelection || !modelList.some(m => m.name === currentSelection))) {
         const preferredDefault = modelList.find(m => m.name === GEMINI_MODEL_NAME);
-        if (preferredDefault) {
+        if (preferredDefault && serviceProvider === 'cloud' && cloudProvider === 'google') {
             setSelection(preferredDefault.name);
         } else {
             setSelection(modelList[0].name);
         }
     }
-  }, [models, serviceProvider, localProviderType, selectedModel, setSelectedModel, lmStudioModel, setLmStudioModel, ollamaModel, setOllamaModel]);
+  }, [models, serviceProvider, cloudProvider, googleModel, setGoogleModel, openRouterModel, setOpenRouterModel, lmStudioModel, setLmStudioModel, ollamaModel, setOllamaModel]);
 
   useEffect(() => {
     const messageListener = (request: any) => {
@@ -178,7 +192,7 @@ const App: React.FC = () => {
   return (
     <div className="relative flex flex-col h-screen bg-gray-100 dark:bg-gray-600">
       <div className="absolute top-2 right-4 z-20 flex items-center space-x-2">
-        <button onClick={() => setIsNightMode(!isNightMode)} className="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full focus:outline-none" title={t('night_mode_toggle_tooltip')}>
+        <button onClick={() => setIsNightMode(!isNightMode)} className="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full focus:outline-none" title={t('night_mode_toggle_tooltip')}> 
           {isNightMode ? <SunIcon className="w-5 h-5 text-amber-500" /> : <MoonIcon className="w-5 h-5 text-gray-600" />}
         </button>
         <LanguageSwitcher />
@@ -205,7 +219,7 @@ const App: React.FC = () => {
             lmStudioModel={lmStudioModel} onLmStudioModelChange={setLmStudioModel}
             ollamaUrl={ollamaUrl} onOllamaUrlChange={setOllamaUrl}
             ollamaModel={ollamaModel} onOllamaModelChange={setOllamaModel}
-            models={models} googleModel={selectedModel} onGoogleModelChange={setSelectedModel}
+            models={models} googleModel={googleModel} onGoogleModelChange={setGoogleModel}
             areModelsLoading={areModelsLoading} modelsError={modelsError} onRefetchModels={refetchModels}
             currentMaxCharLimit={maxCharLimit} onMaxCharLimitSave={handleMaxCharLimitSave}
             isNightMode={isNightMode} onNightModeChange={setIsNightMode}
@@ -220,7 +234,7 @@ const App: React.FC = () => {
             ref={textareaRef}
             text={textToAnalyze}
             onTextChange={setTextToAnalyze}
-            onAnalyze={handleAnalyzeText}
+            onAnalyze={() => handleAnalyzeText(textToAnalyze)}
             isLoading={isBusy}
             maxCharLimit={maxCharLimit}
             onJsonLoad={handleJsonLoad}
@@ -250,9 +264,10 @@ const App: React.FC = () => {
                     includeRebuttalInJson={includeRebuttalInJson}
                     includeRebuttalInPdf={includeRebuttalInPdf}
                     serviceProvider={serviceProvider}
+                    cloudProvider={cloudProvider}
                     localProviderType={localProviderType}
                     apiKey={apiKeyInput}
-                    googleModel={selectedModel}
+                    googleModel={googleModel}
                     lmStudioConfig={{ url: lmStudioUrl, model: lmStudioModel }}
                     ollamaConfig={{ url: ollamaUrl, model: ollamaModel }}
                     isCurrentProviderConfigured={isCurrentProviderConfigured}
@@ -269,7 +284,7 @@ const App: React.FC = () => {
         <footer className="mt-auto pt-6 text-center text-sm text-gray-600 dark:text-gray-400">
           <div>
             {t('app_footer_copyright', { year: new Date().getFullYear() })}
-            <Tooltip content={t('app_footer_responsibility')}>
+            <Tooltip content={t('app_footer_responsibility')}> 
               <span className="ml-2 underline decoration-dotted cursor-pointer">
                 {t('app_footer_disclaimer_label')}
               </span>

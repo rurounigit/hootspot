@@ -81,9 +81,10 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
   const isFormValid = () => {
     if (isCloudProvider) {
       if (props.cloudProvider === 'google') {
-        return props.apiKeyInput.trim() !== '';
+        return props.apiKeyInput.trim() !== '' && props.googleModel.trim() !== '';
       }
-      return props.openRouterApiKey.trim() !== '';
+      // OpenRouter case
+      return props.openRouterApiKey.trim() !== '' && props.openRouterModel.trim() !== '';
     }
     if (localProviderType === 'lm-studio') {
       return lmStudioUrl.trim() !== '' && lmStudioModel.trim() !== '';
@@ -113,7 +114,7 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
   }, [isCollapsed, serviceProvider, props.cloudProvider, props.apiKeyInput, props.openRouterApiKey, lmStudioUrl, lmStudioModel, ollamaUrl, ollamaModel, t]);
 
   const renderCollapsedStatus = () => {
-    const providerName = isCloudProvider ? 'Cloud' : (localProviderType === 'ollama' ? 'Ollama' : 'LM Studio');
+    const providerName = isCloudProvider ? (props.cloudProvider === 'google' ? 'Google' : 'OpenRouter') : (localProviderType === 'ollama' ? 'Ollama' : 'LM Studio');
     if (isCurrentProviderConfigured) {
       return <p className="text-sm text-green-600 dark:text-green-400">{t('config_status_configured', { provider: providerName })}</p>;
     }

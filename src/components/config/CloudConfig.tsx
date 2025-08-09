@@ -1,3 +1,4 @@
+// src/components/config/CloudConfig.tsx
 import React from 'react';
 import { useTranslation } from '../../i18n';
 import GoogleConfig from './GoogleConfig';
@@ -58,6 +59,9 @@ const CloudConfig: React.FC<CloudConfigProps> = (props) => {
           onApiKeyChange={props.onOpenRouterApiKeyChange}
           selectedModel={props.openRouterModel}
           onModelChange={props.onOpenRouterModelChange}
+          models={props.models}
+          areModelsLoading={props.areModelsLoading}
+          modelsError={props.modelsError}
         />
       )}
     </div>

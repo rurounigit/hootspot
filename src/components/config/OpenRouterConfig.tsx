@@ -1,13 +1,17 @@
-import React, { useState, useEffect } from 'react';
+// src/components/config/OpenRouterConfig.tsx
+import React, { useState } from 'react';
 import { useTranslation } from '../../i18n';
-import { getOpenRouterModels } from '../../api/open-router';
 import { InfoIcon, ExternalLinkIcon } from '../../assets/icons';
+import { GroupedModels } from '../../types/api';
 
 interface OpenRouterConfigProps {
   apiKey: string;
   onApiKeyChange: (key: string) => void;
   selectedModel: string;
   onModelChange: (model: string) => void;
+  models: GroupedModels;
+  areModelsLoading: boolean;
+  modelsError: string | null;
 }
 
 const OpenRouterConfig: React.FC<OpenRouterConfigProps> = ({
@@ -15,26 +19,18 @@ const OpenRouterConfig: React.FC<OpenRouterConfigProps> = ({
   onApiKeyChange,
   selectedModel,
   onModelChange,
+  models,
+  areModelsLoading,
+  modelsError,
 }) => {
   const { t } = useTranslation();
-  const [models, setModels] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    if (apiKey) {
-      setIsLoading(true);
-      getOpenRouterModels(apiKey)
-        .then(setModels)
-        .catch((err) => setError(err.message))
-        .finally(() => setIsLoading(false));
-    }
-  }, [apiKey]);
-
-  const filteredModels = models.filter((model) =>
-    model.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const allModels = models.stable || [];
+  const filteredModels = allModels.filter((model) =>
+    model.displayName.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  const allModelsEmpty = allModels.length === 0;
 
   return (
     <>
@@ -62,18 +58,18 @@ const OpenRouterConfig: React.FC<OpenRouterConfigProps> = ({
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-50 mb-2"
         />
-        <select id="modelSelector" value={selectedModel} onChange={(e) => onModelChange(e.target.value)} disabled={isLoading || !models.length} className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 dark:disabled:bg-gray-600 bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-50">
-          {isLoading && <option>{t('config_model_loading')}</option>}
-          {error && <option>{t('config_model_error')}</option>}
-          {!isLoading && !error && filteredModels.length === 0 && <option>No models found</option>}
-          {!isLoading && !error &&
+        <select id="modelSelector" value={selectedModel} onChange={(e) => onModelChange(e.target.value)} disabled={areModelsLoading || allModelsEmpty} className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 dark:disabled:bg-gray-600 bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-50">
+          {areModelsLoading && <option>{t('config_model_loading')}</option>}
+          {modelsError && <option>{t('config_model_error')}</option>}
+          {!areModelsLoading && !modelsError && allModelsEmpty && <option>Enter API Key to see models</option>}
+          {!areModelsLoading && !modelsError &&
             filteredModels.map((model) => (
-              <option key={model.id} value={model.id}>
-                {model.name}
+              <option key={model.name} value={model.name}>
+                {model.displayName}
               </option>
             ))}
         </select>
-        {error && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{error}</p>}
+        {modelsError && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{modelsError}</p>}
       </div>
     </>
   );
