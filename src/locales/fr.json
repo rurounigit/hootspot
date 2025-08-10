@@ -12,6 +12,7 @@
   "config_provider_title": "Fournisseur de services",
   "config_provider_cloud": "Cloud",
   "config_provider_google": "API Google",
+  "config_api_provider_label": "Fournisseur d'API",
   "config_api_key_info": "Votre clé API Google Gemini est requise pour utiliser HootSpot AI. Elle est stockée localement dans votre navigateur et n'est jamais envoyée à nos serveurs. Vous êtes responsable de tous les coûts associés à son utilisation.",
   "config_openrouter_api_key_info": "Votre clé API OpenRouter est requise pour utiliser HootSpot AI. Elle est stockée localement dans votre navigateur et n'est jamais envoyée à nos serveurs. Vous êtes responsable de tous les coûts associés à son utilisation.",
   "config_get_api_key": "Obtenez votre clé API depuis Google AI Studio",
@@ -117,5 +118,6 @@
   "config_ollama_info": "Exécutez Ollama localement et entrez les détails du serveur ici. Assurez-vous que le modèle que vous souhaitez utiliser est téléchargé et disponible.",
   "config_ollama_model_name_label_dropdown": "Modèle (chargez dans Ollama)",
   "config_openrouter_enter_api_key_to_see_models": "Entrez la clé API pour voir les modèles",
-  "config_openrouter_get_api_key": "Obtenez votre clé API depuis OpenRouter"
+  "config_openrouter_get_api_key": "Obtenez votre clé API depuis OpenRouter",
+  "config_openrouter_model_search_hint": "Liste la plus récente des modèles disponibles sur OpenRouter. Essayez de rechercher \"free\" pour trouver des options gratuites."
 }

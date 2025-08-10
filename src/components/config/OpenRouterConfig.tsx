@@ -61,7 +61,7 @@ const OpenRouterConfig: React.FC<OpenRouterConfigProps> = ({
       </div>
       <div className="mb-6">
         <label htmlFor="modelSelector" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('config_model_label')}</label>
-        <p className="mb-2 text-xs text-gray-600 dark:text-gray-400">latest list of models available on OpenRouter. Try searching "free" for no-cost options.</p>
+        <p className="mb-2 text-xs text-gray-600 dark:text-gray-400">{t('config_openrouter_model_search_hint')}</p>
         <input
           type="text"
           placeholder="Search models..."
