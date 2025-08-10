@@ -3,8 +3,6 @@
 import React from 'react';
 import { useTranslation } from '../../i18n';
 import { GroupedModels } from '../../types/api';
-import { InfoIcon, ExternalLinkIcon } from '../../assets/icons';
-
 interface GoogleConfigProps {
   apiKeyInput: string;
   onApiKeyInputChange: (key: string) => void;

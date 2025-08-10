@@ -5,8 +5,7 @@ import { GeminiModel, GroupedModels } from '../types/api';
 import { fetchModels as fetchGoogleModels } from '../api/google/models';
 import { fetchLMStudioModels } from '../api/lm-studio';
 import { fetchOllamaModels } from '../api/ollama';
-
-import { getOpenRouterModels } from '../api/open-router';
+import { fetchModels } from '../api/openrouter/models';
 
 interface UseModelsProps {
     serviceProvider: 'cloud' | 'local';
@@ -35,12 +34,13 @@ export const useModels = ({ serviceProvider, cloudProvider, localProviderType, a
                 const fetchedModels = await fetchGoogleModels(apiKey, showAllVersions);
                 setModels(fetchedModels);
             } else if (cloudProvider === 'openrouter' && openRouterApiKey) {
-                const rawModels = await getOpenRouterModels(openRouterApiKey);
+                const rawModels = await fetchModels(openRouterApiKey);
                 const fetchedModels: GeminiModel[] = rawModels.map((model: any) => ({
                     name: model.id,
                     displayName: model.name,
                     supportedGenerationMethods: ["generateContent"],
                     version: model.id, // No version info, use id as a stand-in
+                    description: model.description,
                 }));
                 setModels({ preview: [], stable: fetchedModels, experimental: [] });
             }

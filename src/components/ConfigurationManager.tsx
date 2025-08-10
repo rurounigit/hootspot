@@ -64,15 +64,11 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
   const {
     serviceProvider, onServiceProviderChange,
     localProviderType, onLocalProviderTypeChange,
-    apiKeyInput, onApiKeyInputChange,
-    lmStudioUrl, onLmStudioUrlChange, lmStudioModel, onLmStudioModelChange,
+    apiKeyInput, lmStudioUrl, onLmStudioUrlChange, lmStudioModel, onLmStudioModelChange,
     ollamaUrl, onOllamaUrlChange, ollamaModel, onOllamaModelChange,
-    models, googleModel, onGoogleModelChange,
-    areModelsLoading, modelsError, onRefetchModels,
+    models, areModelsLoading, modelsError, onRefetchModels,
     isCurrentProviderConfigured, isCollapsed, onToggleCollapse,
-    isTesting, testStatus, onSave,
-    showAllVersions, onShowAllVersionsChange,
-    openRouterModel // Added prop
+    isTesting, testStatus, onSave, openRouterModel
   } = props;
   const { t } = useTranslation();
   const [localError, setLocalError] = useState<string | null>(null);

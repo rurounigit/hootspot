@@ -46,6 +46,7 @@ export interface GeminiModel {
   displayName: string;
   supportedGenerationMethods: string[];
   version: string;
+  description: string;
 }
 
 export interface GroupedModels {
