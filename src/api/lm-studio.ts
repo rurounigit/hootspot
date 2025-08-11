@@ -8,7 +8,7 @@ import {
   SIMPLE_TEXT_TRANSLATION_PROMPT,
   JSON_REPAIR_SYSTEM_PROMPT,
 } from '../config/api-prompts';
-import { GeminiAnalysisResponse, GeminiFinding, GeminiModel } from '../types/api';
+import { GeminiAnalysisResponse, PatternFinding, AIModel } from '../types/api';
 import { LanguageCode } from '../i18n';
 import {
   createNumberedJsonForTranslation,
@@ -72,7 +72,7 @@ async function repairAndParseJsonWithLMStudio(
 }
 
 
-export const fetchLMStudioModels = async (serverUrl: string): Promise<GeminiModel[]> => {
+export const fetchLMStudioModels = async (serverUrl: string): Promise<AIModel[]> => {
   try {
     const response = await fetch(`${serverUrl}/v1/models`);
     if (!response.ok) {
@@ -192,7 +192,7 @@ export const analyzeTextWithLMStudio = async (
         }
 
         if (typeof parsedData.analysis_summary === 'string' && Array.isArray(parsedData.findings)) {
-            parsedData.findings.sort((a: GeminiFinding, b: GeminiFinding) => {
+            parsedData.findings.sort((a: PatternFinding, b: PatternFinding) => {
                 return (textToAnalyze.indexOf(a.specific_quote) - textToAnalyze.indexOf(b.specific_quote));
             });
             return parsedData;

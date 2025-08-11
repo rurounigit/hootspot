@@ -1,7 +1,7 @@
 // src/hooks/useAnalysisReportData.ts
 
 import { useMemo } from 'react';
-import { GeminiAnalysisResponse, GeminiFinding } from '../types/api';
+import { AIAnalysisOutput, PatternFinding } from '../types/api';
 
 const generateDistantColor = (index: number, saturation: number = 0.7, lightness: number = 0.6) => {
     const goldenAngle = 137.5;
@@ -14,7 +14,7 @@ function escapeRegex(string: string) {
 }
 
 export const useAnalysisReportData = (
-  analysis: GeminiAnalysisResponse | null,
+  analysis: AIAnalysisOutput | null,
   sourceText: string | null,
   chartWidth: number
 ) => {
@@ -71,7 +71,7 @@ export const useAnalysisReportData = (
   }, [indexedFindings, hasFindings, patternColorMap, chartWidth]);
 
   const finalHighlights = useMemo(() => {
-    const matchesByPosition = new Map<string, { start: number; end: number; findings: (GeminiFinding & { displayIndex: number })[] }>();
+    const matchesByPosition = new Map<string, { start: number; end: number; findings: (PatternFinding & { displayIndex: number })[] }>();
     const MIN_WORDS_FOR_MATCH = 3;
 
     if (hasFindings && sourceText) {

@@ -1,6 +1,6 @@
 // src/components/analysis/ShareMenu.tsx
 import React, { useState, useRef, useEffect } from 'react';
-import { GeminiAnalysisResponse } from '../../types/api';
+import { AIAnalysisOutput } from '../../types/api';
 import { ShareIcon } from '../../assets/icons';
 import { useTranslation } from '../../i18n';
 import { usePdfGenerator } from '../../hooks/usePdfGenerator';
@@ -9,7 +9,7 @@ interface BubbleData {
   id: string; name: string; strength: number; category: string; color: string; radius: number;
 }
 interface ShareMenuProps {
-  analysis: GeminiAnalysisResponse;
+  analysis: AIAnalysisOutput;
   sourceText: string | null;
   highlightData: any[];
   patternColorMap: Map<string, string>;

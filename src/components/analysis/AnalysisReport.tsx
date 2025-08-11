@@ -1,7 +1,7 @@
 // src/components/analysis/AnalysisReport.tsx
 
 import React, { useState } from 'react';
-import { GeminiAnalysisResponse } from '../../types/api';
+import { AIAnalysisOutput } from '../../types/api';
 import { InfoIcon } from '../../assets/icons';
 import { useTranslation } from '../../i18n';
 import ShareMenu from './ShareMenu';
@@ -12,7 +12,7 @@ import { useAnalysisReportData } from '../../hooks/useAnalysisReportData';
 
 // Updated props for clarity and consistency
 interface AnalysisReportProps {
-  analysis: GeminiAnalysisResponse | null;
+  analysis: AIAnalysisOutput | null;
   sourceText: string;
   rebuttal: string;
   isTranslatingRebuttal: boolean;

@@ -1,6 +1,7 @@
 import { OPENROUTER_API_BASE_URL } from '../../constants';
+import { AIModel } from '../../types/api';
 
-export const fetchModels = async (apiKey: string): Promise<any[]> => {
+export const fetchModels = async (apiKey: string): Promise<AIModel[]> => {
   try {
     const response = await fetch(`${OPENROUTER_API_BASE_URL}/models`, {
       headers: {
@@ -13,7 +14,14 @@ export const fetchModels = async (apiKey: string): Promise<any[]> => {
       throw new Error(errorData.error.message || `HTTP error! status: ${response.status}`);
     }
     const { data } = await response.json();
-    return data;
+    // Transform the OpenRouter model data to fit the AIModel interface
+    return data.map((model: any) => ({
+      name: model.id,
+      displayName: model.name,
+      supportedGenerationMethods: model.supported_generation_methods || ["generateContent"],
+      version: model.version || "1.0", // Version might not always be available
+      description: model.description || "",
+    }));
   } catch (error) {
     console.error("Failed to fetch models:", error);
     throw error;

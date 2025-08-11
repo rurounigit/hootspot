@@ -1,5 +1,5 @@
 // src/types/api.ts
-export interface GeminiFinding {
+export interface PatternFinding {
   pattern_name: string;
   display_name: string; // The translated name for UI display
   specific_quote: string;
@@ -8,40 +8,12 @@ export interface GeminiFinding {
   category: string; // Will contain a key like "category_interpersonal_psychological"
 }
 
-export interface GeminiAnalysisResponse {
+export interface AIAnalysisOutput {
   analysis_summary: string;
-  findings: GeminiFinding[];
+  findings: PatternFinding[];
 }
 
-export interface GroundingChunkWeb {
-  uri: string;
-  title: string;
-}
-
-export interface GroundingChunk {
-  web?: GroundingChunkWeb;
-  // Other types of chunks can be added here if needed
-}
-
-export interface GroundingMetadata {
-  groundingChunks?: GroundingChunk[];
-  // Other grounding metadata fields can be added here
-}
-
-export interface Candidate {
-  groundingMetadata?: GroundingMetadata;
-  // Other candidate fields can be added here
-}
-
-// This represents the structure we expect from the Gemini API response
-// when grounding metadata is involved.
-export interface GeminiApiResponseWithGrounding {
-  text: string; // The main textual response
-  candidates?: Candidate[];
-  // Include other relevant fields from GenerateContentResponse if needed
-}
-
-export interface GeminiModel {
+export interface AIModel {
   name: string;
   displayName: string;
   supportedGenerationMethods: string[];
@@ -50,7 +22,7 @@ export interface GeminiModel {
 }
 
 export interface GroupedModels {
-  preview: GeminiModel[];
-  stable: GeminiModel[];
-  experimental?: GeminiModel[]; // Added experimental category
+  preview: AIModel[];
+  stable: AIModel[];
+  experimental?: AIModel[]; // Added experimental category
 }

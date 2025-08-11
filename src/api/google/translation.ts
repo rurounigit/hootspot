@@ -1,7 +1,7 @@
 // src/api/google/translation.ts
 import { GoogleGenAI } from "@google/genai";
 import { GEMINI_MODEL_NAME, ANALYSIS_TRANSLATION_PROMPT, SIMPLE_TEXT_TRANSLATION_PROMPT, TRANSLATION_SYSTEM_PROMPT } from "../../config/api-prompts";
-import { GeminiAnalysisResponse } from "../../types/api";
+import { AIAnalysisOutput } from "../../types/api";
 import { LanguageCode } from "../../i18n";
 import { repairAndParseJson } from "./utils";
 import { extractJson } from "../../utils/apiUtils";
@@ -16,11 +16,11 @@ type TFunction = (key: string, replacements?: Record<string, string | number>) =
 
 export const translateAnalysisResult = async (
   apiKey: string,
-  analysis: GeminiAnalysisResponse,
+  analysis: AIAnalysisOutput,
   targetLanguage: LanguageCode,
   modelName: string,
   t: TFunction
-): Promise<GeminiAnalysisResponse> => {
+): Promise<AIAnalysisOutput> => {
   if (!apiKey) {
     throw new Error(`KEY::error_api_key_not_configured::${t('error_api_key_not_configured')}`);
   }

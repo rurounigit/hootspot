@@ -1,7 +1,7 @@
 // src/hooks/useModels.ts
 
 import { useState, useEffect, useCallback } from 'react';
-import { GeminiModel, GroupedModels } from '../types/api';
+import { AIModel, GroupedModels } from '../types/api';
 import { fetchModels as fetchGoogleModels } from '../api/google/models';
 import { fetchLMStudioModels } from '../api/lm-studio';
 import { fetchOllamaModels } from '../api/ollama';
@@ -35,7 +35,7 @@ export const useModels = ({ serviceProvider, cloudProvider, localProviderType, a
                 setModels(fetchedModels);
             } else if (cloudProvider === 'openrouter' && openRouterApiKey) {
                 const rawModels = await fetchModels(openRouterApiKey);
-                const fetchedModels: GeminiModel[] = rawModels.map((model: any) => ({
+                const fetchedModels: AIModel[] = rawModels.map((model: any) => ({
                     name: model.id,
                     displayName: model.name,
                     supportedGenerationMethods: ["generateContent"],
@@ -45,7 +45,7 @@ export const useModels = ({ serviceProvider, cloudProvider, localProviderType, a
                 setModels({ preview: [], stable: fetchedModels, experimental: [] });
             }
         } else if (serviceProvider === 'local') {
-            let fetchedModels: GeminiModel[] = [];
+            let fetchedModels: AIModel[] = [];
             if (localProviderType === 'lm-studio' && lmStudioUrl) {
                 fetchedModels = await fetchLMStudioModels(lmStudioUrl);
             } else if (localProviderType === 'ollama' && ollamaUrl) {

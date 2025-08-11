@@ -1,5 +1,5 @@
 // src/api/google/models.ts
-import { GeminiModel, GroupedModels } from "../../types/api";
+import { AIModel, GroupedModels } from "../../types/api";
 
 export const fetchModels = async (apiKey: string, showAllVersions: boolean = false): Promise<GroupedModels> => {
   try {
@@ -16,7 +16,7 @@ export const fetchModels = async (apiKey: string, showAllVersions: boolean = fal
         return { preview: [], stable: [], experimental: [] };
     }
 
-    const filteredModels = (data.models as GeminiModel[]).filter(model => {
+    const filteredModels = (data.models as AIModel[]).filter(model => {
       const name = model.name.toLowerCase();
       const displayName = model.displayName.toLowerCase();
 
@@ -31,7 +31,7 @@ export const fetchModels = async (apiKey: string, showAllVersions: boolean = fal
     const processedModels = showAllVersions
       ? (() => {
           // When "Show all versions" is checked, remove exact duplicates based on the VISIBLE displayName.
-          const modelMap = new Map<string, GeminiModel>();
+          const modelMap = new Map<string, AIModel>();
           for (const model of filteredModels) {
             // *** THE FIX IS HERE: We now use displayName as the key ***
             if (!modelMap.has(model.displayName)) {
@@ -42,7 +42,7 @@ export const fetchModels = async (apiKey: string, showAllVersions: boolean = fal
         })()
       : (() => {
           // When unchecked, perform version deduplication based on the base name.
-          const modelMap = new Map<string, GeminiModel>();
+          const modelMap = new Map<string, AIModel>();
           filteredModels.forEach(model => {
             const baseName = model.displayName.toLowerCase()
               .replace(/(\s\d{3})$/, '')
@@ -58,7 +58,7 @@ export const fetchModels = async (apiKey: string, showAllVersions: boolean = fal
           return Array.from(modelMap.values());
         })();
 
-    const sorter = (a: GeminiModel, b: GeminiModel): number => {
+    const sorter = (a: AIModel, b: AIModel): number => {
         const aIsGemini = a.displayName.toLowerCase().includes('gemini');
         const bIsGemini = b.displayName.toLowerCase().includes('gemini');
 

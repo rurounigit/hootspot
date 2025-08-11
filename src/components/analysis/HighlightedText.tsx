@@ -1,14 +1,14 @@
 // src/components/analysis/HighlightedText.tsx
 
 import React, { useState } from 'react';
-import { GeminiFinding } from '../../types/api';
+import { PatternFinding } from '../../types/api';
 import { useTranslation } from '../../i18n';
 
 const UNIFORM_HIGHLIGHT_COLOR = 'bg-red-200 dark:bg-red-800/60';
 
 interface HighlightedTextProps {
   text: string;
-  matches: { start: number; end: number; findings: (GeminiFinding & { displayIndex: number })[] }[];
+  matches: { start: number; end: number; findings: (PatternFinding & { displayIndex: number })[] }[];
   patternColorMap: Map<string, string>;
 }
 
@@ -29,7 +29,7 @@ export const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches,
     }
   };
 
-  const handlePillMouseOver = (event: React.MouseEvent, finding: GeminiFinding & { displayIndex: number }) => {
+  const handlePillMouseOver = (event: React.MouseEvent, finding: PatternFinding & { displayIndex: number }) => {
     const color = patternColorMap.get(finding.pattern_name) || '#ccc';
     setTooltip({ visible: true, title: finding.display_name, description: t(finding.category), x: event.clientX, y: event.clientY, color: color, textColor: '#fff' });
   };

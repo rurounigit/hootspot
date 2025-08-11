@@ -5,12 +5,12 @@ import { generateRebuttal as generateRebuttalGoogle } from '../../api/google/ana
 import { generateRebuttalWithLMStudio } from '../../api/lm-studio';
 import { generateRebuttalWithOllama } from '../../api/ollama';
 import { generateRebuttal as generateRebuttalWithOpenRouter } from '../../api/openrouter/analysis';
-import { GeminiAnalysisResponse } from '../../types/api';
+import { AIAnalysisOutput } from '../../types/api';
 import { useTranslation } from '../../i18n';
 import { SparklesIcon } from '../../assets/icons';
 
 interface RebuttalGeneratorProps {
-    analysis: GeminiAnalysisResponse;
+    analysis: AIAnalysisOutput;
     sourceText: string | null;
     rebuttalForDisplay: string | null;
     isTranslating: boolean;

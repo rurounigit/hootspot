@@ -5,7 +5,7 @@ import html2canvas from 'html2canvas';
 import { useTranslation } from '../i18n';
 import ExportableBubbleChart from '../components/pdf/ExportableBubbleChart';
 import { PDF_CHART_CONFIG, PDF_TITLE_TEXT } from '../config/chart';
-import { GeminiAnalysisResponse } from '../types/api';
+import { AIAnalysisOutput } from '../types/api';
 
 interface BubbleData {
   id: string; name: string; strength: number; category: string; color: string; radius: number;
@@ -57,7 +57,7 @@ export const usePdfGenerator = () => {
   }, [cleanup]);
 
   const generatePdf = useCallback(async (
-    analysis: GeminiAnalysisResponse,
+    analysis: AIAnalysisOutput,
     sourceText: string | null,
     highlightData: any[],
     patternColorMap: Map<string, string>,

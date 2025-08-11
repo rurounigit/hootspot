@@ -1,6 +1,6 @@
 // src/utils/translationUtils.ts
 
-import { GeminiAnalysisResponse } from "../types/api";
+import { AIAnalysisOutput } from "../types/api";
 
 /**
  * Creates a token-efficient, numbered JSON object from a source object,
@@ -61,7 +61,7 @@ export const reconstructTranslatedJson = (
  * @param analysis The original analysis response.
  * @returns A flat object with unique keys and text values to be translated.
  */
-export const flattenAnalysisForTranslation = (analysis: GeminiAnalysisResponse): Record<string, string> => {
+export const flattenAnalysisForTranslation = (analysis: AIAnalysisOutput): Record<string, string> => {
     const flatSource: Record<string, string> = { 'analysis_summary': analysis.analysis_summary };
     analysis.findings.forEach((finding, index) => {
         flatSource[`finding_${index}_display_name`] = finding.display_name;
@@ -79,9 +79,9 @@ export const flattenAnalysisForTranslation = (analysis: GeminiAnalysisResponse):
  * @returns A new analysis object with the translated text merged in.
  */
 export const reconstructAnalysisFromTranslation = (
-    originalAnalysis: GeminiAnalysisResponse,
+    originalAnalysis: AIAnalysisOutput,
     translatedFlat: Record<string, string>
-): GeminiAnalysisResponse => {
+): AIAnalysisOutput => {
     const translatedAnalysis = JSON.parse(JSON.stringify(originalAnalysis));
 
     translatedAnalysis.analysis_summary = translatedFlat['analysis_summary'] || originalAnalysis.analysis_summary;

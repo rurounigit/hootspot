@@ -7,7 +7,7 @@ import { analyzeTextWithLMStudio, translateAnalysisResultWithLMStudio } from '..
 import { analyzeTextWithOllama, translateAnalysisResultWithOllama } from '../api/ollama';
 import { analyzeText as analyzeTextWithOpenRouter } from '../api/openrouter/analysis';
 import { translateAnalysisResult as translateAnalysisResultWithOpenRouter } from '../api/openrouter/translation';
-import { GeminiAnalysisResponse } from '../types/api';
+import { AIAnalysisOutput } from '../types/api';
 
 const CONFIG_ERROR_KEYS = [
     'error_api_key_not_configured', 'error_api_key_empty', 'error_api_key_test_failed_message', 'error_quota_exhausted', 'error_api_generic', 'error_api_key_test_failed_generic',
@@ -48,20 +48,20 @@ export const useAnalysis = (
   const { t, language } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<{ message: string, type: 'config' | 'general' } | null>(null);
-  const [analysisResult, setAnalysisResult] = useState<GeminiAnalysisResponse | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<AIAnalysisOutput | null>(null);
   const [currentTextAnalyzed, setCurrentTextAnalyzed] = useState<string | null>(null);
   const [textToAnalyze, setTextToAnalyze] = useState('');
   const [pendingAnalysis, setPendingAnalysis] = useState<{ text: string } | null>(null);
-  const [translatedResults, setTranslatedResults] = useState<Record<string, GeminiAnalysisResponse>>({});
+  const [translatedResults, setTranslatedResults] = useState<Record<string, AIAnalysisOutput>>({});
   const [isTranslating, setIsTranslating] = useState(false);
   const analysisReportRef = useRef<HTMLDivElement>(null);
 
-  const translateAnalysis = useCallback(async (analysis: GeminiAnalysisResponse, targetLang: string) => {
+  const translateAnalysis = useCallback(async (analysis: AIAnalysisOutput, targetLang: string) => {
       if (!isCurrentProviderConfigured || analysis.findings.length === 0) return;
       setIsTranslating(true);
       setError(null);
       try {
-          let translatedResult: GeminiAnalysisResponse;
+          let translatedResult: AIAnalysisOutput;
           if (serviceProvider === 'cloud') {
             if (cloudProvider === 'google') {
               if (!apiKey) throw new Error(t('error_api_key_not_configured'));
@@ -110,7 +110,7 @@ export const useAnalysis = (
     onRebuttalLoad({ text: '', lang: language });
 
     try {
-      let result: GeminiAnalysisResponse;
+      let result: AIAnalysisOutput;
       if (serviceProvider === 'cloud') {
         if (cloudProvider === 'google') {
           if (!apiKey) throw new Error('error_api_key_not_configured');

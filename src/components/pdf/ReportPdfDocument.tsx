@@ -1,7 +1,7 @@
 // src/components/ReportPdfDocument.tsx
 
 import { Page, Text, View, Document, StyleSheet, Image } from '@react-pdf/renderer';
-import { GeminiAnalysisResponse, GeminiFinding } from '../../types/api';
+import { AIAnalysisOutput, PatternFinding } from '../../types/api';
 import { PDF_HEADER_TEXT } from '../../config/chart';
 
 type PatternColorMap = Record<string, string>;
@@ -20,8 +20,8 @@ const getSafeBackgroundColor = (hslColor: string): string => {
 };
 
 /* ---------- grouping helper ---------- */
-const groupByCategory = (findings: GeminiFinding[]): Record<string, GeminiFinding[]> =>
-  findings.reduce<Record<string, GeminiFinding[]>>((acc, f) => {
+const groupByCategory = (findings: PatternFinding[]): Record<string, PatternFinding[]> =>
+  findings.reduce<Record<string, PatternFinding[]>>((acc, f) => {
     const key = f.category || 'Uncategorized';
     (acc[key] ||= []).push(f);
     return acc;
@@ -206,7 +206,7 @@ const HighlightedSourceTextView = ({ text, highlights }: { text: string; highlig
 };
 
 interface ReportPdfDocumentProps {
-  analysis: GeminiAnalysisResponse;
+  analysis: AIAnalysisOutput;
   sourceText: string | null;
   highlightData: { start: number; end: number }[];
   chartImage: string | null;
@@ -256,7 +256,7 @@ export const ReportPdfDocument = ({
             {Object.entries(findingsByCategory).map(([categoryKey, findings]) => (
               <View key={categoryKey} style={styles.categoryContainer}>
                 <Text style={styles.categoryTitle}>{translations.categoryNames[categoryKey] || categoryKey}</Text>
-                {(findings as GeminiFinding[]).map((finding, idx) => {
+                {(findings as PatternFinding[]).map((finding, idx) => {
                   const color = patternColorMap[finding.pattern_name] || defaultColor;
                   const safeBg = getSafeBackgroundColor(color);
                   return (
