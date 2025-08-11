@@ -268,11 +268,11 @@ export const translateAnalysisResultWithOllama = async (
     analysis: AIAnalysisOutput,
     serverUrl: string,
     modelName: string,
-    targetLanguage: LanguageCode
+    languageCode: LanguageCode
 ): Promise<AIAnalysisOutput> => {
     if (!serverUrl || !modelName) throw new Error("KEY::error_local_server_config_missing::LM Studio server URL and Model Name must be configured.");
     const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
-    const languageName = languageMap[targetLanguage] || targetLanguage;
+    const languageName = languageMap[languageCode] || languageCode;
 
     const systemPrompt = ANALYSIS_TRANSLATION_PROMPT.replace('{language}', languageName);
 
@@ -312,12 +312,12 @@ export const translateTextWithOllama = async (
     textToTranslate: string,
     serverUrl: string,
     modelName: string,
-    targetLanguage: LanguageCode
+    languageCode: LanguageCode
 ): Promise<string> => {
     if (!textToTranslate.trim()) return "";
     if (!serverUrl || !modelName) throw new Error("KEY::error_local_server_config_missing::LM Studio server URL and Model Name must be configured.");
     const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
-    const languageName = languageMap[targetLanguage] || targetLanguage;
+    const languageName = languageMap[languageCode] || languageCode;
 
     const systemPrompt = SIMPLE_TEXT_TRANSLATION_PROMPT.replace('{language}', languageName);
     const payload = {
