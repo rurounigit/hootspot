@@ -10,21 +10,24 @@ import {
   flattenAnalysisForTranslation,
   reconstructAnalysisFromTranslation
 } from '../../utils/translationUtils';
+import { LANGUAGE_CODE_MAP } from '../../constants';
 
 type TFunction = (key: string, replacements?: Record<string, string | number>) => string;
 
 export const translateAnalysisResult = async (
   apiKey: string,
   analysis: AIAnalysisOutput,
-  targetLanguage: LanguageCode,
+  languageCode: LanguageCode,
   modelName: string,
   t: TFunction
 ): Promise<AIAnalysisOutput> => {
   if (!apiKey) {
     throw new Error(`KEY::error_api_key_not_configured::${t('error_api_key_not_configured')}`);
   }
+  const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
+  const languageName = languageMap[languageCode] || languageCode;
 
-  const systemPrompt = ANALYSIS_TRANSLATION_PROMPT.replace('{language}', targetLanguage);
+  const systemPrompt = ANALYSIS_TRANSLATION_PROMPT.replace('{language}',languageName);
 
   const flatSource = flattenAnalysisForTranslation(analysis);
   const { numberedJson, numberToKeyMap } = createNumberedJsonForTranslation(flatSource);
@@ -69,7 +72,7 @@ export const translateAnalysisResult = async (
 export const translateText = async (
   apiKey: string,
   textToTranslate: string,
-  targetLanguage: LanguageCode,
+  languageCode: LanguageCode,
   modelName: string,
   t: TFunction
 ): Promise<string> => {
@@ -80,7 +83,10 @@ export const translateText = async (
     return "";
   }
 
-  const systemPrompt = SIMPLE_TEXT_TRANSLATION_PROMPT.replace('{language}', targetLanguage);
+  const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
+  const languageName = languageMap[languageCode] || languageCode;
+
+  const systemPrompt = SIMPLE_TEXT_TRANSLATION_PROMPT.replace('{language}',languageName);
 
   const response = await fetch(`${OPENROUTER_API_BASE_URL}/chat/completions`, {
     method: 'POST',
@@ -109,7 +115,7 @@ export const translateText = async (
 
 export const translateUI = async (
   apiKey: string,
-  targetLanguage: string,
+  languageCode: LanguageCode,
   baseTranslationsJSON: string,
   modelName: string,
   t: TFunction
@@ -117,6 +123,9 @@ export const translateUI = async (
     if (!apiKey) {
         throw new Error(`KEY::error_api_key_not_configured::${t('error_api_key_not_configured')}`);
     }
+
+    const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
+    const languageName = languageMap[languageCode] || languageCode;
 
     const baseTranslations = JSON.parse(baseTranslationsJSON);
     const { numberedJson, numberToKeyMap } = createNumberedJsonForTranslation(baseTranslations);
@@ -132,7 +141,7 @@ export const translateUI = async (
             model: modelName,
             messages: [
                 { role: 'system', content: TRANSLATION_SYSTEM_PROMPT },
-                { role: 'user', content: `Translate the following JSON values to ${targetLanguage}:
+                { role: 'user', content: `Translate the following JSON values to ${languageName}:
 
 ${contentToTranslate}` }
             ],

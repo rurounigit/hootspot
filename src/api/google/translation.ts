@@ -11,22 +11,25 @@ import {
   flattenAnalysisForTranslation,
   reconstructAnalysisFromTranslation
 } from "../../utils/translationUtils";
+import { LANGUAGE_CODE_MAP } from '../../constants';
 
 type TFunction = (key: string, replacements?: Record<string, string | number>) => string;
 
 export const translateAnalysisResult = async (
   apiKey: string,
   analysis: AIAnalysisOutput,
-  targetLanguage: LanguageCode,
+  languageCode: LanguageCode,
   modelName: string,
   t: TFunction
 ): Promise<AIAnalysisOutput> => {
   if (!apiKey) {
     throw new Error(`KEY::error_api_key_not_configured::${t('error_api_key_not_configured')}`);
   }
+  const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
+  const languageName = languageMap[languageCode] || languageCode;
 
   const ai = new GoogleGenAI({ apiKey });
-  const systemPrompt = ANALYSIS_TRANSLATION_PROMPT.replace('{language}', targetLanguage);
+  const systemPrompt = ANALYSIS_TRANSLATION_PROMPT.replace('{language}', languageName);
 
   const flatSource = flattenAnalysisForTranslation(analysis);
   const { numberedJson, numberToKeyMap } = createNumberedJsonForTranslation(flatSource);
@@ -67,7 +70,7 @@ export const translateAnalysisResult = async (
 export const translateText = async (
   apiKey: string,
   textToTranslate: string,
-  targetLanguage: LanguageCode,
+  languageCode: LanguageCode,
   modelName: string,
   t: TFunction
 ): Promise<string> => {
@@ -77,9 +80,11 @@ export const translateText = async (
   if (!textToTranslate) {
     return "";
   }
+  const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
+  const languageName = languageMap[languageCode] || languageCode;
 
   const ai = new GoogleGenAI({ apiKey });
-  const systemPrompt = SIMPLE_TEXT_TRANSLATION_PROMPT.replace('{language}', targetLanguage);
+  const systemPrompt = SIMPLE_TEXT_TRANSLATION_PROMPT.replace('{language}', languageName);
 
   try {
     const response = await ai.models.generateContent({
@@ -93,14 +98,14 @@ export const translateText = async (
 
     return (response.text ?? '').trim();
   } catch (error: any) {
-    console.error(`Error translating text to ${targetLanguage}:`, error);
+    console.error(`Error translating text to ${languageName}:`, error);
     throw new Error(`KEY::error_rebuttal_translation_failed::${t('error_rebuttal_translation_failed', { message: error.message || "Unknown API error" })}`);
   }
 };
 
 export const translateUI = async (
   apiKey: string,
-  targetLanguage: string,
+  languageCode: LanguageCode,
   baseTranslationsJSON: string,
   modelName: string,
   t: TFunction
@@ -108,6 +113,9 @@ export const translateUI = async (
     if (!apiKey) {
         throw new Error(`KEY::error_api_key_not_configured::${t('error_api_key_not_configured')}`);
     }
+
+    const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
+    const languageName = languageMap[languageCode] || languageCode;
 
     const ai = new GoogleGenAI({ apiKey });
 
@@ -122,7 +130,7 @@ export const translateUI = async (
         const fullResponse = await ai.models.generateContent({
             model: modelName,
             contents: [
-                { role: "user", parts: [{ text: `Translate the following JSON values to ${targetLanguage}:\n\n${contentToTranslate}` }] }
+                { role: "user", parts: [{ text: `Translate the following JSON values to ${languageName}:\n\n${contentToTranslate}` }] }
             ],
             config: {
                 systemInstruction: String(TRANSLATION_SYSTEM_PROMPT),
@@ -146,6 +154,6 @@ export const translateUI = async (
         if (error.message && error.message.includes("SAFETY")) {
             throw new Error(`KEY::lang_manager_error_safety::${t('lang_manager_error_safety')}`);
         }
-        throw new Error(`KEY::lang_manager_error_api::${t('lang_manager_error_api', { message: error.message || "Unknown API error" })}`);
+         throw new Error(`KEY::lang_manager_error_api::${t('lang_manager_error_api', { message: error.message || "Unknown API error" })}`);
     }
 };
