@@ -143,8 +143,21 @@ import { translateUIWithOllama } from '../api/ollama';
 import { LanguageCode } from '../i18n';
 
 export const useLanguageManager = () => {
-    const { t, setLanguage, language, addTranslations } = useTranslation();
-    const { config, isCurrentProviderConfigured } = useConfig();
+    const { t, setLanguage, language, addLanguage } = useTranslation();
+    const {
+        serviceProvider,
+        cloudProvider,
+        localProviderType,
+        apiKeyInput: apiKey, // Renaming apiKeyInput to apiKey for local use
+        openRouterApiKey,
+        googleModel,
+        openRouterModel,
+        lmStudioUrl,
+        lmStudioModel,
+        ollamaUrl,
+        ollamaModel,
+        isCurrentProviderConfigured
+    } = useConfig();
     const [isTranslating, setIsTranslating] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showConfirmation, setShowConfirmation] = useState(false);
@@ -172,23 +185,23 @@ export const useLanguageManager = () => {
 
             let translatedStrings: Record<string, string>;
 
-            if (config.serviceProvider === 'cloud') {
-                if (config.cloudProvider === 'google') {
-                    if (!config.apiKey) throw new Error(t('error_api_key_not_configured'));
-                    translatedStrings = await translateUIGoogle(config.apiKey, targetLang, baseTranslations, t);
+            if (serviceProvider === 'cloud') {
+                if (cloudProvider === 'google') {
+                    if (!apiKey) throw new Error(t('error_api_key_not_configured'));
+                    translatedStrings = await translateUIGoogle(apiKey, targetLang, baseTranslations, googleModel, t);
                 } else { // openrouter
-                    if (!config.openRouterApiKey) throw new Error(t('error_api_key_not_configured'));
-                    translatedStrings = await translateUIOpenRouter(config.openRouterApiKey, targetLang, baseTranslations, config.openRouterModel, t);
+                    if (!openRouterApiKey) throw new Error(t('error_api_key_not_configured'));
+                    translatedStrings = await translateUIOpenRouter(openRouterApiKey, targetLang, baseTranslations, openRouterModel, t);
                 }
             } else {
-                if (config.localProvider.type === 'lm-studio') {
-                    translatedStrings = await translateUIWithLMStudio(config.localProvider.lmStudio.url, config.localProvider.lmStudio.model, targetLang, baseTranslations);
+                if (localProviderType === 'lm-studio') {
+                    translatedStrings = await translateUIWithLMStudio(lmStudioUrl, lmStudioModel, targetLang, baseTranslations);
                 } else { // Ollama
-                    translatedStrings = await translateUIWithOllama(config.localProvider.ollama.url, config.localProvider.ollama.model, targetLang, baseTranslations);
+                    translatedStrings = await translateUIWithOllama(ollamaUrl, ollamaModel, targetLang, baseTranslations);
                 }
             }
 
-            addTranslations(targetLang, translatedStrings);
+            addLanguage(targetLang, `Custom (${targetLang})`, translatedStrings); // Assuming a name for the custom language
             setLanguage(targetLang);
 
         } catch (err: any) {

@@ -16,6 +16,7 @@ interface LanguageManagerProps {
   localProviderType: 'lm-studio' | 'ollama';
   apiKey: string | null;
   openRouterApiKey: string | null;
+  googleModel: string; // Added prop
   openRouterModelName: string; // Added prop
   lmStudioConfig: { url: string; model: string; };
   ollamaConfig: { url: string; model: string; };
@@ -28,6 +29,7 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({
   localProviderType,
   apiKey,
   openRouterApiKey,
+  googleModel, // Added prop
   openRouterModelName, // Added prop
   lmStudioConfig,
   ollamaConfig,
@@ -64,7 +66,7 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({
 
       if (serviceProvider === 'cloud') {
         if (cloudProvider === 'google' && apiKey) {
-          translatedNumberedJson = await translateUI(apiKey, code, jsonToSend, t);
+          translatedNumberedJson = await translateUI(apiKey, code, jsonToSend, googleModel, t);
         } else if (cloudProvider === 'openrouter' && openRouterApiKey) {
           translatedNumberedJson = await translateUIWithOpenRouter(openRouterApiKey, code, jsonToSend, openRouterModelName, t);
         }

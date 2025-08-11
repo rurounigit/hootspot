@@ -13,7 +13,7 @@ import { useAnalysisReportData } from '../../hooks/useAnalysisReportData';
 // Updated props for clarity and consistency
 interface AnalysisReportProps {
   analysis: AIAnalysisOutput | null;
-  sourceText: string;
+  sourceText: string | null;
   rebuttal: string;
   isTranslatingRebuttal: boolean;
   onRebuttalUpdate: (rebuttal: string) => void;

@@ -8,7 +8,7 @@ import {
   SIMPLE_TEXT_TRANSLATION_PROMPT,
   JSON_REPAIR_SYSTEM_PROMPT,
 } from '../config/api-prompts';
-import { GeminiAnalysisResponse, PatternFinding, AIModel } from '../types/api';
+import {  AIAnalysisOutput, PatternFinding, AIModel } from '../types/api';
 import { LanguageCode } from '../i18n';
 import {
   createNumberedJsonForTranslation,
@@ -148,7 +148,7 @@ export const analyzeTextWithLMStudio = async (
     textToAnalyze: string,
     serverUrl: string,
     modelName: string
-): Promise<GeminiAnalysisResponse> => {
+): Promise<AIAnalysisOutput> => {
     if (!serverUrl || !modelName) throw new Error("KEY::error_local_server_config_missing::LM Studio server URL and Model Name must be configured.");
     if (!textToAnalyze.trim()) return { analysis_summary: "No text provided for analysis.", findings: [] };
 
@@ -208,7 +208,7 @@ export const analyzeTextWithLMStudio = async (
 
 export const generateRebuttalWithLMStudio = async (
     sourceText: string,
-    analysis: GeminiAnalysisResponse,
+    analysis: AIAnalysisOutput,
     serverUrl: string,
     modelName: string,
     languageCode: LanguageCode
@@ -292,11 +292,11 @@ export const translateUIWithLMStudio = async (
 };
 
 export const translateAnalysisResultWithLMStudio = async (
-    analysis: GeminiAnalysisResponse,
+    analysis: AIAnalysisOutput,
     serverUrl: string,
     modelName: string,
     targetLanguage: LanguageCode
-): Promise<GeminiAnalysisResponse> => {
+): Promise<AIAnalysisOutput> => {
     if (!serverUrl || !modelName) throw new Error("KEY::error_local_server_config_missing::LM Studio server URL and Model Name must be configured.");
     const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
     const languageName = languageMap[targetLanguage] || targetLanguage;

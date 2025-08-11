@@ -102,6 +102,7 @@ export const translateUI = async (
   apiKey: string,
   targetLanguage: string,
   baseTranslationsJSON: string,
+  modelName: string,
   t: TFunction
 ): Promise<Record<string, string>> => {
     if (!apiKey) {
@@ -119,7 +120,7 @@ export const translateUI = async (
         const contentToTranslate = JSON.stringify(numberedJson);
 
         const fullResponse = await ai.models.generateContent({
-            model: GEMINI_MODEL_NAME,
+            model: modelName,
             contents: [
                 { role: "user", parts: [{ text: `Translate the following JSON values to ${targetLanguage}:\n\n${contentToTranslate}` }] }
             ],
@@ -135,7 +136,7 @@ export const translateUI = async (
         try {
             parsedData = JSON.parse(jsonStr);
         } catch(e) {
-            parsedData = await repairAndParseJson(apiKey, jsonStr, GEMINI_MODEL_NAME);
+            parsedData = await repairAndParseJson(apiKey, jsonStr, modelName);
         }
 
         // Reconstruct the translated JSON with original keys

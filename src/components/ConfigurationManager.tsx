@@ -206,6 +206,7 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
             cloudProvider={props.cloudProvider}
             localProviderType={localProviderType}
             apiKey={apiKeyInput}
+            googleModel={props.googleModel} // Added prop
             openRouterApiKey={props.openRouterApiKey}
             openRouterModelName={openRouterModel} // Added prop
             lmStudioConfig={{ url: lmStudioUrl, model: lmStudioModel }}
