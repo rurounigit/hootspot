@@ -1,6 +1,6 @@
 // src/api/google/translation.ts
 import { GoogleGenAI } from "@google/genai";
-import { GEMINI_MODEL_NAME, ANALYSIS_TRANSLATION_PROMPT, SIMPLE_TEXT_TRANSLATION_PROMPT, TRANSLATION_SYSTEM_PROMPT } from "../../config/api-prompts";
+import { ANALYSIS_TRANSLATION_PROMPT, SIMPLE_TEXT_TRANSLATION_PROMPT, TRANSLATION_SYSTEM_PROMPT } from "../../config/api-prompts";
 import { AIAnalysisOutput } from "../../types/api";
 import { LanguageCode } from "../../i18n";
 import { repairAndParseJson } from "./utils";
@@ -37,7 +37,7 @@ export const translateAnalysisResult = async (
 
   try {
     const fullResponse = await ai.models.generateContent({
-      model: modelName || GEMINI_MODEL_NAME,
+      model: modelName,
       contents: [{ role: "user", parts: [{ text: contentToTranslate }] }],
       config: {
         systemInstruction: String(systemPrompt),
