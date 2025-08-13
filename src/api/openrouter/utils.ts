@@ -1,6 +1,7 @@
 import { OPENROUTER_API_BASE_URL } from '../../constants';
 import { JSON_REPAIR_SYSTEM_PROMPT } from '../../config/api-prompts';
 import { extractJson } from '../../utils/apiUtils';
+import { ConfigError, GeneralError } from '../../utils/errors';
 
 type TFunction = (key: string, replacements?: Record<string, string | number>) => string;
 
@@ -49,10 +50,10 @@ export const testApiKey = async (
   modelName: string
 ): Promise<void> => {
   if (!apiKey) {
-    throw new Error(`KEY::error_api_key_empty::${t('error_api_key_empty')}`);
+    throw new ConfigError('error_api_key_empty');
   }
   if (!modelName) {
-    throw new Error('KEY::error_model_not_selected::Please select a model for OpenRouter.');
+    throw new ConfigError('error_model_not_selected');
   }
 
   try {
@@ -75,10 +76,10 @@ export const testApiKey = async (
     }
     const result = await response.json();
     if (!result.choices || result.choices.length === 0 || !result.choices[0].message.content) {
-        throw new Error(`KEY::test_query_returned_empty::${t('test_query_returned_empty')}`);
+        throw new ConfigError('test_query_returned_empty');
     }
   } catch (error: any) {
     console.error("API Key test failed:", error);
-    throw new Error(`KEY::error_api_key_test_failed_message::${t('error_api_key_test_failed_message', { message: error.message || 'Unknown error' })}`);
+    throw new ConfigError('error_api_key_test_failed_message', { message: error.message || 'Unknown error' });
   }
 };

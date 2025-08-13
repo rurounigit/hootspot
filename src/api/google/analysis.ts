@@ -3,6 +3,7 @@ import { GEMINI_MODEL_NAME, SYSTEM_PROMPT, REBUTTAL_SYSTEM_PROMPT } from "../../
 import { AIAnalysisOutput, PatternFinding } from "../../types/api";
 import { repairAndParseJson } from "./utils";
 import { extractJson } from "../../utils/apiUtils";
+import { ConfigError, GeneralError } from "../../utils/errors";
 
 export const analyzeText = async (
   apiKey: string,
@@ -10,7 +11,7 @@ export const analyzeText = async (
   modelName: string,
 ): Promise<AIAnalysisOutput> => {
     if (!apiKey) {
-      throw new Error("KEY::error_api_key_not_configured::API Key is not configured.");
+      throw new ConfigError('error_api_key_not_configured');
     }
     if (!textToAnalyze.trim()) {
       return {
@@ -56,28 +57,28 @@ export const analyzeText = async (
           });
           return parsedData;
       } else {
-        throw new Error("Received an unexpected JSON structure from the API.");
+        throw new GeneralError('error_unexpected_json_structure');
       }
     } catch (error: any) {
         console.error("Error analyzing text with Gemini API:", error);
         if (error.message && error.message.includes("SAFETY")) {
-            throw new Error("KEY::error_safety_block::The request was blocked due to safety concerns from the API.");
+            throw new GeneralError('error_safety_block');
         }
         let apiErrorObject;
         try {
           apiErrorObject = JSON.parse(error.message);
         } catch (parseError) {
-          throw new Error(`KEY::error_analysis_failed::Failed to analyze text: ${error.message || "Unknown API error"}`);
+          throw new GeneralError('error_analysis_failed', { message: error.message || "Unknown API error" });
         }
         if (apiErrorObject && apiErrorObject.error && apiErrorObject.error.message) {
           const { code, status, message } = apiErrorObject.error;
           if (status === 'RESOURCE_EXHAUSTED' || code === 429) {
-            throw new Error(`KEY::error_quota_exhausted::API Quota Error: ${message}`);
+            throw new ConfigError('error_quota_exhausted', { message: message });
           } else {
-            throw new Error(`KEY::error_api_generic::API Error: ${message}`);
+            throw new ConfigError('error_api_generic', { message: message });
           }
         }
-        throw new Error(`KEY::error_analysis_failed::Failed to analyze text: ${error.message || "Unknown API error"}`);
+        throw new GeneralError('error_analysis_failed', { message: error.message || "Unknown API error" });
     }
 };
 
@@ -89,10 +90,10 @@ export const generateRebuttal = async (
   languageCode: string
 ): Promise<string> => {
   if (!apiKey) {
-    throw new Error("KEY::error_api_key_not_configured::API Key is not configured.");
+    throw new ConfigError('error_api_key_not_configured');
   }
   if (!sourceText || !analysis) {
-    throw new Error("KEY::error_rebuttal_generation::Source text and analysis are required to generate a rebuttal.");
+    throw new GeneralError('error_rebuttal_generation');
   }
 
   const ai = new GoogleGenAI({ apiKey });
@@ -117,8 +118,8 @@ export const generateRebuttal = async (
   } catch (error: any) {
     console.error("Error generating rebuttal:", error);
     if (error.message && error.message.includes("SAFETY")) {
-        throw new Error("KEY::error_safety_block::The rebuttal generation was blocked due to safety concerns from the API.");
+        throw new GeneralError('error_safety_block');
     }
-    throw new Error(`KEY::error_rebuttal_generation::Failed to generate rebuttal: ${error.message || "Unknown API error"}`);
+    throw new GeneralError('error_rebuttal_generation', { message: error.message || "Unknown API error" });
   }
 };

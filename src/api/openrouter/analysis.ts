@@ -1,8 +1,9 @@
 import { OPENROUTER_API_BASE_URL } from '../../constants';
-import { REBUTTAL_SYSTEM_PROMPT, SYSTEM_PROMPT } from '../../config/api-prompts';
+import { GEMINI_MODEL_NAME, SYSTEM_PROMPT, REBUTTAL_SYSTEM_PROMPT, JSON_REPAIR_SYSTEM_PROMPT } from '../../config/api-prompts';
 import { AIAnalysisOutput, PatternFinding } from '../../types/api';
 import { extractJson } from '../../utils/apiUtils';
 import { repairAndParseJson } from './utils';
+import { ConfigError, GeneralError } from '../../utils/errors';
 
 export const analyzeText = async (
   apiKey: string,
@@ -10,7 +11,7 @@ export const analyzeText = async (
   modelName: string,
 ): Promise<AIAnalysisOutput> => {
   if (!apiKey) {
-    throw new Error("KEY::error_api_key_not_configured::API Key is not configured.");
+    throw new ConfigError('error_api_key_not_configured');
   }
   if (!textToAnalyze.trim()) {
     return {
@@ -41,9 +42,9 @@ export const analyzeText = async (
   if (!response.ok) {
     const errorData = await response.json();
     if (errorData.error.code === 'context_length_exceeded') {
-        throw new Error(`KEY::error_context_length_exceeded::The text is too long for the selected model. Please use a model with a larger context window.`);
+        throw new GeneralError('error_context_length_exceeded');
     }
-    throw new Error(`KEY::error_analysis_failed::OpenRouter analysis request failed: ${errorData.error.message}`);
+    throw new GeneralError('error_analysis_failed', { message: errorData.error.message });
   }
 
   const rawJson = await response.json();
@@ -66,7 +67,7 @@ export const analyzeText = async (
       });
       return parsedData;
   } else {
-    throw new Error("Received an unexpected JSON structure from the API.");
+    throw new GeneralError('error_unexpected_json_structure');
   }
 };
 
@@ -78,10 +79,10 @@ export const generateRebuttal = async (
   languageCode: string
 ): Promise<string> => {
   if (!apiKey) {
-    throw new Error("KEY::error_api_key_not_configured::API Key is not configured.");
+    throw new ConfigError('error_api_key_not_configured');
   }
   if (!sourceText || !analysis) {
-    throw new Error("KEY::error_rebuttal_generation::Source text and analysis are required to generate a rebuttal.");
+    throw new GeneralError('error_rebuttal_generation');
   }
 
   const systemPrompt = REBUTTAL_SYSTEM_PROMPT
@@ -107,7 +108,7 @@ export const generateRebuttal = async (
 
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(`KEY::error_rebuttal_generation::OpenRouter rebuttal request failed: ${errorData.error.message}`);
+    throw new GeneralError('error_rebuttal_generation', { message: errorData.error.message });
   }
 
   const json = await response.json();

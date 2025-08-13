@@ -5,26 +5,7 @@ import { translateText as translateWithGoogle } from '../api/google/translation'
 import { translateText as translateWithOpenRouter } from '../api/openrouter/translation';
 import { translateTextWithLMStudio } from '../api/lm-studio';
 import { translateTextWithOllama } from '../api/ollama';
-
-const CONFIG_ERROR_KEYS = [
-  'error_api_key_not_configured', 'error_api_key_empty', 'error_api_key_test_failed_message', 'error_quota_exhausted', 'error_api_generic', 'error_api_key_test_failed_generic',
-  'error_local_server_config_missing', 'error_local_server_connection', 'error_local_model_not_loaded', 'error_local_model_not_loaded_exact', 'error_local_model_mismatch',
-  'error_provider_not_configured',
-  'test_query_returned_empty',
-];
-
-const isConfigError = (errorMessage: string): boolean => {
-  if (!errorMessage || !errorMessage.startsWith('KEY::')) return false;
-  const key = errorMessage.split('::')[1];
-  return CONFIG_ERROR_KEYS.some(configKey => key === configKey);
-};
-
-const getCleanErrorMessage = (errorMessage: string): string => {
-    if (errorMessage && errorMessage.startsWith('KEY::')) {
-        return errorMessage.substring(errorMessage.indexOf('::', 5) + 2);
-    }
-    return errorMessage;
-};
+import { ConfigError } from '../utils/errors';
 
 // Define a comprehensive config interface for the hook
 interface UseTranslationManagerConfig {
@@ -75,12 +56,11 @@ export const useTranslationManager = (config: UseTranslationManagerConfig) => {
       }
       setTranslatedRebuttals(prev => ({ ...prev, [targetLang]: translatedText }));
     } catch (err: any) {
-      const rawMessage = (err as Error).message;
-      const cleanMessage = getCleanErrorMessage(rawMessage);
-      if (isConfigError(rawMessage)) {
-        setTranslationError({ message: cleanMessage, type: 'config' });
+      const message = t(err.message, err.details) || err.message;
+      if (err instanceof ConfigError) {
+        setTranslationError({ message, type: 'config' });
       } else {
-        setTranslationError({ message: cleanMessage, type: 'general' });
+        setTranslationError({ message, type: 'general' });
       }
     } finally {
       setIsTranslatingRebuttal(false);
@@ -205,9 +185,8 @@ export const useLanguageManager = () => {
             setLanguage(targetLang);
 
         } catch (err: any) {
-            const rawMessage = (err as Error).message;
-            const cleanMessage = getCleanErrorMessage(rawMessage);
-            setError(cleanMessage);
+            const message = t(err.message, err.details) || err.message;
+            setError(message);
         } finally {
             setIsTranslating(false);
             setTargetLang(null);

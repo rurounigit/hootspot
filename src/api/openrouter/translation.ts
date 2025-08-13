@@ -11,6 +11,7 @@ import {
   reconstructAnalysisFromTranslation
 } from '../../utils/translationUtils';
 import { LANGUAGE_CODE_MAP } from '../../constants';
+import { ConfigError, GeneralError } from '../../utils/errors';
 
 type TFunction = (key: string, replacements?: Record<string, string | number>) => string;
 
@@ -22,7 +23,7 @@ export const translateAnalysisResult = async (
   t: TFunction
 ): Promise<AIAnalysisOutput> => {
   if (!apiKey) {
-    throw new Error(`KEY::error_api_key_not_configured::${t('error_api_key_not_configured')}`);
+    throw new ConfigError('error_api_key_not_configured');
   }
   const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
   const languageName = languageMap[languageCode] || languageCode;
@@ -52,7 +53,7 @@ export const translateAnalysisResult = async (
 
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(`KEY::error_translation_failed::${t('error_translation_failed', { message: errorData.error.message || "Unknown API error" })}`);
+    throw new GeneralError('error_translation_failed', { message: errorData.error.message || "Unknown API error" });
   }
 
   const rawJson = await response.json();
@@ -77,7 +78,7 @@ export const translateText = async (
   t: TFunction
 ): Promise<string> => {
   if (!apiKey) {
-    throw new Error(`KEY::error_api_key_not_configured::${t('error_api_key_not_configured')}`);
+    throw new ConfigError('error_api_key_not_configured');
   }
   if (!textToTranslate) {
     return "";
@@ -106,7 +107,7 @@ export const translateText = async (
 
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(`KEY::error_rebuttal_translation_failed::${t('error_rebuttal_translation_failed', { message: errorData.error.message || "Unknown API error" })}`);
+    throw new GeneralError('error_rebuttal_translation_failed', { message: errorData.error.message || "Unknown API error" });
   }
 
   const json = await response.json();
@@ -121,7 +122,7 @@ export const translateUI = async (
   t: TFunction
 ): Promise<Record<string, string>> => {
     if (!apiKey) {
-        throw new Error(`KEY::error_api_key_not_configured::${t('error_api_key_not_configured')}`);
+        throw new ConfigError('error_api_key_not_configured');
     }
 
     const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
@@ -152,7 +153,7 @@ ${contentToTranslate}` }
 
     if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(`KEY::lang_manager_error_api::${t('lang_manager_error_api', { message: errorData.error.message || "Unknown API error" })}`);
+        throw new GeneralError('lang_manager_error_api', { message: errorData.error.message || "Unknown API error" });
     }
 
     const rawJson = await response.json();

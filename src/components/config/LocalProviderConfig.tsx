@@ -87,7 +87,7 @@ const LocalProviderConfig: React.FC<LocalProviderConfigProps> = ({
           <label htmlFor="modelSelector" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             {t(modelLabelKey)}
           </label>
-          <button onClick={onRefetchModels} disabled={areModelsLoading || !currentUrl} className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed">
+          <button onClick={onRefetchModels} disabled={areModelsLoading || !!modelsError || !currentUrl} className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed">
             {t('config_model_refresh')}
           </button>
         </div>

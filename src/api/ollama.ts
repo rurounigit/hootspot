@@ -18,6 +18,7 @@ import {
 } from '../utils/translationUtils';
 import { extractJson } from '../utils/apiUtils';
 import { LANGUAGE_CODE_MAP } from '../constants';
+import { ConfigError, GeneralError } from '../utils/errors';
 
 
 /**
@@ -54,13 +55,13 @@ async function repairAndParseJsonWithOllama(
         });
 
         if (!response.ok) {
-            throw new Error(`KEY::error_analysis_failed::Failed to analyze text: Repair attempt failed with status: ${response.statusText}`);
+            throw new GeneralError('error_analysis_failed', { message: `Repair attempt failed with status: ${response.statusText}` });
         }
 
         const data = await response.json();
         const repairedContent = data.message?.content;
         if (!repairedContent) {
-            throw new Error("KEY::error_unexpected_json_structure::Received an unexpected JSON structure from the API.");
+            throw new GeneralError('error_unexpected_json_structure');
         }
 
         // Ollama with format: "json" should return clean JSON, but we extract just in case.
@@ -70,7 +71,7 @@ async function repairAndParseJsonWithOllama(
     } catch (e: any) {
         console.error("--- HootSpot JSON REPAIR FAILED ---");
         console.error("Original broken JSON from Ollama:", brokenJson);
-        throw new Error(`KEY::error_analysis_failed::Failed to analyze text: Failed to parse or repair the model's response. Details: ${e.message}`);
+        throw new GeneralError('error_analysis_failed', { message: `Failed to parse or repair the model's response. Details: ${e.message}` });
     }
 }
 
@@ -102,7 +103,7 @@ export const testOllamaConnection = async (
     serverUrl: string,
     modelName: string
 ): Promise<void> => {
-    if (!serverUrl || !modelName) throw new Error("KEY::error_local_server_config_missing::LM Studio server URL and Model Name must be configured.");
+    if (!serverUrl || !modelName) throw new ConfigError('error_local_server_config_missing');
     try {
         const response = await fetch(`${serverUrl}/api/chat`, {
             method: 'POST',
@@ -115,11 +116,11 @@ export const testOllamaConnection = async (
         });
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
-            throw new Error(`KEY::error_local_model_not_loaded::The model '${modelName}' might not be loaded. Details: ${errorData.error || response.statusText}`);
+            throw new ConfigError('error_local_model_not_loaded', { model: modelName, message: errorData.error || response.statusText });
         }
     } catch (error: any) {
         if (error instanceof TypeError || error.message.includes('Failed to fetch')) {
-            throw new Error(`KEY::error_local_server_connection::Could not connect to LM Studio server at ${serverUrl}. Ensure the server is running and the URL is correct.`);
+            throw new ConfigError('error_local_server_connection', { url: serverUrl });
         }
         throw error;
     }
@@ -130,7 +131,7 @@ export const analyzeTextWithOllama = async (
     serverUrl: string,
     modelName: string
 ): Promise<AIAnalysisOutput> => {
-    if (!serverUrl || !modelName) throw new Error("KEY::error_local_server_config_missing::LM Studio server URL and Model Name must be configured.");
+    if (!serverUrl || !modelName) throw new ConfigError('error_local_server_config_missing');
     if (!textToAnalyze.trim()) return { analysis_summary: "No text provided for analysis.", findings: [] };
 
     const payload = {
@@ -151,11 +152,11 @@ export const analyzeTextWithOllama = async (
         });
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(`KEY::error_local_model_not_loaded::The model '${modelName}' might not be loaded. Details: ${errorData.error || response.statusText}`);
+            throw new ConfigError('error_local_model_not_loaded', { model: modelName, message: errorData.error || response.statusText });
         }
         const data = await response.json();
         const content = data.message?.content;
-        if (!content) throw new Error("KEY::error_unexpected_json_structure::Received an unexpected JSON structure from the API.");
+        if (!content) throw new GeneralError('error_unexpected_json_structure');
 
         const jsonStr = extractJson(content);
         let parsedData;
@@ -174,10 +175,10 @@ export const analyzeTextWithOllama = async (
             });
             return parsedData;
         } else {
-            throw new Error("KEY::error_unexpected_json_structure::Received an unexpected JSON structure from the API.");
+            throw new GeneralError('error_unexpected_json_structure');
         }
     } catch (error: any) {
-        if (error instanceof TypeError) throw new Error(`KEY::error_local_server_connection::Could not connect to LM Studio server at ${serverUrl}. Ensure the server is running and the URL is correct.`);
+        if (error instanceof TypeError) throw new ConfigError('error_local_server_connection', { url: serverUrl });
         console.error("Error analyzing text with Ollama:", error);
         throw error;
     }
@@ -190,8 +191,8 @@ export const generateRebuttalWithOllama = async (
     modelName: string,
     languageCode: LanguageCode
 ): Promise<string> => {
-    if (!serverUrl || !modelName) throw new Error("KEY::error_local_server_config_missing::LM Studio server URL and Model Name must be configured.");
-    if (!sourceText.trim() || !analysis) throw new Error("Source text and analysis are required to generate a rebuttal.");
+    if (!serverUrl || !modelName) throw new ConfigError('error_local_server_config_missing');
+    if (!sourceText.trim() || !analysis) throw new GeneralError('error_rebuttal_generation');
 
     const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
     const languageName = languageMap[languageCode] || languageCode;
@@ -213,10 +214,10 @@ export const generateRebuttalWithOllama = async (
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
     });
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`KEY::error_local_model_not_loaded::The model '${modelName}' might not be loaded. Details: ${errorData.error || "Unknown"}`);
-    }
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new ConfigError('error_local_model_not_loaded', { model: modelName, message: errorData.error || "Unknown" });
+        }
     const data = await response.json();
     return (data.message?.content || '').trim();
 };
@@ -227,7 +228,7 @@ export const translateUIWithOllama = async (
     languageCode: LanguageCode,
     jsonToTranslate: string
 ): Promise<Record<string, string>> => {
-    if (!serverUrl || !modelName) throw new Error("KEY::error_local_server_config_missing::LM Studio server URL and Model Name must be configured.");
+    if (!serverUrl || !modelName) throw new ConfigError('error_local_server_config_missing');
 
     const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
     const languageName = languageMap[languageCode] || languageCode;
@@ -252,13 +253,13 @@ export const translateUIWithOllama = async (
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
     });
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`KEY::error_local_model_not_loaded::The model '${modelName}' might not be loaded. Details: ${errorData.error || "Unknown"}`);
-    }
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new ConfigError('error_local_model_not_loaded', { model: modelName, message: errorData.error || "Unknown" });
+        }
     const data = await response.json();
     const content = data.message?.content;
-    if (!content) throw new Error("KEY::error_unexpected_json_structure::Received an unexpected JSON structure from the API.");
+        if (!content) throw new GeneralError('error_unexpected_json_structure');
 
     const translatedNumbered = JSON.parse(extractJson(content));
     return reconstructTranslatedJson(translatedNumbered, numberToKeyMap);
@@ -270,7 +271,7 @@ export const translateAnalysisResultWithOllama = async (
     modelName: string,
     languageCode: LanguageCode
 ): Promise<AIAnalysisOutput> => {
-    if (!serverUrl || !modelName) throw new Error("KEY::error_local_server_config_missing::LM Studio server URL and Model Name must be configured.");
+    if (!serverUrl || !modelName) throw new ConfigError('error_local_server_config_missing');
     const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
     const languageName = languageMap[languageCode] || languageCode;
 
@@ -296,11 +297,11 @@ export const translateAnalysisResultWithOllama = async (
         body: JSON.stringify(payload),
     });
 
-    if (!response.ok) throw new Error(`KEY::error_translation_failed::Failed to translate analysis result: Ollama: ${response.statusText}`);
+    if (!response.ok) throw new GeneralError('error_translation_failed', { message: `Ollama: ${response.statusText}` });
 
     const data = await response.json();
     const content = data.message?.content;
-    if (!content) throw new Error("KEY::error_unexpected_json_structure::Received an unexpected JSON structure from the API.");
+        if (!content) throw new GeneralError('error_unexpected_json_structure');
 
     const translatedNumbered = JSON.parse(extractJson(content));
     const translatedFlat = reconstructTranslatedJson(translatedNumbered, numberToKeyMap);
@@ -315,7 +316,7 @@ export const translateTextWithOllama = async (
     languageCode: LanguageCode
 ): Promise<string> => {
     if (!textToTranslate.trim()) return "";
-    if (!serverUrl || !modelName) throw new Error("KEY::error_local_server_config_missing::LM Studio server URL and Model Name must be configured.");
+    if (!serverUrl || !modelName) throw new ConfigError('error_local_server_config_missing');
     const languageMap: { [key: string]: string } = LANGUAGE_CODE_MAP;
     const languageName = languageMap[languageCode] || languageCode;
 
@@ -334,7 +335,7 @@ export const translateTextWithOllama = async (
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
     });
-    if (!response.ok) throw new Error(`KEY::error_rebuttal_translation_failed::Failed to translate rebuttal: Ollama: ${response.statusText}`);
+    if (!response.ok) throw new GeneralError('error_rebuttal_translation_failed', { message: `Ollama: ${response.statusText}` });
     const data = await response.json();
     return (data.message?.content || '').trim();
 };

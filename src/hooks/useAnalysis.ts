@@ -8,26 +8,7 @@ import { analyzeTextWithOllama, translateAnalysisResultWithOllama } from '../api
 import { analyzeText as analyzeTextWithOpenRouter } from '../api/openrouter/analysis';
 import { translateAnalysisResult as translateAnalysisResultWithOpenRouter } from '../api/openrouter/translation';
 import { AIAnalysisOutput } from '../types/api';
-
-const CONFIG_ERROR_KEYS = [
-    'error_api_key_not_configured', 'error_api_key_empty', 'error_api_key_test_failed_message', 'error_quota_exhausted', 'error_api_generic', 'error_api_key_test_failed_generic',
-    'error_local_server_config_missing', 'error_local_server_connection', 'error_local_model_not_loaded', 'error_local_model_not_loaded_exact', 'error_local_model_mismatch',
-    'error_provider_not_configured',
-    'test_query_returned_empty',
-];
-
-const isConfigError = (errorMessage: string): boolean => {
-    if (!errorMessage || !errorMessage.startsWith('KEY::')) return false;
-    const key = errorMessage.split('::')[1];
-    return CONFIG_ERROR_KEYS.some(configKey => key === configKey);
-};
-
-const getCleanErrorMessage = (errorMessage: string): string => {
-    if (errorMessage && errorMessage.startsWith('KEY::')) {
-        return errorMessage.substring(errorMessage.indexOf('::', 5) + 2);
-    }
-    return errorMessage;
-};
+import { ConfigError, GeneralError } from '../utils/errors';
 
 export const useAnalysis = (
   serviceProvider: 'cloud' | 'local',
@@ -79,12 +60,11 @@ export const useAnalysis = (
           }
           setTranslatedResults(prev => ({ ...prev, [targetLang]: translatedResult }));
       } catch (err: any) {
-          const rawMessage = (err as Error).message;
-          const cleanMessage = getCleanErrorMessage(rawMessage);
-          if (isConfigError(rawMessage)) {
-              setError({ message: cleanMessage, type: 'config' });
+          const message = t(err.message, err.details) || err.message;
+          if (err instanceof ConfigError) {
+            setError({ message, type: 'config' });
           } else {
-              setError({ message: cleanMessage, type: 'general' });
+            setError({ message, type: 'general' });
           }
       } finally {
           setIsTranslating(false);
@@ -132,12 +112,11 @@ export const useAnalysis = (
         await translateAnalysis(result, language);
       }
     } catch (err: any) {
-      const rawMessage = (err as Error).message;
-      const cleanMessage = getCleanErrorMessage(rawMessage);
-      if (isConfigError(rawMessage)) {
-        setError({ message: cleanMessage, type: 'config' });
+      const message = t(err.message, err.details) || err.message;
+      if (err instanceof ConfigError) {
+        setError({ message, type: 'config' });
       } else {
-        setError({ message: cleanMessage, type: 'general' });
+        setError({ message, type: 'general' });
       }
       setAnalysisResult(null);
     } finally {
@@ -198,9 +177,8 @@ export const useAnalysis = (
           setTranslatedResults({ [language]: data.analysisResult });
         }
       } catch (e: any) {
-          const rawMessage = (e as Error).message;
-          const cleanMessage = getCleanErrorMessage(rawMessage);
-          const finalMessage = `${t('error_json_load_failed')} ${cleanMessage}`;
+          const message = t(e.message, e.details) || e.message;
+          const finalMessage = `${t('error_json_load_failed')} ${message}`;
           setError({ message: finalMessage, type: 'general' });
       }
     };
