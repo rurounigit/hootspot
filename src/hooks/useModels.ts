@@ -34,14 +34,7 @@ export const useModels = ({ serviceProvider, cloudProvider, localProviderType, a
                 const fetchedModels = await fetchGoogleModels(apiKey, showAllVersions);
                 setModels(fetchedModels);
             } else if (cloudProvider === 'openrouter' && openRouterApiKey) {
-                const rawModels = await fetchModels(openRouterApiKey);
-                const fetchedModels: AIModel[] = rawModels.map((model: any) => ({
-                    name: model.id,
-                    displayName: model.name,
-                    supportedGenerationMethods: ["generateContent"],
-                    version: model.id, // No version info, use id as a stand-in
-                    description: model.description,
-                }));
+                const fetchedModels = await fetchModels(openRouterApiKey);
                 setModels({ preview: [], stable: fetchedModels, experimental: [] });
             }
         } else if (serviceProvider === 'local') {
