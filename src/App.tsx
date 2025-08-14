@@ -298,6 +298,15 @@ const App: React.FC = () => {
                 {t('app_footer_disclaimer_label')}
               </span>
             </Tooltip>
+            <span className="mx-2">•</span>
+            <a
+              href="https://github.com/rurounigit/hootspot"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-600 dark:text-gray-400 hover:underline"
+            >
+              {t('app_footer_help_code')}
+            </a>
           </div>
         </footer>
       </div>

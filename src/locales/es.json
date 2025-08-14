@@ -3,6 +3,7 @@
   "app_footer_copyright": "© {year} HootSpot. ",
   "app_footer_disclaimer_label": "Descargo de responsabilidad",
   "app_footer_responsibility": "Esta herramienta tiene fines educativos y analíticos. El análisis lo genera una IA y puede no ser siempre preciso ni completo. El usuario es responsable de todos los costos de la API de Google Gemini.",
+  "app_footer_help_code": "Ayuda / Código",
   "error_prefix": "Error: ",
   "info_enter_text_to_analyze": "Introduzca texto arriba y haga clic en \"Analizar\" para ver las conclusiones de la IA. También puede usar el menú contextual (seleccione texto y haga clic derecho) o los atajos de teclado (seleccionar texto y presionar Alt/⌥+Shift+A) para analizar el texto.",
   "info_uncover_patterns": "HootSpot IA le ayudará a descubrir patrones psicológicos y retóricos ocultos.",
