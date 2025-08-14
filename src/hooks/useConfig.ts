@@ -106,7 +106,7 @@ export const useConfig = () => {
       } else {
         // Empty API key
         setIsOpenRouterApiKeyValid(false);
-        setOpenRouterApiKeyTestStatus({ message: t('error_api_key_empty'), type: 'error' });
+        setOpenRouterApiKeyTestStatus({ message: '', type: 'error' });
       }
     } else {
       // Clear validation status when not using OpenRouter
