@@ -21,6 +21,9 @@ interface ConfigurationManagerProps {
   openRouterApiKey: string;
   onOpenRouterApiKeyChange: (key: string) => void;
 
+  isOpenRouterApiKeyValid: boolean;
+  openRouterApiKeyTestStatus: { message: string, type: 'success' | 'error' } | null;
+
   lmStudioUrl: string;
   onLmStudioUrlChange: (url: string) => void;
   lmStudioModel: string;
@@ -58,6 +61,7 @@ interface ConfigurationManagerProps {
   isTesting: boolean;
   testStatus: { message: string, type: 'success' | 'error' } | null;
   onSave: () => void;
+
 }
 
 const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
@@ -80,8 +84,8 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
       if (props.cloudProvider === 'google') {
         return props.apiKeyInput.trim() !== '' && props.googleModel.trim() !== '';
       }
-      // OpenRouter case
-      return props.openRouterApiKey.trim() !== '' && props.openRouterModel.trim() !== '';
+      // OpenRouter case - also check if API key is valid
+      return props.openRouterApiKey.trim() !== '' && props.openRouterModel.trim() !== '' && props.isOpenRouterApiKeyValid;
     }
     if (localProviderType === 'lm-studio') {
       return lmStudioUrl.trim() !== '' && lmStudioModel.trim() !== '';
@@ -164,6 +168,8 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
               onOpenRouterApiKeyChange={props.onOpenRouterApiKeyChange}
               openRouterModel={props.openRouterModel}
               onOpenRouterModelChange={props.onOpenRouterModelChange}
+              isOpenRouterApiKeyValid={props.isOpenRouterApiKeyValid}
+              openRouterApiKeyTestStatus={props.openRouterApiKeyTestStatus}
             />
           ) : (
             <LocalProviderConfig

@@ -33,8 +33,9 @@ export const useModels = ({ serviceProvider, cloudProvider, localProviderType, a
             if (cloudProvider === 'google' && apiKey) {
                 const fetchedModels = await fetchGoogleModels(apiKey, showAllVersions);
                 setModels(fetchedModels);
-            } else if (cloudProvider === 'openrouter' && openRouterApiKey) {
-                const fetchedModels = await fetchModels(openRouterApiKey);
+            } else if (cloudProvider === 'openrouter') {
+                // OpenRouter models can be loaded without authentication
+                const fetchedModels = await fetchModels();
                 setModels({ preview: [], stable: fetchedModels, experimental: [] });
             }
         } else if (serviceProvider === 'local') {
@@ -53,11 +54,11 @@ export const useModels = ({ serviceProvider, cloudProvider, localProviderType, a
     } finally {
         setIsLoading(false);
     }
-  }, [serviceProvider, cloudProvider, localProviderType, apiKey, openRouterApiKey, lmStudioUrl, ollamaUrl, showAllVersions]);
+  }, [serviceProvider, cloudProvider, localProviderType, apiKey, lmStudioUrl, ollamaUrl, showAllVersions]);
 
   useEffect(() => {
     // Determine if the necessary conditions to fetch models are met.
-    const shouldFetch = (serviceProvider === 'cloud' && ((cloudProvider === 'google' && apiKey) || (cloudProvider === 'openrouter' && openRouterApiKey))) || (serviceProvider === 'local' && (lmStudioUrl || ollamaUrl));
+    const shouldFetch = (serviceProvider === 'cloud' && ((cloudProvider === 'google' && apiKey) || (cloudProvider === 'openrouter'))) || (serviceProvider === 'local' && (lmStudioUrl || ollamaUrl));
 
     if (shouldFetch) {
       // If conditions are met, call the function that handles the API request.
@@ -69,7 +70,7 @@ export const useModels = ({ serviceProvider, cloudProvider, localProviderType, a
       setError(null);
       setModels({ preview: [], stable: [], experimental: [] });
     }
-  }, [serviceProvider, cloudProvider, apiKey, openRouterApiKey, lmStudioUrl, ollamaUrl, loadModels]);
+  }, [serviceProvider, cloudProvider, apiKey, lmStudioUrl, ollamaUrl, loadModels]);
 
   return {
     models,

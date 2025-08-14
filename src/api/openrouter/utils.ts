@@ -72,7 +72,16 @@ export const testApiKey = async (
 
     if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error.message);
+        // Handle specific OpenRouter error cases
+        if (errorData.error && errorData.error.message) {
+            const { message } = errorData.error;
+            // Check for common OpenRouter error patterns
+            if (message.toLowerCase().includes('auth') || message.toLowerCase().includes('credentials')) {
+                throw new ConfigError('error_api_key_test_failed_message', { message: 'Invalid or missing API credentials' });
+            }
+            throw new ConfigError('error_api_key_test_failed_message', { message });
+        }
+        throw new ConfigError('error_api_key_test_failed_generic');
     }
     const result = await response.json();
     if (!result.choices || result.choices.length === 0 || !result.choices[0].message.content) {
@@ -80,6 +89,11 @@ export const testApiKey = async (
     }
   } catch (error: any) {
     console.error("API Key test failed:", error);
+    // If it's already a ConfigError, rethrow it
+    if (error instanceof ConfigError) {
+        throw error;
+    }
+    // Otherwise, wrap it in a ConfigError for consistent handling
     throw new ConfigError('error_api_key_test_failed_message', { message: error.message || 'Unknown error' });
   }
 };

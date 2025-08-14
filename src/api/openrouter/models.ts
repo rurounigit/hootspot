@@ -1,12 +1,16 @@
 import { OPENROUTER_API_BASE_URL } from '../../constants';
 import { AIModel } from '../../types/api';
 
-export const fetchModels = async (apiKey: string): Promise<AIModel[]> => {
+export const fetchModels = async (apiKey: string = ''): Promise<AIModel[]> => {
   try {
+    const headers: Record<string, string> = {};
+    // Only add Authorization header if apiKey is provided (not empty)
+    if (apiKey && apiKey.trim() !== '') {
+      headers['Authorization'] = `Bearer ${apiKey}`;
+    }
+
     const response = await fetch(`${OPENROUTER_API_BASE_URL}/models`, {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-      },
+      headers,
     });
 
     if (!response.ok) {

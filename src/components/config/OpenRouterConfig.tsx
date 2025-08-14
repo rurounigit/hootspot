@@ -11,6 +11,7 @@ interface OpenRouterConfigProps {
   models: GroupedModels;
   areModelsLoading: boolean;
   modelsError: string | null;
+  apiKeyTestStatus?: { message: string, type: 'success' | 'error' } | null;
 }
 
 const OpenRouterConfig: React.FC<OpenRouterConfigProps> = ({
@@ -21,6 +22,7 @@ const OpenRouterConfig: React.FC<OpenRouterConfigProps> = ({
   models,
   areModelsLoading,
   modelsError,
+  apiKeyTestStatus,
 }) => {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
@@ -58,6 +60,11 @@ const OpenRouterConfig: React.FC<OpenRouterConfigProps> = ({
       <div className="mb-4">
         <label htmlFor="openRouterApiKey" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('config_openrouter_api_key_label')}</label>
         <input type="password" id="openRouterApiKey" value={apiKey} onChange={(e) => onApiKeyChange(e.target.value)} placeholder={t('config_api_key_placeholder')} className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-50" />
+        {apiKeyTestStatus && (
+          <div className={`mt-2 text-sm ${apiKeyTestStatus.type === 'success' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+            {apiKeyTestStatus.message}
+          </div>
+        )}
       </div>
       <div className="mb-6">
         <label htmlFor="modelSelector" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('config_model_label')}</label>
@@ -79,7 +86,7 @@ const OpenRouterConfig: React.FC<OpenRouterConfigProps> = ({
           {areModelsLoading && <option value="">{t('config_model_loading')}</option>}
           {modelsError && <option value="">{t('config_model_error')}</option>}
           {!areModelsLoading && !modelsError && allModelsEmpty && <option value="">{t('config_openrouter_enter_api_key_to_see_models')}</option>}
-          {!areModelsLoading && !modelsError &&
+          {!areModelsLoading && !modelsError && !allModelsEmpty &&
             filteredModels.map((model) => (
               <option key={model.name} value={model.name}>
                 {model.displayName}

@@ -25,6 +25,7 @@ const App: React.FC = () => {
     googleModel, setGoogleModel,
     openRouterModel, setOpenRouterModel,
     debouncedApiKey,
+    debouncedOpenRouterApiKey,
     lmStudioUrl, setLmStudioUrl,
     lmStudioModel, setLmStudioModel,
     ollamaUrl, setOllamaUrl,
@@ -38,6 +39,8 @@ const App: React.FC = () => {
     isCurrentProviderConfigured, isTesting, testStatus,
     saveAndTestConfig, handleMaxCharLimitSave,
     invalidateConfig,
+    isOpenRouterApiKeyValid,
+    openRouterApiKeyTestStatus
   } = useConfig();
 
   const { models, isLoading: areModelsLoading, error: modelsError, refetch: refetchModels } = useModels({
@@ -66,7 +69,7 @@ const App: React.FC = () => {
       isCurrentProviderConfigured,
   });
 
-  const { 
+  const {
     isLoading, error: analysisErrorObject, analysisResult,
     currentTextAnalyzed, textToAnalyze, setTextToAnalyze,
     setPendingAnalysis, isTranslating, handleAnalyzeText,
@@ -194,7 +197,7 @@ const App: React.FC = () => {
   return (
     <div className="relative flex flex-col h-screen bg-gray-100 dark:bg-gray-600">
       <div className="absolute top-2 right-4 z-20 flex items-center space-x-2">
-        <button onClick={() => setIsNightMode(!isNightMode)} className="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full focus:outline-none" title={t('night_mode_toggle_tooltip')}> 
+        <button onClick={() => setIsNightMode(!isNightMode)} className="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full focus:outline-none" title={t('night_mode_toggle_tooltip')}>
           {isNightMode ? <SunIcon className="w-5 h-5 text-amber-500" /> : <MoonIcon className="w-5 h-5 text-gray-600" />}
         </button>
         <LanguageSwitcher />
@@ -231,6 +234,8 @@ const App: React.FC = () => {
             isCurrentProviderConfigured={isCurrentProviderConfigured}
             isCollapsed={isConfigCollapsed} onToggleCollapse={() => setIsConfigCollapsed(!isConfigCollapsed)}
             isTesting={isTesting} testStatus={testStatus} onSave={saveAndTestConfig}
+            isOpenRouterApiKeyValid={isOpenRouterApiKeyValid}
+            openRouterApiKeyTestStatus={openRouterApiKeyTestStatus}
           />
           <TextAnalyzer
             ref={textareaRef}
@@ -288,7 +293,7 @@ const App: React.FC = () => {
         <footer className="mt-auto pt-6 text-center text-sm text-gray-600 dark:text-gray-400">
           <div>
             {t('app_footer_copyright', { year: new Date().getFullYear() })}
-            <Tooltip content={t('app_footer_responsibility')}> 
+            <Tooltip content={t('app_footer_responsibility')}>
               <span className="ml-2 underline decoration-dotted cursor-pointer">
                 {t('app_footer_disclaimer_label')}
               </span>
