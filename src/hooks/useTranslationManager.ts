@@ -24,14 +24,30 @@ interface UseTranslationManagerConfig {
 export const useTranslationManager = (config: UseTranslationManagerConfig) => {
   const { t, language } = useTranslation();
   const [rebuttal, setRebuttal] = useState<{ text: string; lang: string; } | null>(null);
-  const [translatedRebuttals, setTranslatedRebuttals] = useState<Record<string, string>>({});
+  // FIX 1: Allow the state to hold `null` to signify a failed translation attempt.
+  const [translatedRebuttals, setTranslatedRebuttals] = useState<Record<string, string | null>>({});
   const [isTranslatingRebuttal, setIsTranslatingRebuttal] = useState(false);
   const [translationError, setTranslationError] = useState<{ message: string, type: 'config' | 'general' } | null>(null);
 
   const inflightRequests = useRef<Record<string, boolean>>({});
 
+  const {
+    isCurrentProviderConfigured,
+    serviceProvider,
+    cloudProvider,
+    apiKey,
+    googleModel,
+    openRouterApiKey,
+    openRouterModel,
+    localProviderType,
+    lmStudioConfig,
+    ollamaConfig
+  } = config;
+  const { url: lmStudioUrl, model: lmStudioModel } = lmStudioConfig;
+  const { url: ollamaUrl, model: ollamaModel } = ollamaConfig;
+
   const translateRebuttal = useCallback(async (textToTranslate: string, targetLang: string) => {
-    if (!config.isCurrentProviderConfigured) return;
+    if (!isCurrentProviderConfigured) return;
 
     inflightRequests.current[targetLang] = true;
     setTranslationError(null);
@@ -39,19 +55,19 @@ export const useTranslationManager = (config: UseTranslationManagerConfig) => {
 
     try {
       let translatedText: string;
-      if (config.serviceProvider === 'cloud') {
-        if (config.cloudProvider === 'google') {
-          if (!config.apiKey) throw new Error(t('error_api_key_not_configured'));
-          translatedText = await translateWithGoogle(config.apiKey, textToTranslate, targetLang, config.googleModel, t);
+      if (serviceProvider === 'cloud') {
+        if (cloudProvider === 'google') {
+          if (!apiKey) throw new Error(t('error_api_key_not_configured'));
+          translatedText = await translateWithGoogle(apiKey, textToTranslate, targetLang, googleModel, t);
         } else { // openrouter
-          if (!config.openRouterApiKey) throw new Error(t('error_api_key_not_configured'));
-          translatedText = await translateWithOpenRouter(config.openRouterApiKey, textToTranslate, targetLang, config.openRouterModel, t);
+          if (!openRouterApiKey) throw new Error(t('error_api_key_not_configured'));
+          translatedText = await translateWithOpenRouter(openRouterApiKey, textToTranslate, targetLang, openRouterModel, t);
         }
       } else { // Local provider
-        if (config.localProviderType === 'lm-studio') {
-          translatedText = await translateTextWithLMStudio(textToTranslate, config.lmStudioConfig.url, config.lmStudioConfig.model, targetLang);
+        if (localProviderType === 'lm-studio') {
+          translatedText = await translateTextWithLMStudio(textToTranslate, lmStudioUrl, lmStudioModel, targetLang);
         } else { // Ollama
-          translatedText = await translateTextWithOllama(textToTranslate, config.ollamaConfig.url, config.ollamaConfig.model, targetLang);
+          translatedText = await translateTextWithOllama(textToTranslate, ollamaUrl, ollamaModel, targetLang);
         }
       }
       setTranslatedRebuttals(prev => ({ ...prev, [targetLang]: translatedText }));
@@ -62,16 +78,23 @@ export const useTranslationManager = (config: UseTranslationManagerConfig) => {
       } else {
         setTranslationError({ message, type: 'general' });
       }
+      // FIX 2: On error, set the entry to null. This prevents the useEffect from retrying.
+      setTranslatedRebuttals(prev => ({ ...prev, [targetLang]: null }));
     } finally {
       setIsTranslatingRebuttal(false);
       inflightRequests.current[targetLang] = false;
     }
-  }, [config, t]);
+  }, [
+    isCurrentProviderConfigured, serviceProvider, cloudProvider, apiKey, googleModel,
+    openRouterApiKey, openRouterModel, localProviderType, lmStudioUrl, lmStudioModel,
+    ollamaUrl, ollamaModel, t
+  ]);
 
 
   useEffect(() => {
     if (!rebuttal) return;
     if (language === rebuttal.lang) return;
+    // This condition now correctly handles success (string) and failure (null), stopping the loop.
     if (translatedRebuttals[language] !== undefined) return;
     if (inflightRequests.current[language]) return;
 
@@ -97,6 +120,7 @@ export const useTranslationManager = (config: UseTranslationManagerConfig) => {
   }, []);
 
   const displayedRebuttal =
+    // Check for null before trying to display
     translatedRebuttals[language] ??
     (rebuttal && rebuttal.lang === language ? rebuttal.text : null);
 
@@ -109,103 +133,4 @@ export const useTranslationManager = (config: UseTranslationManagerConfig) => {
     translationError: translationError,
     clearTranslationError,
   };
-};
-
-
-// ---
-// NEW: A hook specifically for managing UI language translations.
-// ---
-import { useConfig } from './useConfig';
-import { translateUI as translateUIGoogle } from '../api/google/translation';
-import { translateUI as translateUIOpenRouter } from '../api/openrouter/translation';
-import { translateUIWithLMStudio } from '../api/lm-studio';
-import { translateUIWithOllama } from '../api/ollama';
-import { LanguageCode } from '../i18n';
-
-export const useLanguageManager = () => {
-    const { t, setLanguage, language, addLanguage } = useTranslation();
-    const {
-        serviceProvider,
-        cloudProvider,
-        localProviderType,
-        apiKeyInput: apiKey, // Renaming apiKeyInput to apiKey for local use
-        openRouterApiKey,
-        googleModel,
-        openRouterModel,
-        lmStudioUrl,
-        lmStudioModel,
-        ollamaUrl,
-        ollamaModel,
-        isCurrentProviderConfigured
-    } = useConfig();
-    const [isTranslating, setIsTranslating] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [showConfirmation, setShowConfirmation] = useState(false);
-    const [targetLang, setTargetLang] = useState<LanguageCode | null>(null);
-
-    const handleTranslateLanguage = async (lang: LanguageCode) => {
-        if (!isCurrentProviderConfigured) {
-            setError(t('lang_manager_error_config_needed'));
-            return;
-        }
-        setTargetLang(lang);
-        setShowConfirmation(true);
-    };
-
-    const confirmTranslation = async () => {
-        if (!targetLang) return;
-        setShowConfirmation(false);
-        setIsTranslating(true);
-        setError(null);
-
-        try {
-            const baseLangPath = `/locales/en.json`;
-            const response = await fetch(baseLangPath);
-            const baseTranslations = await response.text();
-
-            let translatedStrings: Record<string, string>;
-
-            if (serviceProvider === 'cloud') {
-                if (cloudProvider === 'google') {
-                    if (!apiKey) throw new Error(t('error_api_key_not_configured'));
-                    translatedStrings = await translateUIGoogle(apiKey, targetLang, baseTranslations, googleModel, t);
-                } else { // openrouter
-                    if (!openRouterApiKey) throw new Error(t('error_api_key_not_configured'));
-                    translatedStrings = await translateUIOpenRouter(openRouterApiKey, targetLang, baseTranslations, openRouterModel, t);
-                }
-            } else {
-                if (localProviderType === 'lm-studio') {
-                    translatedStrings = await translateUIWithLMStudio(lmStudioUrl, lmStudioModel, targetLang, baseTranslations);
-                } else { // Ollama
-                    translatedStrings = await translateUIWithOllama(ollamaUrl, ollamaModel, targetLang, baseTranslations);
-                }
-            }
-
-            addLanguage(targetLang, `Custom (${targetLang})`, translatedStrings); // Assuming a name for the custom language
-            setLanguage(targetLang);
-
-        } catch (err: any) {
-            const message = t(err.message, err.details) || err.message;
-            setError(message);
-        } finally {
-            setIsTranslating(false);
-            setTargetLang(null);
-        }
-    };
-
-    const cancelTranslation = () => {
-        setShowConfirmation(false);
-        setTargetLang(null);
-    };
-
-    return {
-        isTranslating,
-        error,
-        showConfirmation,
-        handleTranslateLanguage,
-        confirmTranslation,
-        cancelTranslation,
-        targetLang,
-        currentLanguage: language,
-    };
 };

@@ -1,6 +1,7 @@
 // src/App.tsx
 
-import React, { useEffect, useRef } from 'react';
+// FIX 1: Import useMemo
+import React, { useEffect, useRef, useMemo } from 'react';
 import ConfigurationManager from './components/ConfigurationManager';
 import TextAnalyzer from './components/TextAnalyzer';
 import AnalysisReport from './components/analysis/AnalysisReport';
@@ -8,11 +9,11 @@ import LanguageSwitcher from './components/LanguageSwitcher';
 import { useTranslation } from './i18n';
 import { useModels } from './hooks/useModels';
 import { useConfig } from './hooks/useConfig';
-import { useAnalysis } from './hooks/useAnalysis';
 import { HootSpotLogoIcon, SunIcon, MoonIcon } from './assets/icons';
 import Tooltip from './components/common/Tooltip';
 import { useTranslationManager } from './hooks/useTranslationManager';
 import { GEMINI_MODEL_NAME } from './config/api-prompts';
+import { useAnalysis } from './hooks/useAnalysis';
 
 const App: React.FC = () => {
   const { t } = useTranslation();
@@ -55,6 +56,10 @@ const App: React.FC = () => {
     ? googleModel
     : openRouterModel;
 
+    // FIX 2: Memoize the config objects so they are stable between renders
+    const lmStudioConfig = useMemo(() => ({ url: lmStudioUrl, model: lmStudioModel }), [lmStudioUrl, lmStudioModel]);
+    const ollamaConfig = useMemo(() => ({ url: ollamaUrl, model: ollamaModel }), [ollamaUrl, ollamaModel]);
+
     const {
     isTranslatingRebuttal, handleRebuttalUpdate, displayedRebuttal,
     translationError: translationErrorObject, loadRebuttal, clearTranslationError,
@@ -64,8 +69,8 @@ const App: React.FC = () => {
       openRouterApiKey: openRouterApiKey,
       googleModel: googleModel,
       openRouterModel: openRouterModel,
-      lmStudioConfig: { url: lmStudioUrl, model: lmStudioModel },
-      ollamaConfig: { url: ollamaUrl, model: ollamaModel },
+      lmStudioConfig, // Use the memoized object
+      ollamaConfig,   // Use the memoized object
       isCurrentProviderConfigured,
   });
 
@@ -275,8 +280,8 @@ const App: React.FC = () => {
                     localProviderType={localProviderType}
                     apiKey={apiKeyInput}
                     googleModel={googleModel}
-                    lmStudioConfig={{ url: lmStudioUrl, model: lmStudioModel }}
-                    ollamaConfig={{ url: ollamaUrl, model: ollamaModel }}
+                    lmStudioConfig={lmStudioConfig} // Use the memoized object
+                    ollamaConfig={ollamaConfig}     // Use the memoized object
                     isCurrentProviderConfigured={isCurrentProviderConfigured}
                     openRouterApiKey={openRouterApiKey}
                     openRouterModel={openRouterModel}
