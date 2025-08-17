@@ -2,7 +2,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { JSON_REPAIR_SYSTEM_PROMPT, GEMINI_MODEL_NAME } from "../../config/api-prompts";
 import { extractJson } from "../../utils/apiUtils"; // Import from the central utility
-import { ConfigError, GeneralError } from "../../utils/errors";
+import { ConfigError } from "../../utils/errors";
 
 type TFunction = (key: string, replacements?: Record<string, string | number>) => string;
 

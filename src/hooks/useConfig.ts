@@ -15,7 +15,6 @@ import { testApiKey } from '../api/google/utils';
 import { testLMStudioConnection } from '../api/lm-studio';
 import { testOllamaConnection } from '../api/ollama';
 import { testApiKey as testOpenRouterConnection } from '../api/openrouter/utils';
-import { ConfigError } from '../utils/errors';
 
 const getInitialVerifiedState = (): boolean => {
   const providerInStorage = (localStorage.getItem(SERVICE_PROVIDER_KEY) as 'cloud' | 'local') || 'cloud';

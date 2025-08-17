@@ -1,5 +1,5 @@
 import { OPENROUTER_API_BASE_URL } from '../../constants';
-import { GEMINI_MODEL_NAME, SYSTEM_PROMPT, REBUTTAL_SYSTEM_PROMPT, JSON_REPAIR_SYSTEM_PROMPT } from '../../config/api-prompts';
+import { SYSTEM_PROMPT, REBUTTAL_SYSTEM_PROMPT } from '../../config/api-prompts';
 import { AIAnalysisOutput, PatternFinding } from '../../types/api';
 import { extractJson } from '../../utils/apiUtils';
 import { repairAndParseJson } from './utils';

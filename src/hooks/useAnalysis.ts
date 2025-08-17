@@ -8,7 +8,7 @@ import { analyzeTextWithOllama, translateAnalysisResultWithOllama } from '../api
 import { analyzeText as analyzeTextWithOpenRouter } from '../api/openrouter/analysis';
 import { translateAnalysisResult as translateAnalysisResultWithOpenRouter } from '../api/openrouter/translation';
 import { AIAnalysisOutput } from '../types/api';
-import { ConfigError, GeneralError } from '../utils/errors';
+import { ConfigError} from '../utils/errors';
 
 export const useAnalysis = (
   serviceProvider: 'cloud' | 'local',

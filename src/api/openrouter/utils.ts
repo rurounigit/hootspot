@@ -1,7 +1,7 @@
 import { OPENROUTER_API_BASE_URL } from '../../constants';
 import { JSON_REPAIR_SYSTEM_PROMPT } from '../../config/api-prompts';
 import { extractJson } from '../../utils/apiUtils';
-import { ConfigError, GeneralError } from '../../utils/errors';
+import { ConfigError } from '../../utils/errors';
 
 type TFunction = (key: string, replacements?: Record<string, string | number>) => string;
 
