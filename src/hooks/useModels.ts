@@ -1,6 +1,6 @@
 // src/hooks/useModels.ts
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { AIModel, GroupedModels } from '../types/api';
 import { fetchModels as fetchGoogleModels } from '../api/google/models';
 import { fetchLMStudioModels } from '../api/lm-studio';
@@ -22,11 +22,20 @@ export const useModels = ({ serviceProvider, cloudProvider, localProviderType, a
   const [models, setModels] = useState<GroupedModels>({ preview: [], stable: [], experimental: [] });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const stopPolling = useCallback(() => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+  }, []);
 
   const loadModels = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     setModels({ preview: [], stable: [], experimental: [] });
+    stopPolling(); // Stop any existing polling before a new manual/initial attempt
 
     try {
         if (serviceProvider === 'cloud') {
@@ -47,14 +56,36 @@ export const useModels = ({ serviceProvider, cloudProvider, localProviderType, a
             }
             // Local providers don't have categories, so we put them all in stable
             setModels({ preview: [], stable: fetchedModels, experimental: [] });
+            setError(null); // Explicitly clear error on success
         }
     } catch (err: any) {
-        setError(err.message || 'An unknown error occurred while fetching models.');
+        const errorMessage = err.message || 'An unknown error occurred while fetching models.';
+        setError(errorMessage);
         setModels({ preview: [], stable: [], experimental: [] });
+
+        // If it's a local provider and a connection error, start polling
+        if (serviceProvider === 'local' && (err instanceof TypeError || errorMessage.includes('Failed to fetch'))) {
+            pollingIntervalRef.current = setInterval(() => {
+                (async () => {
+                    try {
+                        if (localProviderType === 'lm-studio' && lmStudioUrl) {
+                            await fetchLMStudioModels(lmStudioUrl);
+                        } else if (localProviderType === 'ollama' && ollamaUrl) {
+                            await fetchOllamaModels(ollamaUrl);
+                        }
+                        // If successful, stop polling and trigger a full reload to update the UI
+                        stopPolling();
+                        loadModels();
+                    } catch (pollError) {
+                        // Server is still down, the interval will try again.
+                    }
+                })();
+            }, 5000); // Poll every 5 seconds
+        }
     } finally {
         setIsLoading(false);
     }
-  }, [serviceProvider, cloudProvider, localProviderType, apiKey, lmStudioUrl, ollamaUrl, showAllVersions]);
+  }, [serviceProvider, cloudProvider, localProviderType, apiKey, lmStudioUrl, ollamaUrl, showAllVersions, stopPolling]);
 
   useEffect(() => {
     // Determine if the necessary conditions to fetch models are met.
@@ -69,8 +100,14 @@ export const useModels = ({ serviceProvider, cloudProvider, localProviderType, a
       setIsLoading(false);
       setError(null);
       setModels({ preview: [], stable: [], experimental: [] });
+      stopPolling();
     }
-  }, [serviceProvider, cloudProvider, apiKey, lmStudioUrl, ollamaUrl, loadModels]);
+
+    // Cleanup function to stop polling when dependencies change or component unmounts
+    return () => {
+      stopPolling();
+    };
+  }, [serviceProvider, cloudProvider, apiKey, lmStudioUrl, ollamaUrl, loadModels, stopPolling]);
 
   return {
     models,
