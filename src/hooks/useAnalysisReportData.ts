@@ -110,10 +110,55 @@ export const useAnalysisReportData = (
 
       // === STEP 2: Try cleaned quote matching ===
       console.log(`[useAnalysisReportData] Step 2: Trying cleaned quote match for "${finding.pattern_name}"`);
-      const cleanedQuote = finding.specific_quote
+
+      // Enhanced cleaning: remove leading/trailing whitespace and common punctuation
+      let cleanedQuote = finding.specific_quote
         .trim()
-        .replace(/^[.,;:"“”'‘’`\s…]+/, '')
-        .replace(/[.,;:"“”'‘’`\s…]+$/, '');
+        .replace(/^[.,;:"“”'‘’`\s…()\[\]]+/, '')
+        .replace(/[.,;:"“”'‘’`\s…()\[\]]+$/, '');
+
+      // For very long quotes, try partial matching with key phrases
+      if (finding.specific_quote.length > 200) {
+        console.log(`[useAnalysisReportData] Long quote detected (${finding.specific_quote.length} chars), trying key phrase extraction`);
+        const sentences = finding.specific_quote.split(/[.!?]+/).filter(s => s.trim().length > 20);
+        if (sentences.length > 1) {
+          // Try to match the first significant sentence
+          const firstSentence = sentences[0].trim();
+          const firstSentenceCleaned = firstSentence
+            .replace(/^[.,;:"“”'‘’`\s…()\[\]]+/, '')
+            .replace(/[.,;:"“”'‘’`\s…()\[\]]+$/, '');
+
+          if (firstSentenceCleaned.length > 30) { // Only if it's substantial
+            const firstSentenceMatch = sourceText.indexOf(firstSentenceCleaned);
+            if (firstSentenceMatch !== -1) {
+              console.log(`[useAnalysisReportData] First sentence match found at position ${firstSentenceMatch}: "${firstSentenceCleaned}"`);
+              // Try to extend to find the full quote context
+              const contextStart = Math.max(0, firstSentenceMatch - 50);
+              const contextEnd = Math.min(sourceText.length, firstSentenceMatch + finding.specific_quote.length + 100);
+              const context = sourceText.substring(contextStart, contextEnd);
+
+              // Check if the original quote is mostly contained in this context
+              const quoteWords = finding.specific_quote.split(/\s+/).filter(word => word.length > 3);
+              const matchingWords = quoteWords.filter(word => context.includes(word));
+              const matchRatio = matchingWords.length / quoteWords.length;
+
+              if (matchRatio > 0.7) { // 70% of significant words found
+                console.log(`[useAnalysisReportData] Context match ratio: ${matchRatio}, using first sentence position`);
+                const result = {
+                  ...finding,
+                  displayIndex: index,
+                  location: {
+                    start: firstSentenceMatch,
+                    end: Math.min(sourceText.length, firstSentenceMatch + finding.specific_quote.length),
+                  },
+                };
+                console.log(`[useAnalysisReportData] Long quote context match result for finding ${index}:`, result);
+                return result;
+              }
+            }
+          }
+        }
+      }
 
       if (cleanedQuote !== finding.specific_quote && cleanedQuote.length > 0) {
         const cleanedMatchIndex = sourceText.indexOf(cleanedQuote);
@@ -174,8 +219,9 @@ export const useAnalysisReportData = (
               score: results[0].score
             });
 
-            // Only accept matches with reasonable scores
-            if (results[0].score < 0.5) {
+            // More lenient scoring for partial matches that are still useful
+            const scoreThreshold = results[0]?.score !== undefined && results[0]?.score < 0.6 ? 0.6 : 0.5; // Dynamic threshold
+            if (results[0]?.score !== undefined && results[0]?.score < scoreThreshold) {
               const result = {
                 ...finding,
                 displayIndex: index,
