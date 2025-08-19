@@ -107,6 +107,24 @@ export const useAnalysisReportData = (
           // Don't include the trailing formatting in the highlight
         }
 
+        // Handle HTML whitespace normalization for exact matches
+        // The issue is that HTML collapses multiple spaces, so we need to ensure
+        // the highlight includes the full intended text even if there are extra spaces
+        const matchedText = sourceText.substring(exactMatchIndex, finalEnd);
+        console.log(`[useAnalysisReportData] Exact match text: "${matchedText}"`);
+
+        // If the matched text doesn't exactly match the finding quote (due to whitespace differences),
+        // try to extend the end position to include the full quote content
+        if (matchedText !== finding.specific_quote) {
+          // Look for the actual end by finding where the quote content truly ends
+          const quoteEndIndex = sourceText.indexOf(finding.specific_quote.slice(-20), exactMatchIndex);
+          if (quoteEndIndex !== -1) {
+            const calculatedEnd = quoteEndIndex + finding.specific_quote.slice(-20).length;
+            console.log(`[useAnalysisReportData] Adjusted exact match end from ${finalEnd} to ${calculatedEnd}`);
+            finalEnd = calculatedEnd;
+          }
+        }
+
         const result = {
           ...finding,
           displayIndex: index,
@@ -208,7 +226,7 @@ export const useAnalysisReportData = (
 
               if (matchRatio > 0.7) { // 70% of significant words found
                 console.log(`[useAnalysisReportData] Context match ratio: ${matchRatio}, using first sentence position`);
-                // Adjust end position to avoid trailing formatting
+                // Adjust end position to avoid trailing formatting and handle HTML whitespace normalization
                 let finalEnd = Math.min(sourceText.length, firstSentenceMatch + finding.specific_quote.length);
 
                 // Check for trailing formatting
@@ -216,6 +234,21 @@ export const useAnalysisReportData = (
                 const trailingMatch = sourceTextAtEnd.match(/^\s*\([A-Za-z\s]+\.\)/);
                 if (trailingMatch) {
                   console.log(`[useAnalysisReportData] Found trailing formatting in long quote: "${trailingMatch[0]}"`);
+                }
+
+                // Handle HTML whitespace normalization - find the actual end by matching the quote content
+                const expectedText = sourceText.substring(firstSentenceMatch, finalEnd);
+                console.log(`[useAnalysisReportData] Expected text for long quote: "${expectedText}"`);
+
+                // If there are discrepancies due to whitespace, try to find the actual end by searching for the last few words
+                const lastWords = finding.specific_quote.split(/\s+/).slice(-3).join('\\s+');
+                const endSearchStart = Math.max(firstSentenceMatch, finalEnd - 50);
+                const endSearchText = sourceText.substring(endSearchStart, Math.min(sourceText.length, finalEnd + 100));
+                const endMatch = endSearchText.match(new RegExp(lastWords));
+                if (endMatch) {
+                  const actualEnd = endSearchStart + endMatch.index! + endMatch[0].length;
+                  console.log(`[useAnalysisReportData] Adjusted end position from ${finalEnd} to ${actualEnd} based on content matching`);
+                  finalEnd = actualEnd;
                 }
 
                 const result = {
