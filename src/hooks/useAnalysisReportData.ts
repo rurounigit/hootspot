@@ -96,12 +96,23 @@ export const useAnalysisReportData = (
 
       if (exactMatchIndex !== -1) {
         console.log(`[useAnalysisReportData] EXACT MATCH FOUND at position ${exactMatchIndex}`);
+        // For exact matches, we still need to be careful about trailing formatting
+        let finalEnd = exactMatchIndex + finding.specific_quote.length;
+
+        // Check if there's trailing formatting in the source text that extends beyond the quote
+        const sourceTextAtEnd = sourceText.substring(finalEnd, finalEnd + 50);
+        const trailingMatch = sourceTextAtEnd.match(/^\s*\([A-Za-z\s]+\.\)/);
+        if (trailingMatch) {
+          console.log(`[useAnalysisReportData] Found trailing formatting: "${trailingMatch[0]}"`);
+          // Don't include the trailing formatting in the highlight
+        }
+
         const result = {
           ...finding,
           displayIndex: index,
           location: {
             start: exactMatchIndex,
-            end: exactMatchIndex + finding.specific_quote.length,
+            end: finalEnd,
           },
         };
         console.log(`[useAnalysisReportData] Exact match result for finding ${index}:`, result);
@@ -110,6 +121,59 @@ export const useAnalysisReportData = (
 
       // === STEP 2: Try cleaned quote matching ===
       console.log(`[useAnalysisReportData] Step 2: Trying cleaned quote match for "${finding.pattern_name}"`);
+
+      // Special handling for repetition patterns
+      if (finding.pattern_name.includes('Repetition') || finding.pattern_name.includes('repetition')) {
+        console.log(`[useAnalysisReportData] Special handling for repetition pattern`);
+
+        // First, try direct match of the full repetition pattern
+        const directMatch = sourceText.indexOf(finding.specific_quote);
+        if (directMatch !== -1) {
+          console.log(`[useAnalysisReportData] Direct repetition match found at position ${directMatch}`);
+          const result = {
+            ...finding,
+            displayIndex: index,
+            location: {
+              start: directMatch,
+              end: directMatch + finding.specific_quote.length,
+            },
+          };
+          console.log(`[useAnalysisReportData] Direct repetition match result for finding ${index}:`, result);
+          return result;
+        }
+
+        // If direct match fails, look for the first significant phrase
+        const firstPhrase = finding.specific_quote.split(/[.!?]+/)[0]?.trim();
+        if (firstPhrase && firstPhrase.length > 10) {
+          const firstMatch = sourceText.indexOf(firstPhrase);
+          if (firstMatch !== -1) {
+            console.log(`[useAnalysisReportData] First phrase of repetition found at position ${firstMatch}: "${firstPhrase}"`);
+            // Check if this appears multiple times (true repetition)
+            const allMatches = [];
+            let searchIndex = 0;
+            while (searchIndex < sourceText.length) {
+              const matchIndex = sourceText.indexOf(firstPhrase, searchIndex);
+              if (matchIndex === -1) break;
+              allMatches.push(matchIndex);
+              searchIndex = matchIndex + firstPhrase.length;
+            }
+
+            if (allMatches.length >= 2) {
+              console.log(`[useAnalysisReportData] Repetition pattern confirmed - found ${allMatches.length} occurrences`);
+              const result = {
+                ...finding,
+                displayIndex: index,
+                location: {
+                  start: firstMatch,
+                  end: Math.min(sourceText.length, firstMatch + finding.specific_quote.length),
+                },
+              };
+              console.log(`[useAnalysisReportData] Repetition match result for finding ${index}:`, result);
+              return result;
+            }
+          }
+        }
+      }
 
       // Enhanced cleaning: remove leading/trailing whitespace and common punctuation
       let cleanedQuote = finding.specific_quote
@@ -144,12 +208,22 @@ export const useAnalysisReportData = (
 
               if (matchRatio > 0.7) { // 70% of significant words found
                 console.log(`[useAnalysisReportData] Context match ratio: ${matchRatio}, using first sentence position`);
+                // Adjust end position to avoid trailing formatting
+                let finalEnd = Math.min(sourceText.length, firstSentenceMatch + finding.specific_quote.length);
+
+                // Check for trailing formatting
+                const sourceTextAtEnd = sourceText.substring(finalEnd, Math.min(sourceText.length, finalEnd + 50));
+                const trailingMatch = sourceTextAtEnd.match(/^\s*\([A-Za-z\s]+\.\)/);
+                if (trailingMatch) {
+                  console.log(`[useAnalysisReportData] Found trailing formatting in long quote: "${trailingMatch[0]}"`);
+                }
+
                 const result = {
                   ...finding,
                   displayIndex: index,
                   location: {
                     start: firstSentenceMatch,
-                    end: Math.min(sourceText.length, firstSentenceMatch + finding.specific_quote.length),
+                    end: finalEnd,
                   },
                 };
                 console.log(`[useAnalysisReportData] Long quote context match result for finding ${index}:`, result);
@@ -222,12 +296,28 @@ export const useAnalysisReportData = (
             // More lenient scoring for partial matches that are still useful
             const scoreThreshold = results[0]?.score !== undefined && results[0]?.score < 0.6 ? 0.6 : 0.5; // Dynamic threshold
             if (results[0]?.score !== undefined && results[0]?.score < scoreThreshold) {
+              // For fuzzy matches, we need to be more careful about the end position
+              // The matched text might include extra formatting, so let's try to align it better
+              const matchedText = sourceText.substring(start, end + 1);
+              let finalEnd = end + 1;
+
+              // If the matched text is significantly longer than the original quote,
+              // try to find a better end point that matches the original quote length
+              if (matchedText.length > finding.specific_quote.length + 20) {
+                // Look for the end of the actual content within the matched text
+                const quoteEndIndex = matchedText.indexOf(finding.specific_quote.slice(-20));
+                if (quoteEndIndex !== -1) {
+                  finalEnd = start + quoteEndIndex + finding.specific_quote.length;
+                  console.log(`[useAnalysisReportData] Adjusted fuzzy match end position from ${end + 1} to ${finalEnd}`);
+                }
+              }
+
               const result = {
                 ...finding,
                 displayIndex: index,
                 location: {
                   start: start,
-                  end: end + 1,
+                  end: finalEnd,
                 },
               };
               console.log(`[useAnalysisReportData] Successful fuzzy match for finding ${index}:`, result);

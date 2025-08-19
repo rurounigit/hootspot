@@ -46,7 +46,7 @@ export const HighlightedText: React.FC<HighlightedTextProps> = ({ text, matches,
       if (!color) return null;
       return (<span key={`${finding.pattern_name}-${match.start}`} className="inline-block w-2.5 h-2.5 rounded-full mr-1 -mb-0.5 border border-gray-500 cursor-pointer" style={{ backgroundColor: color }} onClick={() => handlePillClick(finding.displayIndex)} onMouseOver={(e) => handlePillMouseOver(e, finding)} onMouseLeave={handlePillMouseLeave} />);
     });
-    segments.push(<span key={`match-${matchIndex}`} className="inline-block">{pills}<mark className={`${UNIFORM_HIGHLIGHT_COLOR} p-0.5 rounded-sm text-gray-800 dark:text-gray-50`}>{text.substring(match.start, match.end)}</mark></span>);
+    segments.push(<span key={`match-${matchIndex}`} className="inline">{pills}<mark className={`${UNIFORM_HIGHLIGHT_COLOR} p-0.5 rounded-sm text-gray-800 dark:text-gray-50`}>{text.substring(match.start, match.end)}</mark></span>);
     lastIndex = match.end;
   });
 
