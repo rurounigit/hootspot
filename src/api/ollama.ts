@@ -8,7 +8,7 @@ import {
   SIMPLE_TEXT_TRANSLATION_PROMPT,
   JSON_REPAIR_SYSTEM_PROMPT,
 } from '../config/api-prompts';
-import { AIAnalysisOutput, PatternFinding, AIModel } from '../types/api';
+import { AIAnalysisOutput, AIModel } from '../types/api';
 import { LanguageCode } from '../i18n';
 import {
   createNumberedJsonForTranslation,
@@ -170,9 +170,6 @@ export const analyzeTextWithOllama = async (
         }
 
         if (typeof parsedData.analysis_summary === 'string' && Array.isArray(parsedData.findings)) {
-            parsedData.findings.sort((a: PatternFinding, b: PatternFinding) => {
-                return textToAnalyze.indexOf(a.specific_quote) - textToAnalyze.indexOf(b.specific_quote);
-            });
             return parsedData;
         } else {
             throw new GeneralError('error_unexpected_json_structure');

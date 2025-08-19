@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { GEMINI_MODEL_NAME, SYSTEM_PROMPT, REBUTTAL_SYSTEM_PROMPT } from "../../config/api-prompts";
-import { AIAnalysisOutput, PatternFinding } from "../../types/api";
+import { AIAnalysisOutput } from "../../types/api";
 import { repairAndParseJson } from "./utils";
 import { extractJson } from "../../utils/apiUtils";
 import { ConfigError, GeneralError } from "../../utils/errors";
@@ -48,13 +48,6 @@ export const analyzeText = async (
       }
 
       if (typeof parsedData.analysis_summary === 'string' && Array.isArray(parsedData.findings)) {
-          parsedData.findings.sort((a: PatternFinding, b: PatternFinding) => {
-            const indexA = textToAnalyze.indexOf(a.specific_quote);
-            const indexB = textToAnalyze.indexOf(b.specific_quote);
-            if (indexA === -1) return 1;
-            if (indexB === -1) return -1;
-            return indexA - indexB;
-          });
           return parsedData;
       } else {
         throw new GeneralError('error_unexpected_json_structure');
