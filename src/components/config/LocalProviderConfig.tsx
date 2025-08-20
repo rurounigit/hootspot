@@ -101,7 +101,7 @@ const LocalProviderConfig: React.FC<LocalProviderConfigProps> = ({
           {areModelsLoading && <option>{t('config_model_loading')}</option>}
           {modelsError && <option>{t('config_model_error')}</option>}
           {!areModelsLoading && !modelsError && allModels.length === 0 && (
-            <option>{t('config_model_error')}</option>
+            <option>{t('config_local_model_no_models')}</option>
           )}
           {!areModelsLoading && !modelsError && allModels.length > 0 && allModels.map(model => (
             <option key={model.name} value={model.name}>

@@ -51,7 +51,7 @@ async function repairAndParseJsonWithLMStudio(
         });
 
         if (!response.ok) {
-            throw new GeneralError('error_analysis_failed', { message: `Repair attempt failed with status: ${response.statusText}` });
+            throw new ConfigError('error_analysis_failed', { message: `Repair attempt failed with status: ${response.statusText}` });
         }
 
         const data = await response.json();

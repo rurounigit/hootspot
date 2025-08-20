@@ -59,7 +59,7 @@ interface ConfigurationManagerProps {
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   isTesting: boolean;
-  testStatus: { message: string, type: 'success' | 'error' } | null;
+  testStatus: { message: string, type: 'success' | 'error', details?: Record<string, any> } | null;
   onSave: () => void;
 
 }
@@ -87,13 +87,14 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
       // OpenRouter case - also check if API key is valid
       return props.openRouterApiKey.trim() !== '' && props.openRouterModel.trim() !== '' && props.isOpenRouterApiKeyValid;
     }
+    // Local provider validation
     if (localProviderType === 'lm-studio') {
-      return lmStudioUrl.trim() !== '' && lmStudioModel.trim() !== '';
+      return lmStudioUrl.trim() !== '' && lmStudioModel.trim() !== '' && models.stable.length > 0 && !areModelsLoading && !modelsError;
     }
-    return ollamaUrl.trim() !== '' && ollamaModel.trim() !== '';
+    return ollamaUrl.trim() !== '' && ollamaModel.trim() !== '' && models.stable.length > 0 && !areModelsLoading && !modelsError;
   };
 
-  const isSaveDisabled = isTesting || !isFormValid() || (areModelsLoading && !models.stable.length && !models.preview.length && !(models.experimental && models.experimental.length)) || !!modelsError;
+  const isSaveDisabled = isTesting || !isFormValid() || areModelsLoading || !!modelsError;
 
   useEffect(() => {
     if (isCollapsed) {
@@ -205,7 +206,7 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
           </button>
 
           {(localError && !testStatus) && ( <div className="mt-4 p-3 rounded-md text-sm bg-red-100 text-red-700 border border-red-300 dark:bg-red-900/50 dark:text-red-300 dark:border-red-500"> {localError} </div> )}
-          {testStatus && testStatus.type === 'error' && ( <div className={`mt-4 p-3 rounded-md text-sm bg-red-100 text-red-700 border border-red-300 dark:bg-red-900/50 dark:text-red-300 dark:border-red-500`}> {testStatus.message} </div> )}
+          {testStatus && testStatus.type === 'error' && ( <div className={`mt-4 p-3 rounded-md text-sm bg-red-100 text-red-700 border border-red-300 dark:bg-red-900/50 dark:text-red-300 dark:border-red-500`}> {t(testStatus.message, testStatus.details)} </div> )}
 
           <LanguageManager
             serviceProvider={serviceProvider}

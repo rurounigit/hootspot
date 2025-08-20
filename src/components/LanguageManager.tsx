@@ -78,7 +78,7 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({
           translatedNumberedJson = await translateUIWithOllama(ollamaConfig.url, ollamaConfig.model, code, jsonToSend);
         }
       } else {
-        throw new Error("Translation provider not properly configured.");
+        throw new ConfigError('error_translation_provider_not_configured');
       }
 
       if (!translatedNumberedJson) {
@@ -96,7 +96,11 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({
       setNewLangCode('');
 
     } catch (err: any) {
-      setError(err.message || t('lang_manager_error_generic'));
+      if (err instanceof ConfigError) {
+        setError(t(err.message, err.details));
+      } else {
+        setError(err.message || t('lang_manager_error_generic'));
+      }
     } finally {
       setIsTranslating(false);
     }

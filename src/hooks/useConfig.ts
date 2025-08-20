@@ -54,7 +54,7 @@ export const useConfig = () => {
   const [ollamaModel, setOllamaModelState] = useState<string>(() => localStorage.getItem(OLLAMA_MODEL_KEY) || '');
   const [isVerified, setIsVerified] = useState(getInitialVerifiedState);
   const [isTesting, setIsTesting] = useState(false);
-  const [testStatus, setTestStatus] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+  const [testStatus, setTestStatus] = useState<{ message: string, type: 'success' | 'error', details?: Record<string, any> } | null>(null);
   const [debouncedApiKey, setDebouncedApiKey] = useState<string>(apiKeyInput);
   const [debouncedOpenRouterApiKey, setDebouncedOpenRouterApiKey] = useState<string>(openRouterApiKey);
   const [isOpenRouterApiKeyValid, setIsOpenRouterApiKeyValid] = useState<boolean>(!!localStorage.getItem(OPEN_ROUTER_API_KEY_STORAGE_KEY));
@@ -146,9 +146,9 @@ export const useConfig = () => {
     setMaxCharLimit(newLimit);
   }, []);
 
-  const invalidateConfig = useCallback((errorMessage: string) => {
+  const invalidateConfig = useCallback((errorMessage: string, details?: Record<string, any>) => {
       setIsVerified(false);
-      setTestStatus({ message: errorMessage, type: 'error' });
+      setTestStatus({ message: errorMessage, type: 'error', details });
       setIsConfigCollapsed(false);
   }, []);
 
@@ -188,8 +188,12 @@ export const useConfig = () => {
       setIsConfigCollapsed(true);
 
     } catch (err: any) {
-      const message = t(err.message, err.details) || err.message;
-      setTestStatus({ message, type: 'error' });
+      // Store the error key and details so we can translate at display time
+      setTestStatus({
+        message: err.message, // This is the translation key
+        type: 'error',
+        details: err.details
+      });
       setIsVerified(false);
     } finally {
       setIsTesting(false);
