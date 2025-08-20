@@ -61,7 +61,7 @@
   "error_model_not_selected": "Model not selected.",
   "error_translation_provider_not_configured": "Provider not configured.",
   "error_openrouter_repair_failed": "Repair request failed: {message}",
-  "error_json_repair_failed": "Repair request failed: {message}",
+  "error_json_repair_failed": "JSON-Repair request failed: {message}",
   "error_api_key_test_failed_generic": "API Key test failed. See console.",
   "error_api_key_test_failed_message": "API Key test failed: {message}",
   "error_api_key_not_configured": "API Key not configured.",
