@@ -28,7 +28,7 @@ export const useAnalysis = (
 ) => {
   const { t, language } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<{ message: string, type: 'config' | 'general' } | null>(null);
+  const [error, setError] = useState<{ key: string, details?: Record<string, any>, type: 'config' | 'general' } | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AIAnalysisOutput | null>(null);
   const [currentTextAnalyzed, setCurrentTextAnalyzed] = useState<string | null>(null);
   const [textToAnalyze, setTextToAnalyze] = useState('');
@@ -45,10 +45,10 @@ export const useAnalysis = (
           let translatedResult: AIAnalysisOutput;
           if (serviceProvider === 'cloud') {
             if (cloudProvider === 'google') {
-              if (!apiKey) throw new Error(t('error_api_key_not_configured'));
+              if (!apiKey) throw new ConfigError('error_api_key_not_configured');
               translatedResult = await translateWithGoogle(apiKey, analysis, targetLang, selectedModel, t);
             } else {
-              if (!openRouterApiKey) throw new Error(t('error_api_key_not_configured'));
+              if (!openRouterApiKey) throw new ConfigError('error_api_key_not_configured');
               translatedResult = await translateAnalysisResultWithOpenRouter(openRouterApiKey, analysis, targetLang, openRouterModel, t);
             }
           } else { // Local provider
@@ -60,11 +60,10 @@ export const useAnalysis = (
           }
           setTranslatedResults(prev => ({ ...prev, [targetLang]: translatedResult }));
       } catch (err: any) {
-          const message = t(err.message, err.details) || err.message;
           if (err instanceof ConfigError) {
-            setError({ message, type: 'config' });
+            setError({ key: err.message, details: err.details, type: 'config' });
           } else {
-            setError({ message, type: 'general' });
+            setError({ key: err.message, details: err.details, type: 'general' });
           }
       } finally {
           setIsTranslating(false);
@@ -78,7 +77,7 @@ export const useAnalysis = (
   const handleAnalyzeText = useCallback(async (text: string) => {
     if (!isCurrentProviderConfigured) {
       setIsConfigCollapsed(false);
-      setError({ message: t('error_provider_not_configured'), type: 'config' });
+      setError({ key: 'error_provider_not_configured', type: 'config' });
       return;
     }
     setIsLoading(true);
@@ -93,10 +92,10 @@ export const useAnalysis = (
       let result: AIAnalysisOutput;
       if (serviceProvider === 'cloud') {
         if (cloudProvider === 'google') {
-          if (!apiKey) throw new Error('error_api_key_not_configured');
+          if (!apiKey) throw new ConfigError('error_api_key_not_configured');
           result = await analyzeWithGoogle(apiKey, text, selectedModel);
         } else {
-          if (!openRouterApiKey) throw new Error('error_api_key_not_configured');
+          if (!openRouterApiKey) throw new ConfigError('error_api_key_not_configured');
           result = await analyzeTextWithOpenRouter(openRouterApiKey, text, openRouterModel);
         }
       } else {
@@ -112,11 +111,10 @@ export const useAnalysis = (
         await translateAnalysis(result, language);
       }
     } catch (err: any) {
-      const message = t(err.message, err.details) || err.message;
       if (err instanceof ConfigError) {
-        setError({ message, type: 'config' });
+        setError({ key: err.message, details: err.details, type: 'config' });
       } else {
-        setError({ message, type: 'general' });
+        setError({ key: err.message, details: err.details, type: 'general' });
       }
       setAnalysisResult(null);
     } finally {
@@ -154,7 +152,7 @@ export const useAnalysis = (
         const text = event.target?.result as string;
         const data = JSON.parse(text);
         if (!data.reportId || !data.analysisResult || typeof data.sourceText !== 'string') {
-          throw new Error(t('error_invalid_json_file'));
+          throw new ConfigError('error_invalid_json_file');
         }
 
         setError(null);
@@ -177,9 +175,11 @@ export const useAnalysis = (
           setTranslatedResults({ [language]: data.analysisResult });
         }
       } catch (e: any) {
-          const message = t(e.message, e.details) || e.message;
-          const finalMessage = `${t('error_json_load_failed')} ${message}`;
-          setError({ message: finalMessage, type: 'general' });
+          if (e instanceof ConfigError) {
+            setError({ key: e.message, details: e.details, type: 'general' });
+          } else {
+            setError({ key: 'error_json_load_failed', details: { message: e.message }, type: 'general' });
+          }
       }
     };
     reader.readAsText(file);

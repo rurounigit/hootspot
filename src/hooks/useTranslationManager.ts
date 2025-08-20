@@ -27,7 +27,7 @@ export const useTranslationManager = (config: UseTranslationManagerConfig) => {
   // FIX 1: Allow the state to hold `null` to signify a failed translation attempt.
   const [translatedRebuttals, setTranslatedRebuttals] = useState<Record<string, string | null>>({});
   const [isTranslatingRebuttal, setIsTranslatingRebuttal] = useState(false);
-  const [translationError, setTranslationError] = useState<{ message: string, type: 'config' | 'general' } | null>(null);
+  const [translationError, setTranslationError] = useState<{ key: string, details?: Record<string, any>, type: 'config' | 'general' } | null>(null);
 
   const inflightRequests = useRef<Record<string, boolean>>({});
 
@@ -57,10 +57,10 @@ export const useTranslationManager = (config: UseTranslationManagerConfig) => {
       let translatedText: string;
       if (serviceProvider === 'cloud') {
         if (cloudProvider === 'google') {
-          if (!apiKey) throw new Error(t('error_api_key_not_configured'));
+          if (!apiKey) throw new ConfigError('error_api_key_not_configured');
           translatedText = await translateWithGoogle(apiKey, textToTranslate, targetLang, googleModel, t);
         } else { // openrouter
-          if (!openRouterApiKey) throw new Error(t('error_api_key_not_configured'));
+          if (!openRouterApiKey) throw new ConfigError('error_api_key_not_configured');
           translatedText = await translateWithOpenRouter(openRouterApiKey, textToTranslate, targetLang, openRouterModel, t);
         }
       } else { // Local provider
@@ -72,11 +72,10 @@ export const useTranslationManager = (config: UseTranslationManagerConfig) => {
       }
       setTranslatedRebuttals(prev => ({ ...prev, [targetLang]: translatedText }));
     } catch (err: any) {
-      const message = t(err.message, err.details) || err.message;
       if (err instanceof ConfigError) {
-        setTranslationError({ message, type: 'config' });
+        setTranslationError({ key: err.message, details: err.details, type: 'config' });
       } else {
-        setTranslationError({ message, type: 'general' });
+        setTranslationError({ key: err.message, details: err.details, type: 'general' });
       }
       // FIX 2: On error, set the entry to null. This prevents the useEffect from retrying.
       setTranslatedRebuttals(prev => ({ ...prev, [targetLang]: null }));

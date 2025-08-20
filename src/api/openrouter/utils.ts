@@ -31,7 +31,7 @@ export async function repairAndParseJson(
 
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(`OpenRouter repair request failed: ${errorData.error.message}`);
+            throw new ConfigError('error_openrouter_repair_failed', { message: errorData.error.message });
         }
 
         const rawJson = await response.json();
@@ -40,7 +40,7 @@ export async function repairAndParseJson(
     } catch (e) {
         console.error("--- HootSpot JSON REPAIR FAILED (OpenRouter) ---");
         console.error("Original broken JSON:", brokenJson);
-        throw new Error(`Failed to parse analysis even after attempting a repair: ${(e as Error).message}`);
+        throw new ConfigError('error_json_repair_failed', { message: (e as Error).message });
     }
 }
 

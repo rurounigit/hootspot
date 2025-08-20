@@ -95,20 +95,23 @@ const LocalProviderConfig: React.FC<LocalProviderConfigProps> = ({
           id="modelSelector"
           value={selectedModel}
           onChange={(e) => onModelChange(e.target.value)}
-          disabled={areModelsLoading || !!modelsError || !currentUrl}
+          disabled={areModelsLoading || !!modelsError || !currentUrl || allModels.length === 0}
           className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 dark:disabled:bg-gray-600 bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-50"
         >
           {areModelsLoading && <option>{t('config_model_loading')}</option>}
           {modelsError && <option>{t('config_model_error')}</option>}
           {!areModelsLoading && !modelsError && allModels.length === 0 && (
-            <option>{t('config_local_model_no_models')}</option>
+            <option>{t('config_model_error')}</option>
           )}
-          {!areModelsLoading && !modelsError && allModels.map(model => (
+          {!areModelsLoading && !modelsError && allModels.length > 0 && allModels.map(model => (
             <option key={model.name} value={model.name}>
               {model.displayName}
             </option>
           ))}
         </select>
+        {(!areModelsLoading && !modelsError && allModels.length === 0) && (
+          <p className="text-xs text-red-600 dark:text-red-400 mt-1">{t('config_model_error')}</p>
+        )}
        </div>
     </>
   );

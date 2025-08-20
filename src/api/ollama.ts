@@ -71,7 +71,7 @@ async function repairAndParseJsonWithOllama(
     } catch (e: any) {
         console.error("--- HootSpot JSON REPAIR FAILED ---");
         console.error("Original broken JSON from Ollama:", brokenJson);
-        throw new GeneralError('error_analysis_failed', { message: `Failed to parse or repair the model's response. Details: ${e.message}` });
+        throw new GeneralError('error_analysis_failed', { message: e.message });
     }
 }
 
@@ -80,7 +80,7 @@ export const fetchOllamaModels = async (serverUrl: string): Promise<AIModel[]> =
     const response = await fetch(`${serverUrl}/api/tags`);
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(errorText || `HTTP error! status: ${response.status}`);
+      throw new GeneralError('error_analysis_failed', { message: errorText || `HTTP error! status: ${response.status}` });
     }
     const data = await response.json();
     if (!data.models || !Array.isArray(data.models)) {

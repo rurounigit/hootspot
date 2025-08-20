@@ -168,20 +168,20 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (analysisErrorObject?.type === 'config') {
-      invalidateConfig(analysisErrorObject.message);
+      invalidateConfig(t(analysisErrorObject.key, analysisErrorObject.details));
       clearAnalysisError();
     }
-  }, [analysisErrorObject, invalidateConfig, clearAnalysisError]);
+  }, [analysisErrorObject, invalidateConfig, clearAnalysisError, t]);
 
   useEffect(() => {
     if (translationErrorObject?.type === 'config') {
-      invalidateConfig(translationErrorObject.message);
+      invalidateConfig(t(translationErrorObject.key, translationErrorObject.details));
       clearTranslationError();
     }
-  }, [translationErrorObject, invalidateConfig, clearTranslationError]);
+  }, [translationErrorObject, invalidateConfig, clearTranslationError, t]);
 
-  const generalAnalysisError = analysisErrorObject?.type === 'general' ? analysisErrorObject.message : null;
-  const generalTranslationError = translationErrorObject?.type === 'general' ? translationErrorObject.message : null;
+  const generalAnalysisError = analysisErrorObject?.type === 'general' ? t(analysisErrorObject.key, analysisErrorObject.details) : null;
+  const generalTranslationError = translationErrorObject?.type === 'general' ? t(translationErrorObject.key, translationErrorObject.details) : null;
   const combinedError = generalAnalysisError || generalTranslationError;
 
   useEffect(() => {
@@ -262,7 +262,7 @@ const App: React.FC = () => {
           {combinedError && (
             <div className="my-6 p-4 bg-red-100 border border-red-300 text-red-700 dark:bg-red-900/50 dark:text-red-300 dark:border-red-500 rounded-md shadow-md" role="alert">
               <strong className="font-bold">{t('error_prefix')}</strong>
-              <span>{t(combinedError) || combinedError}</span>
+              <span>{combinedError}</span>
             </div>
           )}
           <div ref={analysisReportRef} className="mt-2">

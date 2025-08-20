@@ -9,6 +9,7 @@ import { AddIcon } from '../assets/icons';
 import { defaultLanguages } from '../i18n';
 import { translateUIWithOllama } from '../api/ollama';
 import { createNumberedJsonForTranslation, reconstructTranslatedJson } from '../utils/translationUtils';
+import { ConfigError } from '../utils/errors';
 
 interface LanguageManagerProps {
   serviceProvider: 'cloud' | 'local';
@@ -81,7 +82,7 @@ const LanguageManager: React.FC<LanguageManagerProps> = ({
       }
 
       if (!translatedNumberedJson) {
-        throw new Error("Translation provider not properly configured.");
+        throw new ConfigError('error_translation_provider_not_configured');
       }
 
       // Use the utility to reconstruct the final JSON

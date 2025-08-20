@@ -68,7 +68,7 @@ async function repairAndParseJsonWithLMStudio(
         console.error("--- HootSpot JSON REPAIR FAILED ---");
         console.error("Original broken JSON from LM Studio:", brokenJson);
         // Throw a specific, user-facing error.
-        throw new GeneralError('error_analysis_failed', { message: `Failed to parse or repair the model's response. Details: ${e.message}` });
+        throw new GeneralError('error_analysis_failed', { message: e.message });
     }
 }
 
@@ -78,7 +78,7 @@ export const fetchLMStudioModels = async (serverUrl: string): Promise<AIModel[]>
     const response = await fetch(`${serverUrl}/v1/models`);
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error?.message || `HTTP error! status: ${response.status}`);
+      throw new GeneralError('error_analysis_failed', { message: errorData.error?.message || `HTTP error! status: ${response.status}` });
     }
     const data = await response.json();
 
