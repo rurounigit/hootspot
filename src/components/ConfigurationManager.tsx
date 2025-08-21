@@ -87,14 +87,14 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
       // OpenRouter case - also check if API key is valid
       return props.openRouterApiKey.trim() !== '' && props.openRouterModel.trim() !== '' && props.isOpenRouterApiKeyValid;
     }
-    // Local provider validation
+    // Local provider validation - more lenient to allow for model loading
     if (localProviderType === 'lm-studio') {
-      return lmStudioUrl.trim() !== '' && lmStudioModel.trim() !== '' && models.stable.length > 0 && !areModelsLoading && !modelsError;
+      return lmStudioUrl.trim() !== '' && lmStudioModel.trim() !== '';
     }
-    return ollamaUrl.trim() !== '' && ollamaModel.trim() !== '' && models.stable.length > 0 && !areModelsLoading && !modelsError;
+    return ollamaUrl.trim() !== '' && ollamaModel.trim() !== '';
   };
 
-  const isSaveDisabled = isTesting || !isFormValid() || areModelsLoading || !!modelsError;
+  const isSaveDisabled = isTesting || !isFormValid() || (isCloudProvider && (areModelsLoading || !!modelsError));
 
   useEffect(() => {
     if (isCollapsed) {
@@ -110,10 +110,28 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
         setLocalError(null);
       }
     } else {
-      if (!isFormValid()) setLocalError(t('error_local_server_config_missing'));
-      else setLocalError(null);
+      // More granular local provider error handling
+      if (localProviderType === 'lm-studio') {
+        if (!lmStudioUrl.trim()) {
+          setLocalError(t('error_local_server_config_missing'));
+        } else if (!lmStudioModel.trim() && !areModelsLoading && models.stable.length > 0) {
+          // Only show error if models are loaded and available but none selected
+          setLocalError(t('error_local_server_config_missing'));
+        } else {
+          setLocalError(null);
+        }
+      } else {
+        if (!ollamaUrl.trim()) {
+          setLocalError(t('error_local_server_config_missing'));
+        } else if (!ollamaModel.trim() && !areModelsLoading && models.stable.length > 0) {
+          // Only show error if models are loaded and available but none selected
+          setLocalError(t('error_local_server_config_missing'));
+        } else {
+          setLocalError(null);
+        }
+      }
     }
-  }, [isCollapsed, serviceProvider, props.cloudProvider, props.apiKeyInput, props.openRouterApiKey, lmStudioUrl, lmStudioModel, ollamaUrl, ollamaModel, t]);
+  }, [isCollapsed, serviceProvider, props.cloudProvider, props.apiKeyInput, props.openRouterApiKey, lmStudioUrl, lmStudioModel, ollamaUrl, ollamaModel, localProviderType, t, models, areModelsLoading, modelsError]);
 
   const renderCollapsedStatus = () => {
     const providerName = isCloudProvider ? (props.cloudProvider === 'google' ? 'Google' : 'OpenRouter') : (localProviderType === 'ollama' ? 'Ollama' : 'LM Studio');
