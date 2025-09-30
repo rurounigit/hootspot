@@ -79,7 +79,9 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
   const isFormValid = () => {
     if (isCloudProvider) {
       if (props.cloudProvider === 'google') {
-        return props.apiKeyInput.trim() !== '' && props.googleModel.trim() !== '';
+        // For Google API, only consider form valid if we have successfully loaded models
+        // This ensures we only enable Save & Test when we know the API key is valid
+        return props.apiKeyInput.trim() !== '' && props.googleModel.trim() !== '' && !areModelsLoading && !modelsError;
       }
       // OpenRouter case - no API key validation needed
       return props.openRouterApiKey.trim() !== '' && props.openRouterModel.trim() !== '';
@@ -92,8 +94,10 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
   };
 
   const isSaveDisabled = isTesting || !isFormValid() || (isCloudProvider && (areModelsLoading || !!modelsError)) ||
-    // Additional safeguard: Always disable Save & Test for Google API when API key is empty
-    (isCloudProvider && props.cloudProvider === 'google' && !props.apiKeyInput.trim());
+    // Additional safeguard for Google API: always disable Save & Test when API key is empty
+    (isCloudProvider && props.cloudProvider === 'google' && props.apiKeyInput.trim() === '') ||
+    // Additional safeguard for Google API: disable during uncertain validation states
+    (isCloudProvider && props.cloudProvider === 'google' && props.apiKeyInput.trim() !== '' && !areModelsLoading && modelsError === null && models.stable.length === 0);
 
   useEffect(() => {
     if (isCollapsed) {
