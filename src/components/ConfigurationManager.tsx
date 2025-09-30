@@ -91,7 +91,9 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
     return ollamaUrl.trim() !== '' && ollamaModel.trim() !== '';
   };
 
-  const isSaveDisabled = isTesting || !isFormValid() || (isCloudProvider && (areModelsLoading || !!modelsError));
+  const isSaveDisabled = isTesting || !isFormValid() || (isCloudProvider && (areModelsLoading || !!modelsError)) ||
+    // Additional safeguard: Always disable Save & Test for Google API when API key is empty
+    (isCloudProvider && props.cloudProvider === 'google' && !props.apiKeyInput.trim());
 
   useEffect(() => {
     if (isCollapsed) {

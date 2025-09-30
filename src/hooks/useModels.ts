@@ -33,6 +33,7 @@ export const useModels = ({ serviceProvider, cloudProvider, localProviderType, a
 
   const loadModels = useCallback(async () => {
     setIsLoading(true);
+    setError(null);
     setModels({ preview: [], stable: [], experimental: [] });
     stopPolling(); // Stop any existing polling before a new manual/initial attempt
 
@@ -41,15 +42,10 @@ export const useModels = ({ serviceProvider, cloudProvider, localProviderType, a
             if (cloudProvider === 'google' && apiKey) {
                 const fetchedModels = await fetchGoogleModels(apiKey, showAllVersions);
                 setModels(fetchedModels);
-                setError(null); // Clear error only on successful Google API call
             } else if (cloudProvider === 'openrouter') {
                 // OpenRouter models can be loaded without authentication
                 const fetchedModels = await fetchModels();
                 setModels({ preview: [], stable: fetchedModels, experimental: [] });
-                setError(null); // Clear error only on successful OpenRouter API call
-            } else {
-                // No API key provided for Google, clear error
-                setError(null);
             }
         } else if (serviceProvider === 'local') {
             let fetchedModels: AIModel[] = [];
@@ -60,10 +56,7 @@ export const useModels = ({ serviceProvider, cloudProvider, localProviderType, a
             }
             // Local providers don't have categories, so we put them all in stable
             setModels({ preview: [], stable: fetchedModels, experimental: [] });
-            setError(null); // Clear error only on successful local provider call
-        } else {
-            // Clear error for other cases
-            setError(null);
+            setError(null); // Explicitly clear error on success
         }
     } catch (err: any) {
         const errorMessage = err.message || 'An unknown error occurred while fetching models.';
@@ -105,10 +98,7 @@ export const useModels = ({ serviceProvider, cloudProvider, localProviderType, a
       // If conditions are NOT met (e.g., the API key was just cleared),
       // explicitly reset the hook's state to its clean, initial values.
       setIsLoading(false);
-      // Only clear error if we're dealing with Google API and no API key is provided
-      if (!(serviceProvider === 'cloud' && cloudProvider === 'google')) {
-        setError(null);
-      }
+      setError(null);
       setModels({ preview: [], stable: [], experimental: [] });
       stopPolling();
     }
