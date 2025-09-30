@@ -22,8 +22,6 @@ interface CloudConfigProps {
   onOpenRouterApiKeyChange: (key: string) => void;
   openRouterModel: string;
   onOpenRouterModelChange: (model: string) => void;
-  isOpenRouterApiKeyValid: boolean;
-  openRouterApiKeyTestStatus: { message: string, type: 'success' | 'error' } | null;
 }
 
 const CloudConfig: React.FC<CloudConfigProps> = (props) => {
@@ -88,7 +86,6 @@ const CloudConfig: React.FC<CloudConfigProps> = (props) => {
           models={props.models}
           areModelsLoading={props.areModelsLoading}
           modelsError={props.modelsError}
-          apiKeyTestStatus={props.openRouterApiKeyTestStatus}
         />
       )}
     </div>
