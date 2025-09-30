@@ -57,8 +57,6 @@ export const useConfig = () => {
   const [testStatus, setTestStatus] = useState<{ message: string, type: 'success' | 'error', details?: Record<string, any> } | null>(null);
   const [debouncedApiKey, setDebouncedApiKey] = useState<string>(apiKeyInput);
   const [debouncedOpenRouterApiKey, setDebouncedOpenRouterApiKey] = useState<string>(openRouterApiKey);
-  const [isOpenRouterApiKeyValid, setIsOpenRouterApiKeyValid] = useState<boolean>(!!localStorage.getItem(OPEN_ROUTER_API_KEY_STORAGE_KEY));
-  const [openRouterApiKeyTestStatus, setOpenRouterApiKeyTestStatus] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
   const [maxCharLimit, setMaxCharLimit] = useState<number>(DEFAULT_MAX_CHAR_LIMIT);
   const [isNightMode, setIsNightMode] = useState<boolean>(() => localStorage.getItem(NIGHT_MODE_STORAGE_KEY) === 'true');
   const [includeRebuttalInJson, setIncludeRebuttalInJson] = useState<boolean>(() => localStorage.getItem(INCLUDE_REBUTTAL_JSON_KEY) === 'true');
@@ -85,34 +83,6 @@ export const useConfig = () => {
     const handler = setTimeout(() => { setDebouncedOpenRouterApiKey(openRouterApiKey.trim()); }, 500);
     return () => clearTimeout(handler);
   }, [openRouterApiKey]);
-
-  useEffect(() => {
-    if (serviceProvider === 'cloud' && cloudProvider === 'openrouter') {
-      if (debouncedOpenRouterApiKey) {
-        const validateApiKey = async () => {
-          try {
-            // Test with a simple model - we just need to verify the key works
-            await testOpenRouterConnection(debouncedOpenRouterApiKey, t, 'openai/gpt-3.5-turbo');
-            setIsOpenRouterApiKeyValid(true);
-            setOpenRouterApiKeyTestStatus({ message: 'API key is valid', type: 'success' });
-          } catch (error: any) {
-            setIsOpenRouterApiKeyValid(false);
-            // Use the exact same error message text as Google API
-            setOpenRouterApiKeyTestStatus({ message: 'API key not valid. Please pass a valid API key.', type: 'error' });
-          }
-        };
-        validateApiKey();
-      } else {
-        // Empty API key
-        setIsOpenRouterApiKeyValid(false);
-        setOpenRouterApiKeyTestStatus({ message: '', type: 'error' });
-      }
-    } else {
-      // Clear validation status when not using OpenRouter
-      setIsOpenRouterApiKeyValid(true);
-      setOpenRouterApiKeyTestStatus(null);
-    }
-  }, [debouncedOpenRouterApiKey, serviceProvider, cloudProvider, t]);
 
   const setAndDirty = <T extends (...args: any[]) => void>(setter: T) => (...args: Parameters<T>): void => {
       setter(...args);
@@ -227,8 +197,6 @@ export const useConfig = () => {
     isCurrentProviderConfigured: isVerified,
     handleMaxCharLimitSave,
     saveAndTestConfig,
-    invalidateConfig,
-    isOpenRouterApiKeyValid,
-    openRouterApiKeyTestStatus
+    invalidateConfig
   };
 };

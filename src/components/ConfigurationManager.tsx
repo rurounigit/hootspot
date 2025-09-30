@@ -21,9 +21,6 @@ interface ConfigurationManagerProps {
   openRouterApiKey: string;
   onOpenRouterApiKeyChange: (key: string) => void;
 
-  isOpenRouterApiKeyValid: boolean;
-  openRouterApiKeyTestStatus: { message: string, type: 'success' | 'error' } | null;
-
   lmStudioUrl: string;
   onLmStudioUrlChange: (url: string) => void;
   lmStudioModel: string;
@@ -84,8 +81,8 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
       if (props.cloudProvider === 'google') {
         return props.apiKeyInput.trim() !== '' && props.googleModel.trim() !== '';
       }
-      // OpenRouter case - also check if API key is valid
-      return props.openRouterApiKey.trim() !== '' && props.openRouterModel.trim() !== '' && props.isOpenRouterApiKeyValid;
+      // OpenRouter case - no API key validation needed
+      return props.openRouterApiKey.trim() !== '' && props.openRouterModel.trim() !== '';
     }
     // Local provider validation - more lenient to allow for model loading
     if (localProviderType === 'lm-studio') {
@@ -187,8 +184,6 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
               onOpenRouterApiKeyChange={props.onOpenRouterApiKeyChange}
               openRouterModel={props.openRouterModel}
               onOpenRouterModelChange={props.onOpenRouterModelChange}
-              isOpenRouterApiKeyValid={props.isOpenRouterApiKeyValid}
-              openRouterApiKeyTestStatus={props.openRouterApiKeyTestStatus}
             />
           ) : (
             <LocalProviderConfig
@@ -225,6 +220,11 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
 
           {(localError && !testStatus) && ( <div className="mt-4 p-3 rounded-md text-sm bg-red-100 text-red-700 border border-red-300 dark:bg-red-900/50 dark:text-red-300 dark:border-red-500"> {localError} </div> )}
           {testStatus && testStatus.type === 'error' && ( <div className={`mt-4 p-3 rounded-md text-sm bg-red-100 text-red-700 border border-red-300 dark:bg-red-900/50 dark:text-red-300 dark:border-red-500`}> {t(testStatus.message, testStatus.details)} </div> )}
+          {modelsError && !localError && !testStatus && (
+            <div className="mt-4 p-3 rounded-md text-sm bg-red-100 text-red-700 border border-red-300 dark:bg-red-900/50 dark:text-red-300 dark:border-red-500">
+              {modelsError}
+            </div>
+          )}
 
           <LanguageManager
             serviceProvider={serviceProvider}

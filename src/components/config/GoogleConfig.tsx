@@ -74,7 +74,6 @@ const GoogleConfig: React.FC<GoogleConfigProps> = ({
             </>
           )}
         </select>
-        {modelsError && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{modelsError}</p>}
       </div>
     </>
   );

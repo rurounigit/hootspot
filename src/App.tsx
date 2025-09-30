@@ -39,9 +39,7 @@ const App: React.FC = () => {
     isConfigCollapsed, setIsConfigCollapsed,
     isCurrentProviderConfigured, isTesting, testStatus,
     saveAndTestConfig, handleMaxCharLimitSave,
-    invalidateConfig,
-    isOpenRouterApiKeyValid,
-    openRouterApiKeyTestStatus
+    invalidateConfig
   } = useConfig();
 
   const { models, isLoading: areModelsLoading, error: modelsError, refetch: refetchModels } = useModels({
@@ -239,8 +237,6 @@ const App: React.FC = () => {
             isCurrentProviderConfigured={isCurrentProviderConfigured}
             isCollapsed={isConfigCollapsed} onToggleCollapse={() => setIsConfigCollapsed(!isConfigCollapsed)}
             isTesting={isTesting} testStatus={testStatus} onSave={saveAndTestConfig}
-            isOpenRouterApiKeyValid={isOpenRouterApiKeyValid}
-            openRouterApiKeyTestStatus={openRouterApiKeyTestStatus}
           />
           <TextAnalyzer
             ref={textareaRef}
