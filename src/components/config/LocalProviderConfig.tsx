@@ -21,7 +21,6 @@ interface LocalProviderConfigProps {
   areModelsLoading: boolean;
   modelsError: string | null;
   modelsCurrentErrorKey: string | null; // Key for the current error
-  isModelListEmpty: boolean; // True if server responded with no models
   onRefetchModels: () => void;
 }
 
@@ -30,7 +29,7 @@ const LocalProviderConfig: React.FC<LocalProviderConfigProps> = ({
   lmStudioUrl, onLmStudioUrlChange,
   ollamaUrl, onOllamaUrlChange,
   models, selectedModel, onModelChange,
-  areModelsLoading, modelsError, modelsCurrentErrorKey, isModelListEmpty, onRefetchModels
+  areModelsLoading, modelsError, modelsCurrentErrorKey, onRefetchModels
 }) => {
   const { t } = useTranslation();
   const allModels = models.stable;

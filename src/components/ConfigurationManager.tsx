@@ -40,7 +40,6 @@ interface ConfigurationManagerProps {
   areModelsLoading: boolean;
   modelsError: string | null;
   modelsCurrentErrorKey: string | null; // Key for the current error
-  isModelListEmpty: boolean; // True if server responded with no models
   onRefetchModels: () => void;
 
   currentMaxCharLimit: number;
@@ -69,7 +68,7 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
     localProviderType, onLocalProviderTypeChange,
     apiKeyInput, lmStudioUrl, onLmStudioUrlChange, lmStudioModel, onLmStudioModelChange,
     ollamaUrl, onOllamaUrlChange, ollamaModel, onOllamaModelChange,
-    models, areModelsLoading, modelsError, modelsCurrentErrorKey, isModelListEmpty, onRefetchModels,
+    models, areModelsLoading, modelsError, modelsCurrentErrorKey, onRefetchModels,
     isCurrentProviderConfigured, isCollapsed, onToggleCollapse,
     isTesting, testStatus, onSave, openRouterModel
   } = props;
@@ -207,7 +206,6 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
               areModelsLoading={areModelsLoading}
               modelsError={modelsError}
               modelsCurrentErrorKey={modelsCurrentErrorKey} // Pass the new prop
-              isModelListEmpty={isModelListEmpty} // Pass the new prop
               onRefetchModels={onRefetchModels}
             />
           )}
