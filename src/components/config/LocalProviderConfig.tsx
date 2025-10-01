@@ -109,9 +109,6 @@ const LocalProviderConfig: React.FC<LocalProviderConfigProps> = ({
             </option>
           ))}
         </select>
-        {(!areModelsLoading && !modelsError && allModels.length === 0) && (
-          <p className="text-xs text-red-600 dark:text-red-400 mt-1">{t('config_model_error')}</p>
-        )}
        </div>
     </>
   );

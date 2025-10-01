@@ -76,6 +76,7 @@ export const useModels = ({ serviceProvider, cloudProvider, localProviderType, a
 
         // If it's a local provider and a connection error, start polling
         if (serviceProvider === 'local' && (err instanceof TypeError || errorMessage.includes('Failed to fetch'))) {
+            setError(t('error_network_connection_failed')); // Use translated message for network issues
             pollingIntervalRef.current = setInterval(() => {
                 (async () => {
                     try {
@@ -89,6 +90,7 @@ export const useModels = ({ serviceProvider, cloudProvider, localProviderType, a
                         loadModels();
                     } catch (pollError) {
                         // Server is still down, the interval will try again.
+                        setError(t('error_network_connection_failed')); // Ensure error message is set during polling attempts
                     }
                 })();
             }, 5000); // Poll every 5 seconds
