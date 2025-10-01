@@ -20,6 +20,8 @@ interface LocalProviderConfigProps {
   onModelChange: (modelId: string) => void;
   areModelsLoading: boolean;
   modelsError: string | null;
+  modelsCurrentErrorKey: string | null; // Key for the current error
+  isModelListEmpty: boolean; // True if server responded with no models
   onRefetchModels: () => void;
 }
 
@@ -28,7 +30,7 @@ const LocalProviderConfig: React.FC<LocalProviderConfigProps> = ({
   lmStudioUrl, onLmStudioUrlChange,
   ollamaUrl, onOllamaUrlChange,
   models, selectedModel, onModelChange,
-  areModelsLoading, modelsError, onRefetchModels
+  areModelsLoading, modelsError, modelsCurrentErrorKey, isModelListEmpty, onRefetchModels
 }) => {
   const { t } = useTranslation();
   const allModels = models.stable;
@@ -87,7 +89,7 @@ const LocalProviderConfig: React.FC<LocalProviderConfigProps> = ({
           <label htmlFor="modelSelector" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             {t(modelLabelKey)}
           </label>
-          <button onClick={onRefetchModels} disabled={areModelsLoading || !!modelsError || !currentUrl} className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed">
+          <button onClick={onRefetchModels} disabled={!currentUrl || areModelsLoading || (modelsError != null && modelsCurrentErrorKey !== 'config_model_error')} className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed">
             {t('config_model_refresh')}
           </button>
         </div>

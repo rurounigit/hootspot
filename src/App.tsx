@@ -42,7 +42,7 @@ const App: React.FC = () => {
     invalidateConfig
   } = useConfig();
 
-  const { models, isLoading: areModelsLoading, error: modelsError, refetch: refetchModels } = useModels({
+  const { models, isLoading: areModelsLoading, error: modelsError, currentErrorKey, isModelListEmpty, refetch: refetchModels } = useModels({
     serviceProvider, cloudProvider, localProviderType,
     apiKey: debouncedApiKey,
     openRouterApiKey: openRouterApiKey,
@@ -228,7 +228,7 @@ const App: React.FC = () => {
             ollamaUrl={ollamaUrl} onOllamaUrlChange={setOllamaUrl}
             ollamaModel={ollamaModel} onOllamaModelChange={setOllamaModel}
             models={models} googleModel={googleModel} onGoogleModelChange={setGoogleModel}
-            areModelsLoading={areModelsLoading} modelsError={modelsError} onRefetchModels={refetchModels}
+            areModelsLoading={areModelsLoading} modelsError={modelsError} modelsCurrentErrorKey={currentErrorKey} isModelListEmpty={isModelListEmpty} onRefetchModels={refetchModels}
             currentMaxCharLimit={maxCharLimit} onMaxCharLimitSave={handleMaxCharLimitSave}
             isNightMode={isNightMode} onNightModeChange={setIsNightMode}
             includeRebuttalInJson={includeRebuttalInJson} onIncludeRebuttalInJsonChange={setIncludeRebuttalInJson}

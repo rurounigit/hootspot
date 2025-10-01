@@ -1,6 +1,6 @@
 // src/components/config/LMStudioConfig.tsx
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from '../../i18n';
 import { InfoIcon } from '../../assets/icons';
 import { GroupedModels } from '../../types/api';
@@ -13,6 +13,7 @@ interface LMStudioConfigProps {
   onModelChange: (modelId: string) => void;
   areModelsLoading: boolean;
   modelsError: string | null;
+  modelsCurrentErrorKey: string | null; // Key for the current error, e.g., 'config_model_error'
   onRefetchModels: () => void;
 }
 
@@ -24,10 +25,12 @@ const LMStudioConfig: React.FC<LMStudioConfigProps> = ({
   onModelChange,
   areModelsLoading,
   modelsError,
+  modelsCurrentErrorKey, // Destructure the new prop
   onRefetchModels
 }) => {
   const { t } = useTranslation();
   const allModels = models.stable; // Local models are all in the 'stable' group
+  // No need for local state or effect to check error type, we have the key directly
 
   return (
     <>
@@ -53,7 +56,7 @@ const LMStudioConfig: React.FC<LMStudioConfigProps> = ({
           <label htmlFor="modelSelector" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             {t('config_local_model_name_label_dropdown')}
           </label>
-          <button onClick={onRefetchModels} disabled={areModelsLoading || !lmStudioUrl} className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed">
+          <button onClick={onRefetchModels} disabled={!lmStudioUrl || areModelsLoading || (modelsError != null && modelsCurrentErrorKey !== 'config_model_error')} className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed">
             {t('config_model_refresh')}
           </button>
         </div>

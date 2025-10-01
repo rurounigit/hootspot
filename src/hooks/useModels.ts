@@ -20,10 +20,12 @@ interface UseModelsProps {
 }
 
 export const useModels = ({ serviceProvider, cloudProvider, localProviderType, apiKey, openRouterApiKey, lmStudioUrl, ollamaUrl, showAllVersions }: UseModelsProps) => {
-  const { t } = useTranslation(); // Added to get the translation function
+  const { t, language } = useTranslation(); // Added to get the translation function and current language
   const [models, setModels] = useState<GroupedModels>({ preview: [], stable: [], experimental: [] });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isModelListEmpty, setIsModelListEmpty] = useState<boolean>(false); // To track if server responded with no models
+  const [currentErrorKey, setCurrentErrorKey] = useState<string | null>(null); // To store the key of the current error
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const stopPolling = useCallback(() => {
@@ -53,17 +55,31 @@ export const useModels = ({ serviceProvider, cloudProvider, localProviderType, a
             let fetchedModels: AIModel[] = [];
             if (localProviderType === 'lm-studio' && lmStudioUrl) {
                 fetchedModels = await fetchLMStudioModels(lmStudioUrl);
-                if (fetchedModels.length === 0 && lmStudioUrl) {
-                    setError(t('config_model_error')); // Generic "Model Load Error."
+                if (fetchedModels.length === 0) {
+                    // Server responded, but no models.
+                    // Show "Model Load Error." message but keep refresh button enabled.
+                    setIsModelListEmpty(true);
+                    setCurrentErrorKey('config_model_error');
+                    setError(t('config_model_error'));
                 } else {
-                    setError(null); // Clear error if models are found or if URL was empty (handled by outer logic)
+                    // Models were found.
+                    setIsModelListEmpty(false);
+                    setCurrentErrorKey(null);
+                    setError(null);
                 }
             } else if (localProviderType === 'ollama' && ollamaUrl) {
                 fetchedModels = await fetchOllamaModels(ollamaUrl);
-                 if (fetchedModels.length === 0 && ollamaUrl) {
-                    setError(t('config_model_error')); // Generic "Model Load Error."
+                if (fetchedModels.length === 0) {
+                    // Server responded, but no models.
+                    // Show "Model Load Error." message but keep refresh button enabled.
+                    setIsModelListEmpty(true);
+                    setCurrentErrorKey('config_model_error');
+                    setError(t('config_model_error'));
                 } else {
-                    setError(null); // Clear error if models are found or if URL was empty (handled by outer logic)
+                    // Models were found.
+                    setIsModelListEmpty(false);
+                    setCurrentErrorKey(null);
+                    setError(null);
                 }
             }
             // Local providers don't have categories, so we put them all in stable
@@ -73,9 +89,11 @@ export const useModels = ({ serviceProvider, cloudProvider, localProviderType, a
         const errorMessage = err.message || 'An unknown error occurred while fetching models.';
         setError(errorMessage);
         setModels({ preview: [], stable: [], experimental: [] });
+        setIsModelListEmpty(false); // Reset empty state on actual error
 
         // If it's a local provider and a connection error, start polling
         if (serviceProvider === 'local' && (err instanceof TypeError || errorMessage.includes('Failed to fetch'))) {
+            setCurrentErrorKey('error_network_connection_failed');
             setError(t('error_network_connection_failed')); // Use translated message for network issues
             pollingIntervalRef.current = setInterval(() => {
                 (async () => {
@@ -90,6 +108,7 @@ export const useModels = ({ serviceProvider, cloudProvider, localProviderType, a
                         loadModels();
                     } catch (pollError) {
                         // Server is still down, the interval will try again.
+                        setCurrentErrorKey('error_network_connection_failed');
                         setError(t('error_network_connection_failed')); // Ensure error message is set during polling attempts
                     }
                 })();
@@ -98,7 +117,16 @@ export const useModels = ({ serviceProvider, cloudProvider, localProviderType, a
     } finally {
         setIsLoading(false);
     }
-  }, [serviceProvider, cloudProvider, localProviderType, apiKey, lmStudioUrl, ollamaUrl, showAllVersions, stopPolling]);
+  }, [serviceProvider, cloudProvider, localProviderType, apiKey, lmStudioUrl, ollamaUrl, showAllVersions, stopPolling, t]); // Added t to dependencies
+
+  // Effect to re-translate error message when language changes
+  useEffect(() => {
+    if (currentErrorKey) {
+      setError(t(currentErrorKey));
+    } else {
+      setError(null);
+    }
+  }, [language, currentErrorKey, t]);
 
   useEffect(() => {
     // Determine if the necessary conditions to fetch models are met.
@@ -125,7 +153,9 @@ export const useModels = ({ serviceProvider, cloudProvider, localProviderType, a
   return {
     models,
     isLoading,
-    error,
+    error, // This is the criticalError or the specific model load error message
+    currentErrorKey, // The key for the current error, e.g., 'config_model_error'
+    isModelListEmpty, // True if server responded with no models
     refetch: loadModels
   };
 };

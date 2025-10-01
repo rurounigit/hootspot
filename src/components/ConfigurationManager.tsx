@@ -39,6 +39,8 @@ interface ConfigurationManagerProps {
 
   areModelsLoading: boolean;
   modelsError: string | null;
+  modelsCurrentErrorKey: string | null; // Key for the current error
+  isModelListEmpty: boolean; // True if server responded with no models
   onRefetchModels: () => void;
 
   currentMaxCharLimit: number;
@@ -67,7 +69,7 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
     localProviderType, onLocalProviderTypeChange,
     apiKeyInput, lmStudioUrl, onLmStudioUrlChange, lmStudioModel, onLmStudioModelChange,
     ollamaUrl, onOllamaUrlChange, ollamaModel, onOllamaModelChange,
-    models, areModelsLoading, modelsError, onRefetchModels,
+    models, areModelsLoading, modelsError, modelsCurrentErrorKey, isModelListEmpty, onRefetchModels,
     isCurrentProviderConfigured, isCollapsed, onToggleCollapse,
     isTesting, testStatus, onSave, openRouterModel
   } = props;
@@ -93,7 +95,7 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
     return ollamaUrl.trim() !== '' && ollamaModel.trim() !== '';
   };
 
-  const isSaveDisabled = isTesting || !isFormValid() || (isCloudProvider && (areModelsLoading || !!modelsError)) ||
+  const isSaveDisabled = isTesting || !isFormValid() || (areModelsLoading || !!modelsError) ||
     // Additional safeguard for Google API: always disable Save & Test when API key is empty
     (isCloudProvider && props.cloudProvider === 'google' && props.apiKeyInput.trim() === '') ||
     // Additional safeguard for Google API: disable during uncertain validation states
@@ -204,6 +206,8 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
               onModelChange={localProviderType === 'lm-studio' ? onLmStudioModelChange : onOllamaModelChange}
               areModelsLoading={areModelsLoading}
               modelsError={modelsError}
+              modelsCurrentErrorKey={modelsCurrentErrorKey} // Pass the new prop
+              isModelListEmpty={isModelListEmpty} // Pass the new prop
               onRefetchModels={onRefetchModels}
             />
           )}
