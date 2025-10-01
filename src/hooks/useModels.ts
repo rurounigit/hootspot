@@ -1,6 +1,7 @@
 // src/hooks/useModels.ts
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from '../i18n'; // Added import for useTranslation
 import { AIModel, GroupedModels } from '../types/api';
 import { fetchModels as fetchGoogleModels } from '../api/google/models';
 import { fetchLMStudioModels } from '../api/lm-studio';
@@ -19,6 +20,7 @@ interface UseModelsProps {
 }
 
 export const useModels = ({ serviceProvider, cloudProvider, localProviderType, apiKey, openRouterApiKey, lmStudioUrl, ollamaUrl, showAllVersions }: UseModelsProps) => {
+  const { t } = useTranslation(); // Added to get the translation function
   const [models, setModels] = useState<GroupedModels>({ preview: [], stable: [], experimental: [] });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,12 +53,21 @@ export const useModels = ({ serviceProvider, cloudProvider, localProviderType, a
             let fetchedModels: AIModel[] = [];
             if (localProviderType === 'lm-studio' && lmStudioUrl) {
                 fetchedModels = await fetchLMStudioModels(lmStudioUrl);
+                if (fetchedModels.length === 0 && lmStudioUrl) {
+                    setError(t('config_model_error')); // Generic "Model Load Error."
+                } else {
+                    setError(null); // Clear error if models are found or if URL was empty (handled by outer logic)
+                }
             } else if (localProviderType === 'ollama' && ollamaUrl) {
                 fetchedModels = await fetchOllamaModels(ollamaUrl);
+                 if (fetchedModels.length === 0 && ollamaUrl) {
+                    setError(t('config_model_error')); // Generic "Model Load Error."
+                } else {
+                    setError(null); // Clear error if models are found or if URL was empty (handled by outer logic)
+                }
             }
             // Local providers don't have categories, so we put them all in stable
             setModels({ preview: [], stable: fetchedModels, experimental: [] });
-            setError(null); // Explicitly clear error on success
         }
     } catch (err: any) {
         const errorMessage = err.message || 'An unknown error occurred while fetching models.';
