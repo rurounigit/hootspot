@@ -23,6 +23,10 @@ const OpenRouterConfig: React.FC<OpenRouterConfigProps> = ({
   modelsError,
 }) => {
   const { t } = useTranslation();
+
+  console.log('=== OpenRouterConfig Render ===');
+  console.log('selectedModel:', selectedModel);
+  console.log('models:', models.stable?.map(m => ({ name: m.name, displayName: m.displayName })));
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -30,6 +34,11 @@ const OpenRouterConfig: React.FC<OpenRouterConfigProps> = ({
   };
 
   const handleModelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    console.log('=== OpenRouter Model Select Change ===');
+    console.log('Selected value:', e.target.value);
+    console.log('Previous selectedModel:', selectedModel);
+    console.log('Are they equal?', e.target.value === selectedModel);
+    console.log('All models:', allModels.map(m => ({ name: m.name, displayName: m.displayName })));
     onModelChange(e.target.value);
   };
 

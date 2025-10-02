@@ -47,7 +47,13 @@ export const useConfig = () => {
   const [apiKeyInput, setApiKeyInputState] = useState<string>(() => localStorage.getItem(API_KEY_STORAGE_KEY) || '');
   const [openRouterApiKey, setOpenRouterApiKeyState] = useState<string>(() => localStorage.getItem(OPEN_ROUTER_API_KEY_STORAGE_KEY) || '');
   const [googleModel, setGoogleModelState] = useState<string>(() => localStorage.getItem(SELECTED_MODEL_STORAGE_KEY) || GEMINI_MODEL_NAME);
-  const [openRouterModel, setOpenRouterModelState] = useState<string>(() => localStorage.getItem(OPEN_ROUTER_MODEL_KEY) || '');
+  const [openRouterModel, setOpenRouterModelState] = useState<string>(() => {
+    const initialValue = localStorage.getItem(OPEN_ROUTER_MODEL_KEY) || '';
+    console.log('=== OpenRouter Model Initial State ===');
+    console.log('localStorage value:', localStorage.getItem(OPEN_ROUTER_MODEL_KEY));
+    console.log('initial value set to:', initialValue);
+    return initialValue;
+  });
   const [lmStudioUrl, setLmStudioUrlState] = useState<string>(() => localStorage.getItem(LM_STUDIO_URL_KEY) || 'http://localhost:1234');
   const [lmStudioModel, setLmStudioModelState] = useState<string>(() => localStorage.getItem(LM_STUDIO_MODEL_KEY) || '');
   const [ollamaUrl, setOllamaUrlState] = useState<string>(() => localStorage.getItem(OLLAMA_URL_KEY) || 'http://localhost:11434');
@@ -64,15 +70,19 @@ export const useConfig = () => {
   const [showAllVersions, setShowAllVersionsState] = useState<boolean>(() =>
     localStorage.getItem(SHOW_ALL_VERSIONS_KEY) === 'true'
   );
-  const [isConfigCollapsed, setIsConfigCollapsed] = useState(false);
+  const [isConfigCollapsed, setIsConfigCollapsedState] = useState(false);
 
   useEffect(() => {
+    console.log('=== Config Collapse State Change ===');
+    console.log('isVerified changed to:', isVerified);
+    console.log('OpenRouter model in state:', openRouterModel);
+    console.log('OpenRouter model in localStorage:', localStorage.getItem(OPEN_ROUTER_MODEL_KEY));
     setIsConfigCollapsed(isVerified);
     const storedMaxCharLimit = localStorage.getItem(MAX_CHAR_LIMIT_STORAGE_KEY);
     if (storedMaxCharLimit) {
       setMaxCharLimit(parseInt(storedMaxCharLimit, 10) || DEFAULT_MAX_CHAR_LIMIT);
     }
-  }, []);
+  }, [isVerified]);
 
   useEffect(() => {
     const handler = setTimeout(() => { setDebouncedApiKey(apiKeyInput.trim()); }, 500);
@@ -90,6 +100,14 @@ export const useConfig = () => {
       setTestStatus(null);
   };
 
+  const setIsConfigCollapsed = (value: boolean) => {
+    console.log('=== Config Panel Toggle ===');
+    console.log('Setting isConfigCollapsed to:', value);
+    console.log('OpenRouter model in state:', openRouterModel);
+    console.log('OpenRouter model in localStorage:', localStorage.getItem(OPEN_ROUTER_MODEL_KEY));
+    setIsConfigCollapsedState(value);
+  };
+
   useEffect(() => { document.documentElement.classList.toggle('dark', isNightMode); localStorage.setItem(NIGHT_MODE_STORAGE_KEY, String(isNightMode)); }, [isNightMode]);
   useEffect(() => { localStorage.setItem(INCLUDE_REBUTTAL_JSON_KEY, String(includeRebuttalInJson)); }, [includeRebuttalInJson]);
   useEffect(() => { localStorage.setItem(INCLUDE_REBUTTAL_PDF_KEY, String(includeRebuttalInPdf)); }, [includeRebuttalInPdf]);
@@ -101,7 +119,14 @@ export const useConfig = () => {
   const setApiKeyInput = setAndDirty(setApiKeyInputState);
   const setOpenRouterApiKey = setAndDirty(setOpenRouterApiKeyState);
   const setGoogleModel = setAndDirty(setGoogleModelState);
-  const setOpenRouterModel = setAndDirty(setOpenRouterModelState);
+  const setOpenRouterModel = setAndDirty((newValue: string) => {
+    console.log('=== OpenRouter Model State Change ===');
+    console.log('Previous value:', openRouterModel);
+    console.log('New value:', newValue);
+    console.log('localStorage before change:', localStorage.getItem(OPEN_ROUTER_MODEL_KEY));
+    setOpenRouterModelState(newValue);
+    console.log('localStorage after setOpenRouterModelState:', localStorage.getItem(OPEN_ROUTER_MODEL_KEY));
+  });
   const setLmStudioUrl = setAndDirty(setLmStudioUrlState);
   const setLmStudioModel = setAndDirty(setLmStudioModelState);
   const setOllamaUrl = setAndDirty(setOllamaUrlState);
@@ -123,6 +148,15 @@ export const useConfig = () => {
   }, []);
 
   const saveAndTestConfig = useCallback(async () => {
+    console.log('=== Save And Test Config Started ===');
+    console.log('Current state:', {
+      serviceProvider,
+      cloudProvider,
+      openRouterModel,
+      openRouterApiKey: openRouterApiKey.substring(0, 10) + '...',
+      localStorageModel: localStorage.getItem(OPEN_ROUTER_MODEL_KEY)
+    });
+
     setIsTesting(true);
     setTestStatus(null);
 
@@ -133,11 +167,16 @@ export const useConfig = () => {
           await testApiKey(trimmedApiKey, t, googleModel);
           localStorage.setItem(API_KEY_STORAGE_KEY, trimmedApiKey);
           localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, googleModel);
+          console.log('Saved Google model to localStorage:', googleModel);
         } else { // openrouter
           const trimmedApiKey = openRouterApiKey.trim();
+          console.log('Testing OpenRouter with model:', openRouterModel);
           await testOpenRouterConnection(trimmedApiKey, t, openRouterModel);
           localStorage.setItem(OPEN_ROUTER_API_KEY_STORAGE_KEY, trimmedApiKey);
           localStorage.setItem(OPEN_ROUTER_MODEL_KEY, openRouterModel);
+          console.log('=== Saved OpenRouter model to localStorage ===');
+          console.log('Model saved:', openRouterModel);
+          console.log('localStorage after save:', localStorage.getItem(OPEN_ROUTER_MODEL_KEY));
         }
       } else { // local
         if (localProviderType === 'lm-studio') {
@@ -156,8 +195,12 @@ export const useConfig = () => {
       setIsVerified(true);
       setTestStatus(null);
       setIsConfigCollapsed(true);
+      console.log('=== Configuration Saved and Verified ===');
+      console.log('localStorage model after verification:', localStorage.getItem(OPEN_ROUTER_MODEL_KEY));
 
     } catch (err: any) {
+      console.error('=== Save And Test Config Error ===');
+      console.error('Error:', err);
       // Store the error key and details so we can translate at display time
       setTestStatus({
         message: err.message, // This is the translation key
