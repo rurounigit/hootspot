@@ -84,6 +84,11 @@ const OpenRouterConfig: React.FC<OpenRouterConfigProps> = ({
           onChange={handleModelChange}
           disabled={areModelsLoading || allModelsEmpty}
           className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 dark:disabled:bg-gray-600 bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-50"
+          onMouseDown={(e) => {
+            // Force the select to always trigger onChange by temporarily clearing the value
+            const target = e.target as HTMLSelectElement;
+            target.value = '';
+          }}
         >
           {areModelsLoading && <option value="">{t('config_model_loading')}</option>}
           {modelsError && <option value="">{t('config_model_error')}</option>}
