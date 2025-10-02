@@ -46,7 +46,6 @@ export const translateAnalysisResult = async (
         { role: 'system', content: systemPrompt },
         { role: 'user', content: contentToTranslate },
       ],
-      response_format: { type: 'json_object' },
       temperature: 0.2,
     }),
   });
@@ -146,7 +145,6 @@ export const translateUI = async (
 
 ${contentToTranslate}` }
             ],
-            response_format: { type: 'json_object' },
             temperature: 0.2,
         }),
     });

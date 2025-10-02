@@ -24,7 +24,6 @@ export async function repairAndParseJson(
                     { role: 'system', content: JSON_REPAIR_SYSTEM_PROMPT },
                     { role: 'user', content: brokenJson },
                 ],
-                response_format: { type: 'json_object' },
                 temperature: 0,
             }),
         });

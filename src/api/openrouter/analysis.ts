@@ -32,10 +32,7 @@ export const analyzeText = async (
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: `Please analyze the following text: ${textToAnalyze}` },
       ],
-      response_format: { type: 'json_object' },
       temperature: 0,
-      top_p: 0,
-      top_k: 1,
     }),
   });
 
