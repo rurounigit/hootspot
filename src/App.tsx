@@ -93,7 +93,7 @@ const App: React.FC = () => {
   const lastAction = useRef<'PUSH' | 'APPEND'>('PUSH');
 
   useEffect(() => {
-    let modelList: any[] = [], currentSelection, setSelection;
+    let modelList: any[] = [], currentSelection: string | undefined, setSelection: ((value: string) => void) | undefined;
 
     if (serviceProvider === 'cloud') {
         if (cloudProvider === 'google') {
@@ -116,13 +116,44 @@ const App: React.FC = () => {
         }
     }
 
-    if (modelList.length > 0 && setSelection && (!currentSelection || !modelList.some(m => m.name === currentSelection))) {
+    // Only set a default model if there's no current selection (undefined/null) OR if the current selection is not in the model list
+    // Don't set a default if the user has explicitly cleared the selection (empty string)
+    console.log('=== DEBUG MODEL SELECTION ===');
+    console.log('currentSelection:', currentSelection);
+    console.log('modelList length:', modelList.length);
+    console.log('setSelection exists:', !!setSelection);
+
+    const hasExplicitSelection = currentSelection !== undefined && currentSelection !== null;
+    const isEmptySelection = currentSelection === '';
+    const hasValidSelection = hasExplicitSelection && currentSelection !== '' && modelList.some(m => m.name === currentSelection);
+    // The key change: shouldSetDefault now explicitly checks for !isEmptySelection
+    const shouldSetDefault = modelList.length > 0 && setSelection && !hasValidSelection && hasExplicitSelection && !isEmptySelection;
+
+    console.log('hasExplicitSelection:', hasExplicitSelection);
+    console.log('isEmptySelection:', isEmptySelection);
+    console.log('hasValidSelection:', hasValidSelection);
+    console.log('shouldSetDefault:', shouldSetDefault);
+
+    if (shouldSetDefault) {
+        console.log('Setting default model for invalid selection');
+        // Set default for invalid non-empty selections
         const preferredDefault = modelList.find(m => m.name === GEMINI_MODEL_NAME);
         if (preferredDefault && serviceProvider === 'cloud' && cloudProvider === 'google') {
-            setSelection(preferredDefault.name);
+            setSelection?.(preferredDefault.name);
         } else {
-            setSelection(modelList[0].name);
+            setSelection?.(modelList[0].name);
         }
+    } else if (modelList.length > 0 && setSelection && !hasExplicitSelection) {
+        console.log('Setting default model for initial state');
+        // Set default for initial state (undefined/null)
+        const preferredDefault = modelList.find(m => m.name === GEMINI_MODEL_NAME);
+        if (preferredDefault && serviceProvider === 'cloud' && cloudProvider === 'google') {
+            setSelection?.(preferredDefault.name);
+        } else {
+            setSelection?.(modelList[0].name);
+        }
+    } else {
+        console.log('Not setting default model');
     }
   }, [models, serviceProvider, cloudProvider, googleModel, setGoogleModel, openRouterModel, setOpenRouterModel, lmStudioModel, setLmStudioModel, ollamaModel, setOllamaModel]);
 
@@ -228,6 +259,7 @@ const App: React.FC = () => {
             ollamaUrl={ollamaUrl} onOllamaUrlChange={setOllamaUrl}
             ollamaModel={ollamaModel} onOllamaModelChange={setOllamaModel}
             models={models} googleModel={googleModel} onGoogleModelChange={setGoogleModel}
+            openRouterLastSearchTerm={localStorage.getItem('openRouterLastSearchTerm') ?? ''} setOpenRouterLastSearchTerm={(term) => localStorage.setItem('openRouterLastSearchTerm', term || '')}
             areModelsLoading={areModelsLoading} modelsError={modelsError} modelsCurrentErrorKey={currentErrorKey} isModelListEmpty={isModelListEmpty} onRefetchModels={refetchModels}
             currentMaxCharLimit={maxCharLimit} onMaxCharLimitSave={handleMaxCharLimitSave}
             isNightMode={isNightMode} onNightModeChange={setIsNightMode}
@@ -316,3 +348,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+

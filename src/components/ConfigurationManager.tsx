@@ -36,10 +36,13 @@ interface ConfigurationManagerProps {
   onGoogleModelChange: (model: string) => void;
   openRouterModel: string;
   onOpenRouterModelChange: (model: string) => void;
+  openRouterLastSearchTerm: string;
+  setOpenRouterLastSearchTerm: (term: string) => void;
 
   areModelsLoading: boolean;
   modelsError: string | null;
   modelsCurrentErrorKey: string | null; // Key for the current error
+  isModelListEmpty: boolean;
   onRefetchModels: () => void;
 
   currentMaxCharLimit: number;
@@ -191,6 +194,8 @@ const ConfigurationManager: React.FC<ConfigurationManagerProps> = (props) => {
               onOpenRouterApiKeyChange={props.onOpenRouterApiKeyChange}
               openRouterModel={props.openRouterModel}
               onOpenRouterModelChange={props.onOpenRouterModelChange}
+              openRouterLastSearchTerm={props.openRouterLastSearchTerm}
+              setOpenRouterLastSearchTerm={props.setOpenRouterLastSearchTerm}
             />
           ) : (
             <LocalProviderConfig

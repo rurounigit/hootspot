@@ -32,3 +32,4 @@ export const CLOUD_PROVIDER_KEY = 'hootspot-cloud-provider';
 // Keys for OpenRouter
 export const OPEN_ROUTER_API_KEY_STORAGE_KEY = 'hootspot-openrouter-api-key';
 export const OPEN_ROUTER_MODEL_KEY = 'hootspot-openrouter-model';
+export const OPEN_ROUTER_LAST_SEARCH_TERM_KEY = 'hootspot-openrouter-last-search-term';

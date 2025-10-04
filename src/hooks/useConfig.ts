@@ -7,7 +7,8 @@ import {
   NIGHT_MODE_STORAGE_KEY, INCLUDE_REBUTTAL_JSON_KEY, INCLUDE_REBUTTAL_PDF_KEY,
   SERVICE_PROVIDER_KEY, LM_STUDIO_URL_KEY, LM_STUDIO_MODEL_KEY,
   LOCAL_PROVIDER_TYPE_KEY, OLLAMA_URL_KEY, OLLAMA_MODEL_KEY, SHOW_ALL_VERSIONS_KEY,
-  CLOUD_PROVIDER_KEY, OPEN_ROUTER_API_KEY_STORAGE_KEY, OPEN_ROUTER_MODEL_KEY
+  CLOUD_PROVIDER_KEY, OPEN_ROUTER_API_KEY_STORAGE_KEY, OPEN_ROUTER_MODEL_KEY,
+  OPEN_ROUTER_LAST_SEARCH_TERM_KEY
 } from '../config/storage-keys';
 import { GEMINI_MODEL_NAME } from '../config/api-prompts';
 import { DEFAULT_MAX_CHAR_LIMIT } from '../constants';
@@ -70,13 +71,12 @@ export const useConfig = () => {
   const [showAllVersions, setShowAllVersionsState] = useState<boolean>(() =>
     localStorage.getItem(SHOW_ALL_VERSIONS_KEY) === 'true'
   );
+  const [openRouterLastSearchTerm, setOpenRouterLastSearchTermState] = useState<string>(() =>
+    localStorage.getItem(OPEN_ROUTER_LAST_SEARCH_TERM_KEY) || ''
+  );
   const [isConfigCollapsed, setIsConfigCollapsedState] = useState(false);
 
   useEffect(() => {
-    console.log('=== Config Collapse State Change ===');
-    console.log('isVerified changed to:', isVerified);
-    console.log('OpenRouter model in state:', openRouterModel);
-    console.log('OpenRouter model in localStorage:', localStorage.getItem(OPEN_ROUTER_MODEL_KEY));
     setIsConfigCollapsed(isVerified);
     const storedMaxCharLimit = localStorage.getItem(MAX_CHAR_LIMIT_STORAGE_KEY);
     if (storedMaxCharLimit) {
@@ -112,6 +112,7 @@ export const useConfig = () => {
   useEffect(() => { localStorage.setItem(INCLUDE_REBUTTAL_JSON_KEY, String(includeRebuttalInJson)); }, [includeRebuttalInJson]);
   useEffect(() => { localStorage.setItem(INCLUDE_REBUTTAL_PDF_KEY, String(includeRebuttalInPdf)); }, [includeRebuttalInPdf]);
   useEffect(() => { localStorage.setItem(SHOW_ALL_VERSIONS_KEY, String(showAllVersions)); }, [showAllVersions]);
+  useEffect(() => { localStorage.setItem(OPEN_ROUTER_LAST_SEARCH_TERM_KEY, openRouterLastSearchTerm); }, [openRouterLastSearchTerm]);
 
   const setServiceProvider = setAndDirty(setServiceProviderState);
   const setCloudProvider = setAndDirty(setCloudProviderState);
@@ -135,6 +136,8 @@ export const useConfig = () => {
   const setShowAllVersions = (value: boolean) => {
     setShowAllVersionsState(value);
   };
+
+  const setOpenRouterLastSearchTerm = setAndDirty(setOpenRouterLastSearchTermState);
 
   const handleMaxCharLimitSave = useCallback((newLimit: number) => {
     localStorage.setItem(MAX_CHAR_LIMIT_STORAGE_KEY, newLimit.toString());
@@ -235,6 +238,7 @@ export const useConfig = () => {
     includeRebuttalInJson, setIncludeRebuttalInJson,
     includeRebuttalInPdf, setIncludeRebuttalInPdf,
     showAllVersions, setShowAllVersions,
+    openRouterLastSearchTerm, setOpenRouterLastSearchTerm,
     isConfigCollapsed, setIsConfigCollapsed,
     isTesting, testStatus,
     isCurrentProviderConfigured: isVerified,

@@ -22,6 +22,8 @@ interface CloudConfigProps {
   onOpenRouterApiKeyChange: (key: string) => void;
   openRouterModel: string;
   onOpenRouterModelChange: (model: string) => void;
+  openRouterLastSearchTerm: string;
+  setOpenRouterLastSearchTerm: (term: string) => void;
 }
 
 const CloudConfig: React.FC<CloudConfigProps> = (props) => {
@@ -78,15 +80,17 @@ const CloudConfig: React.FC<CloudConfigProps> = (props) => {
           onShowAllVersionsChange={props.onShowAllVersionsChange}
         />
       ) : (
-        <OpenRouterConfig
-          apiKey={props.openRouterApiKey}
-          onApiKeyChange={props.onOpenRouterApiKeyChange}
-          selectedModel={props.openRouterModel}
-          onModelChange={props.onOpenRouterModelChange}
-          models={props.models}
-          areModelsLoading={props.areModelsLoading}
-          modelsError={props.modelsError}
-        />
+      <OpenRouterConfig
+        apiKey={props.openRouterApiKey}
+        onApiKeyChange={props.onOpenRouterApiKeyChange}
+        selectedModel={props.openRouterModel}
+        onModelChange={props.onOpenRouterModelChange}
+        models={props.models}
+        areModelsLoading={props.areModelsLoading}
+        modelsError={props.modelsError}
+        openRouterLastSearchTerm={props.openRouterLastSearchTerm}
+        setOpenRouterLastSearchTerm={props.setOpenRouterLastSearchTerm}
+      />
       )}
     </div>
   );
