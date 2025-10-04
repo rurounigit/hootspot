@@ -195,7 +195,7 @@ const OpenRouterConfig: React.FC<OpenRouterConfigProps> = ({
                     <div
                       key={model.name}
                       onClick={() => handleModelSelect(model.name)}
-                      className="px-4 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-200 dark:border-gray-700 last:border-b-0"
+                      className="px-3 py-1.5 text-xs text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-200 dark:border-gray-700 last:border-b-0"
                     >
                       <div className="font-normal">{model.displayName}</div>
                     </div>
