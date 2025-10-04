@@ -141,11 +141,11 @@ const OpenRouterConfig: React.FC<OpenRouterConfigProps> = ({
               <button
                 type="button"
                 onClick={handleClearSelection}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 p-0.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                 aria-label="Clear model selection"
                 title="Clear model selection"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -158,7 +158,7 @@ const OpenRouterConfig: React.FC<OpenRouterConfigProps> = ({
 
           {/* Show model description below the input when a model is selected */}
           {selectedModel && selectedModelInfo && (
-            <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+            <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
               <p>{selectedModelInfo.description}</p>
             </div>
           )}
@@ -197,7 +197,7 @@ const OpenRouterConfig: React.FC<OpenRouterConfigProps> = ({
                       onClick={() => handleModelSelect(model.name)}
                       className="px-4 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-200 dark:border-gray-700 last:border-b-0"
                     >
-                      <div className="font-medium">{model.displayName}</div>
+                      <div className="font-normal">{model.displayName}</div>
                     </div>
                   ))}
                 </>
