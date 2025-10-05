@@ -126,8 +126,8 @@ const App: React.FC = () => {
     const hasExplicitSelection = currentSelection !== undefined && currentSelection !== null;
     const isEmptySelection = currentSelection === '';
     const hasValidSelection = hasExplicitSelection && currentSelection !== '' && modelList.some(m => m.name === currentSelection);
-    // The key change: shouldSetDefault now explicitly checks for !isEmptySelection
-    const shouldSetDefault = modelList.length > 0 && setSelection && !hasValidSelection && hasExplicitSelection && !isEmptySelection;
+    // Fix: Allow setting default when selection is empty (initial state when switching providers)
+    const shouldSetDefault = modelList.length > 0 && setSelection && !hasValidSelection;
 
     console.log('hasExplicitSelection:', hasExplicitSelection);
     console.log('isEmptySelection:', isEmptySelection);
@@ -259,7 +259,7 @@ const App: React.FC = () => {
             ollamaUrl={ollamaUrl} onOllamaUrlChange={setOllamaUrl}
             ollamaModel={ollamaModel} onOllamaModelChange={setOllamaModel}
             models={models} googleModel={googleModel} onGoogleModelChange={setGoogleModel}
-            openRouterLastSearchTerm={localStorage.getItem('openRouterLastSearchTerm') ?? ''} setOpenRouterLastSearchTerm={(term) => localStorage.setItem('openRouterLastSearchTerm', term || '')}
+            openRouterLastSearchTerm={localStorage.getItem('openRouterLastSearchTerm') || ''} setOpenRouterLastSearchTerm={(term) => localStorage.setItem('openRouterLastSearchTerm', term || '')}
             areModelsLoading={areModelsLoading} modelsError={modelsError} modelsCurrentErrorKey={currentErrorKey} isModelListEmpty={isModelListEmpty} onRefetchModels={refetchModels}
             currentMaxCharLimit={maxCharLimit} onMaxCharLimitSave={handleMaxCharLimitSave}
             isNightMode={isNightMode} onNightModeChange={setIsNightMode}
@@ -348,4 +348,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-
