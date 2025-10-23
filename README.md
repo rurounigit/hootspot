@@ -383,8 +383,7 @@ Once configured with one of these methods, HootSpot will be able to securely con
     ├── config/            # Centralized application configuration
     │   ├── api-prompts.ts # System prompts for all AI interactions
     │   ├── chart.ts       # Visual configuration for charts (UI and PDF)
-    │   ├── storage-keys.ts# Constants for localStorage keys
-    │   └── theme.ts       # Centralized color theme for Tailwind CSS
+    │   └── storage-keys.ts# Constants for localStorage keys
     ├── hooks/             # Custom React hooks for managing state and business logic
     │   ├── useAnalysis.ts # Manages the entire analysis workflow and state
     │   ├── useConfig.ts   # Manages all user configuration and settings
