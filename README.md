@@ -156,7 +156,7 @@ HootSpot is built as a modern Manifest V3 Chrome Extension with a modular, hook-
 
 The easiest way to use HootSpot AI is to install it from the Chrome Web Store.
 
-> **[Install from the Chrome Web Store](https://chrome.google.com/webstore/category/extensions)** (Link pending publication)
+> **[Install from the Chrome Web Store](https://chromewebstore.google.com/detail/eljipjianfehknkdlnemhdkakjkikioe?utm_source=item-share-cb)**
 
 ### For Developers (Running Locally)
 
